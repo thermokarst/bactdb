@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"strconv"
 	"time"
 
@@ -24,6 +25,10 @@ type UsersService interface {
 	// List all users.
 	List(opt *UserListOptions) ([]*User, error)
 }
+
+var (
+	ErrUserNotFound = errors.New("user not found")
+)
 
 type usersService struct {
 	client *Client
