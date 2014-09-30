@@ -20,6 +20,9 @@ type User struct {
 type UsersService interface {
 	// Get a user.
 	Get(id int64) (*User, error)
+
+	// List all users.
+	List(opt *UserListOptions) ([]*User, error)
 }
 
 type usersService struct {
@@ -50,8 +53,33 @@ func (s *usersService) Get(id int64) (*User, error) {
 	return user, nil
 }
 
+type UserListOptions struct {
+	ListOptions
+}
+
+func (s *usersService) List(opt *UserListOptions) ([]*User, error) {
+	url, err := s.client.url(router.Users, nil, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest("GET", url.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var users []*User
+	_, err = s.client.Do(req, &users)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
 type MockUsersService struct {
-	Get_ func(id int64) (*User, error)
+	Get_  func(id int64) (*User, error)
+	List_ func(opt *UserListOptions) ([]*User, error)
 }
 
 func (s *MockUsersService) Get(id int64) (*User, error) {
@@ -59,4 +87,11 @@ func (s *MockUsersService) Get(id int64) (*User, error) {
 		return nil, nil
 	}
 	return s.Get_(id)
+}
+
+func (s *MockUsersService) List(opt *UserListOptions) ([]*User, error) {
+	if s.List_ == nil {
+		return nil, nil
+	}
+	return s.List_(opt)
 }

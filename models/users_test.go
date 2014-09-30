@@ -37,3 +37,35 @@ func TestUsersService_Get(t *testing.T) {
 		t.Errorf("Users.Get returned %+v, want %+v", user, want)
 	}
 }
+
+func TestUsersService_List(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := []*User{{Id: 1, UserName: "Test User"}}
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.Users, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "GET")
+		testFormValues(t, r, values{})
+
+		writeJSON(w, want)
+	})
+
+	users, err := client.Users.List(nil)
+	if err != nil {
+		t.Errorf("Users.List returned error: %v", err)
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	for _, u := range want {
+		normalizeTime(&u.CreatedAt, &u.UpdatedAt, &u.DeletedAt)
+	}
+	if !reflect.DeepEqual(users, want) {
+		t.Errorf("Users.List return %+v, want %+v", users, want)
+	}
+}

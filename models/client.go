@@ -48,6 +48,33 @@ func NewClient(httpClient *http.Client) *Client {
 	return c
 }
 
+// ListOptions specifies general pagination options for fetching a list of results
+type ListOptions struct {
+	PerPage int `url:",omitempty" json:",omitempty"`
+	Page    int `url:",moitempty" json:",omitempty"`
+}
+
+func (o ListOptions) PageOrDefault() int {
+	if o.Page <= 0 {
+		return 1
+	}
+	return o.Page
+}
+
+func (o ListOptions) Offset() int {
+	return (o.PageOrDefault() - 1) * o.PerPageOrDefault()
+}
+
+func (o ListOptions) PerPageOrDefault() int {
+	if o.PerPage <= 0 {
+		return DefaultPerPage
+	}
+	return o.PerPage
+}
+
+// DefaultPerPage is the default number of items to return in a paginated result set
+const DefaultPerPage = 10
+
 // apiRouter is used to generate URLs for bactdb's HTTP API.
 var apiRouter = router.API()
 

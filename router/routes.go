@@ -1,5 +1,6 @@
 package router
 
 const (
-	User = "user"
+	User  = "user"
+	Users = "users"
 )
