@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/thermokarst/bactdb/api"
+	"github.com/thermokarst/bactdb/datastore"
 )
 
 func init() {
@@ -62,6 +63,7 @@ type subcmd struct {
 
 var subcmds = []subcmd{
 	{"serve", "start web server", serveCmd},
+	{"create-db", "create the database schema", createDBCmd},
 }
 
 func serveCmd(args []string) {
@@ -83,12 +85,36 @@ The options are:
 		fs.Usage()
 	}
 
+	datastore.Connect()
+
 	m := http.NewServeMux()
-	m.Handle("/api", api.Handler())
+	m.Handle("/api/", http.StripPrefix("/api", api.Handler()))
 
 	log.Print("Listening on ", *httpAddr)
 	err := http.ListenAndServe(*httpAddr, m)
 	if err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
+}
+
+func createDBCmd(args []string) {
+	fs := flag.NewFlagSet("create-db", flag.ExitOnError)
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, `usage: bactdb create-db [options]
+
+Creates the necessary DB schema.
+
+The options are:
+`)
+		fs.PrintDefaults()
+		os.Exit(1)
+	}
+	fs.Parse(args)
+
+	if fs.NArg() != 0 {
+		fs.Usage()
+	}
+
+	datastore.Connect()
+	datastore.Create()
 }

@@ -10,7 +10,7 @@ import (
 
 // A User is a person that has administrative access to bactdb.
 type User struct {
-	Id        int64     `json:"id"`
+	Id        int64     `json:"id,omitempty"`
 	UserName  string    `sql:"size:100" json:"user_name"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

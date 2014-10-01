@@ -3,7 +3,7 @@ package datastore
 import "github.com/thermokarst/bactdb/models"
 
 func init() {
-	DB.AddTableWithName(models.User{}, "users").SetKeys(false, "Id")
+	DB.AddTableWithName(models.User{}, "users").SetKeys(true, "Id")
 	createSQL = append(createSQL,
 		`CREATE UNIQUE INDEX username_idx ON users (username);`,
 	)
@@ -25,6 +25,9 @@ func (s *usersStore) Get(id int64) (*models.User, error) {
 }
 
 func (s *usersStore) List(opt *models.UserListOptions) ([]*models.User, error) {
+	if opt == nil {
+		opt = &models.UserListOptions{}
+	}
 	var users []*models.User
 	err := s.dbh.Select(&users, `SELECT * FROM users LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
 	if err != nil {
