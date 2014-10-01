@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -19,6 +20,24 @@ func serveUser(w http.ResponseWriter, r *http.Request) error {
 	user, err := store.Users.Get(id)
 	if err != nil {
 		return err
+	}
+
+	return writeJSON(w, user)
+}
+
+func serveCreateUser(w http.ResponseWriter, r *http.Request) error {
+	var user models.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		return err
+	}
+
+	created, err := store.Users.Create(&user)
+	if err != nil {
+		return err
+	}
+	if created {
+		w.WriteHeader(http.StatusCreated)
 	}
 
 	return writeJSON(w, user)

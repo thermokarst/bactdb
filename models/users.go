@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -24,6 +25,9 @@ type UsersService interface {
 
 	// List all users.
 	List(opt *UserListOptions) ([]*User, error)
+
+	// Create a new user. The newly created user's ID is written to user.Id
+	Create(user *User) (created bool, err error)
 }
 
 var (
@@ -58,6 +62,25 @@ func (s *usersService) Get(id int64) (*User, error) {
 	return user, nil
 }
 
+func (s *usersService) Create(user *User) (bool, error) {
+	url, err := s.client.url(router.CreateUser, nil, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("POST", url.String(), user)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &user)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusCreated, nil
+}
+
 type UserListOptions struct {
 	ListOptions
 }
@@ -83,15 +106,25 @@ func (s *usersService) List(opt *UserListOptions) ([]*User, error) {
 }
 
 type MockUsersService struct {
-	Get_  func(id int64) (*User, error)
-	List_ func(opt *UserListOptions) ([]*User, error)
+	Get_    func(id int64) (*User, error)
+	List_   func(opt *UserListOptions) ([]*User, error)
+	Create_ func(post *User) (bool, error)
 }
+
+var _ UsersService = &MockUsersService{}
 
 func (s *MockUsersService) Get(id int64) (*User, error) {
 	if s.Get_ == nil {
 		return nil, nil
 	}
 	return s.Get_(id)
+}
+
+func (s *MockUsersService) Create(user *User) (bool, error) {
+	if s.Create_ == nil {
+		return false, nil
+	}
+	return s.Create_(user)
 }
 
 func (s *MockUsersService) List(opt *UserListOptions) ([]*User, error) {

@@ -63,7 +63,7 @@ type subcmd struct {
 
 var subcmds = []subcmd{
 	{"serve", "start web server", serveCmd},
-	{"create-db", "create the database schema", createDBCmd},
+	{"createdb", "create the database schema", createDBCmd},
 }
 
 func serveCmd(args []string) {
@@ -98,9 +98,10 @@ The options are:
 }
 
 func createDBCmd(args []string) {
-	fs := flag.NewFlagSet("create-db", flag.ExitOnError)
+	fs := flag.NewFlagSet("createdb", flag.ExitOnError)
+	drop := fs.Bool("drop", false, "drop DB before creating")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, `usage: bactdb create-db [options]
+		fmt.Fprintln(os.Stderr, `usage: bactdb createdb [options]
 
 Creates the necessary DB schema.
 
@@ -116,5 +117,8 @@ The options are:
 	}
 
 	datastore.Connect()
+	if *drop {
+		datastore.Drop()
+	}
 	datastore.Create()
 }

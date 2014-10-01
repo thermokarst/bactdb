@@ -19,6 +19,7 @@ var (
 func Handler() *mux.Router {
 	m := router.API()
 	m.Get(router.User).Handler(handler(serveUser))
+	m.Get(router.CreateUser).Handler(handler(serveCreateUser))
 	m.Get(router.Users).Handler(handler(serveUsers))
 	return m
 }

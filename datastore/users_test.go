@@ -12,6 +12,7 @@ func TestUsersStore_Get_db(t *testing.T) {
 
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
+
 	// Test on a clean database
 	tx.Exec(`DELETE FROM users;`)
 	if err := tx.Insert(want); err != nil {
@@ -30,10 +31,32 @@ func TestUsersStore_Get_db(t *testing.T) {
 	}
 }
 
+func TestUsersStore_Create_db(t *testing.T) {
+	user := &models.User{Id: 1, UserName: "Test User"}
+
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	// Test on a clean database
+	tx.Exec(`DELETE FROM users;`)
+
+	d := NewDatastore(tx)
+	created, err := d.Users.Create(user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !created {
+		t.Error("!created")
+	}
+	if user.Id == 0 {
+		t.Error("want nonzero user.Id after submitting")
+	}
+}
+
 func TestUsersStore_List_db(t *testing.T) {
 	want := []*models.User{{Id: 1, UserName: "Test User"}}
 
-	// tx := DBH
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 

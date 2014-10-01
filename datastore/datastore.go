@@ -22,3 +22,9 @@ func NewDatastore(dbh modl.SqlExecutor) *Datastore {
 	d.Users = &usersStore{d}
 	return d
 }
+
+func NewMockDatastore() *Datastore {
+	return &Datastore{
+		Users: &models.MockUsersService{},
+	}
+}

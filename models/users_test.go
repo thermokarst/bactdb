@@ -38,6 +38,42 @@ func TestUsersService_Get(t *testing.T) {
 	}
 }
 
+func TestUsersService_Create(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &User{Id: 1, UserName: "Test User"}
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.CreateUser, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "POST")
+		testBody(t, r, `{"id":1,"user_name":"Test User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":"0001-01-01T00:00:00Z"}`+"\n")
+
+		w.WriteHeader(http.StatusCreated)
+		writeJSON(w, want)
+	})
+
+	user := &User{Id: 1, UserName: "Test User"}
+	created, err := client.Users.Create(user)
+	if err != nil {
+		t.Errorf("Users.Create returned error: %v", err)
+	}
+
+	if !created {
+		t.Error("!created")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	if !reflect.DeepEqual(user, want) {
+		t.Errorf("Users.Create returned %+v, want %+v", user, want)
+	}
+}
+
 func TestUsersService_List(t *testing.T) {
 	setup()
 	defer teardown()
