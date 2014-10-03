@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"log"
+	"os"
 	"sync"
 
 	"github.com/jmoiron/modl"
@@ -28,6 +29,7 @@ func Connect() {
 		if err != nil {
 			log.Fatal("Error connecting to PostgreSQL database (using PG* environment variables): ", err)
 		}
+		DB.TraceOn("[modl]", log.New(os.Stdout, "bactdb:", log.Lmicroseconds))
 		DB.Db = DB.Dbx.DB
 	})
 }
