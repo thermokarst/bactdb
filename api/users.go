@@ -12,7 +12,7 @@ import (
 )
 
 func serveUser(w http.ResponseWriter, r *http.Request) error {
-	id, err := strconv.ParseInt(mux.Vars(r)["ID"], 10, 0)
+	id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
 	if err != nil {
 		return err
 	}
