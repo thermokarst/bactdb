@@ -83,9 +83,8 @@ func TestUser_List(t *testing.T) {
 	if !calledList {
 		t.Error("!calledList")
 	}
-	for i, _ := range users {
-		if !normalizeDeepEqual(wantUsers[i], users[i]) {
-			t.Errorf("got users %+v but wanted users %+v", wantUsers, users)
-		}
+
+	if !normalizeDeepEqual(&wantUsers, &users) {
+		t.Errorf("got users %+v but wanted users %+v", users, wantUsers)
 	}
 }
