@@ -1,5 +1,4 @@
-bactdb
-======
+# bactdb [![Build Status](https://travis-ci.org/thermokarst/bactdb.svg?branch=master)](https://travis-ci.org/thermokarst/bactdb)
 
 golang + bacteria = bactdb
 
