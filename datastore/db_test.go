@@ -21,6 +21,7 @@ func init() {
 
 	// Reset DB
 	Connect()
-	Drop()
-	Create()
+	migrationsPath := "./migrations"
+	Drop(migrationsPath)
+	Create(migrationsPath)
 }

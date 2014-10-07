@@ -117,8 +117,10 @@ The options are:
 	}
 
 	datastore.Connect()
+	migrationsPath := "./datastore/migrations"
+
 	if *drop {
-		datastore.Drop()
+		datastore.Drop(migrationsPath)
 	}
-	datastore.Create()
+	datastore.Create(migrationsPath)
 }

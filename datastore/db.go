@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/DavidHuie/gomigrate"
 	"github.com/jmoiron/modl"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -37,21 +38,32 @@ func Connect() {
 var createSQL []string
 
 // Create the database schema. It calls log.Fatal if it encounters an error.
-func Create() {
-	if err := DB.CreateTablesIfNotExists(); err != nil {
-		log.Fatal("Error creating tables: ", err)
+func Create(path string) {
+	migrator, err := gomigrate.NewMigrator(DB.Dbx.DB, gomigrate.Postgres{}, path)
+	if err != nil {
+		log.Fatal("Error initializing migrations: ", err)
 	}
-	for _, query := range createSQL {
-		if _, err := DB.Exec(query); err != nil {
-			log.Fatalf("Error running query %q: %s", query, err)
-		}
+
+	pwd, err := os.Getwd()
+	log.Print("current path: ", pwd)
+
+	err = migrator.Migrate()
+	if err != nil {
+		log.Fatal("Error applying migrations: ", err)
 	}
 }
 
 // Drop the database schema
-func Drop() {
-	// TODO(mrd): raise errors.
-	DB.DropTables()
+func Drop(path string) {
+	migrator, err := gomigrate.NewMigrator(DB.Dbx.DB, gomigrate.Postgres{}, path)
+	if err != nil {
+		log.Fatal("Error initializing migrations: ", err)
+	}
+
+	err = migrator.RollbackAll()
+	if err != nil {
+		log.Fatal("Error rolling back migrations: ", err)
+	}
 }
 
 // transact calls fn in a DB transaction. If dbh is a transaction, then it just calls

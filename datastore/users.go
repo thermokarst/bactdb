@@ -12,9 +12,6 @@ import (
 
 func init() {
 	DB.AddTableWithName(models.User{}, "users").SetKeys(true, "Id")
-	createSQL = append(createSQL,
-		`CREATE UNIQUE INDEX username_idx ON users (username);`,
-	)
 }
 
 type usersStore struct {
