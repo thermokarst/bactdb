@@ -61,7 +61,7 @@ func Drop(path string) {
 	}
 
 	err = migrator.RollbackAll()
-	if err != nil {
+	if err != nil && err != gomigrate.NoActiveMigrations {
 		log.Fatal("Error rolling back migrations: ", err)
 	}
 }
