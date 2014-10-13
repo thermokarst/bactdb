@@ -108,7 +108,7 @@ func (s *usersService) List(opt *UserListOptions) ([]*User, error) {
 type MockUsersService struct {
 	Get_    func(id int64) (*User, error)
 	List_   func(opt *UserListOptions) ([]*User, error)
-	Create_ func(post *User) (bool, error)
+	Create_ func(user *User) (bool, error)
 }
 
 var _ UsersService = &MockUsersService{}
