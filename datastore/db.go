@@ -26,7 +26,7 @@ var connectOnce sync.Once
 func Connect() {
 	connectOnce.Do(func() {
 		var err error
-		DB.Dbx, err = sqlx.Open("postgres", "sslmode=disable")
+		DB.Dbx, err = sqlx.Open("postgres", "timezone=UTC sslmode=disable")
 		if err != nil {
 			log.Fatal("Error connecting to PostgreSQL database (using PG* environment variables): ", err)
 		}
