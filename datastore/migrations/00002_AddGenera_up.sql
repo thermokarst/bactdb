@@ -5,9 +5,9 @@ CREATE TABLE genera (
     id BIGSERIAL NOT NULL,
     genusname CHARACTER VARYING(100),
 
-    created_at TIMESTAMP WITH TIME ZONE,
-    updated_at TIMESTAMP WITH TIME ZONE,
-    deleted_at TIMESTAMP WITH TIME ZONE,
+    createdat TIMESTAMP WITH TIME ZONE,
+    updatedat TIMESTAMP WITH TIME ZONE,
+    deletedat TIMESTAMP WITH TIME ZONE,
 
     CONSTRAINT genus_pkey PRIMARY KEY (id)
 );
