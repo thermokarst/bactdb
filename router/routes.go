@@ -9,4 +9,5 @@ const (
 	CreateGenus = "genus:create"
 	Genera      = "genera"
 	UpdateGenus = "genus:update"
+	DeleteGenus = "genus:delete"
 )

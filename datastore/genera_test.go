@@ -79,3 +79,62 @@ func TestGeneraStore_List_db(t *testing.T) {
 		t.Errorf("got genera %+v, want %+v", genera, want)
 	}
 }
+
+func TestGeneraStore_Update_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	// Test on a clean database
+	tx.Exec(`DELETE FROM genera;`)
+
+	d := NewDatastore(nil)
+	// Add a new record
+	genus := &models.Genus{GenusName: "Test Genus"}
+	created, err := d.Genera.Create(genus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Error("!created")
+	}
+
+	// Tweak it
+	genus.GenusName = "Updated Genus"
+	updated, err := d.Genera.Update(genus.Id, genus)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+}
+
+func TestGeneraStore_Delete_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	// Test on a clean database
+	tx.Exec(`DELETE FROM genera;`)
+
+	d := NewDatastore(tx)
+	// Add a new record
+	genus := &models.Genus{GenusName: "Test Genus"}
+	created, err := d.Genera.Create(genus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Error("!created")
+	}
+
+	// Delete it
+	deleted, err := d.Genera.Delete(genus.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !deleted {
+		t.Error("!delete")
+	}
+}

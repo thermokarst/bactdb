@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"errors"
+
 	"github.com/jmoiron/modl"
 	"github.com/thermokarst/bactdb/models"
 )
@@ -11,6 +13,11 @@ type Datastore struct {
 	Genera models.GeneraService
 	dbh    modl.SqlExecutor
 }
+
+var (
+	ErrNoRowsUpdated = errors.New(`no rows updated`)
+	ErrNoRowsDeleted = errors.New(`no rows deleted`)
+)
 
 // NewDatastore creates a new client for accessing the datastore (in PostgreSQL).
 // If dbh is nil, it uses the global DB handle.

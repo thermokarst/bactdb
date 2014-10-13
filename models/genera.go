@@ -31,6 +31,9 @@ type GeneraService interface {
 
 	// Update an existing genus.
 	Update(id int64, genus *Genus) (updated bool, err error)
+
+	// Delete an existing genus.
+	Delete(id int64) (deleted bool, err error)
 }
 
 var (
@@ -129,11 +132,34 @@ func (s *generaService) Update(id int64, genus *Genus) (bool, error) {
 	return resp.StatusCode == http.StatusOK, nil
 }
 
+func (s *generaService) Delete(id int64) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.DeleteGenus, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("DELETE", url.String(), nil)
+	if err != nil {
+		return false, err
+	}
+
+	var genus *Genus
+	resp, err := s.client.Do(req, &genus)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockGeneraService struct {
 	Get_    func(id int64) (*Genus, error)
 	List_   func(opt *GenusListOptions) ([]*Genus, error)
 	Create_ func(genus *Genus) (bool, error)
 	Update_ func(id int64, genus *Genus) (bool, error)
+	Delete_ func(id int64) (bool, error)
 }
 
 var _ GeneraService = &MockGeneraService{}
@@ -164,4 +190,11 @@ func (s *MockGeneraService) Update(id int64, genus *Genus) (bool, error) {
 		return false, nil
 	}
 	return s.Update_(id, genus)
+}
+
+func (s *MockGeneraService) Delete(id int64) (bool, error) {
+	if s.Delete_ == nil {
+		return false, nil
+	}
+	return s.Delete_(id)
 }

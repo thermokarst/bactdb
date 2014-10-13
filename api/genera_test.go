@@ -118,3 +118,30 @@ func TestGenus_Update(t *testing.T) {
 		t.Error("!success")
 	}
 }
+
+func TestGenus_Delete(t *testing.T) {
+	setup()
+
+	want := &models.Genus{Id: 1, GenusName: "Test Genus"}
+
+	calledDelete := false
+	store.Genera.(*models.MockGeneraService).Delete_ = func(id int64) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for genus %d but got %d", want.Id, id)
+		}
+		calledDelete = true
+		return true, nil
+	}
+
+	success, err := apiClient.Genera.Delete(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledDelete {
+		t.Error("!calledDelete")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

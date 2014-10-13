@@ -47,12 +47,39 @@ func (s *generaStore) List(opt *models.GenusListOptions) ([]*models.Genus, error
 }
 
 func (s *generaStore) Update(id int64, genus *models.Genus) (bool, error) {
-	ret, err := s.dbh.Exec(`UPDATE genera SET genusname=$1 WHERE id=$2;`, genus.GenusName, id)
+	_, err := s.Get(id)
 	if err != nil {
 		return false, err
 	}
-	if rows, err := ret.RowsAffected(); rows == 0 {
+
+	if id != genus.Id {
+		return false, models.ErrGenusNotFound
+	}
+
+	changed, err := s.dbh.Update(genus)
+	if err != nil {
 		return false, err
+	}
+
+	if changed == 0 {
+		return false, ErrNoRowsUpdated
+	}
+
+	return true, nil
+}
+
+func (s *generaStore) Delete(id int64) (bool, error) {
+	genus, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	deleted, err := s.dbh.Delete(genus)
+	if err != nil {
+		return false, err
+	}
+	if deleted == 0 {
+		return false, ErrNoRowsDeleted
 	}
 	return true, nil
 }
