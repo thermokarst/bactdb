@@ -7,8 +7,9 @@ import (
 
 // A datastore access point (in PostgreSQL)
 type Datastore struct {
-	Users models.UsersService
-	dbh   modl.SqlExecutor
+	Users  models.UsersService
+	Genera models.GeneraService
+	dbh    modl.SqlExecutor
 }
 
 // NewDatastore creates a new client for accessing the datastore (in PostgreSQL).
@@ -20,11 +21,13 @@ func NewDatastore(dbh modl.SqlExecutor) *Datastore {
 
 	d := &Datastore{dbh: dbh}
 	d.Users = &usersStore{d}
+	d.Genera = &generaStore{d}
 	return d
 }
 
 func NewMockDatastore() *Datastore {
 	return &Datastore{
-		Users: &models.MockUsersService{},
+		Users:  &models.MockUsersService{},
+		Genera: &models.MockGeneraService{},
 	}
 }
