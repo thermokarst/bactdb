@@ -45,3 +45,14 @@ func (s *generaStore) List(opt *models.GenusListOptions) ([]*models.Genus, error
 	}
 	return genera, nil
 }
+
+func (s *generaStore) Update(id int64, genus *models.Genus) (bool, error) {
+	ret, err := s.dbh.Exec(`UPDATE genera SET genusname=$1 WHERE id=$2;`, genus.GenusName, id)
+	if err != nil {
+		return false, err
+	}
+	if rows, err := ret.RowsAffected(); rows == 0 {
+		return false, err
+	}
+	return true, nil
+}

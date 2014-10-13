@@ -28,6 +28,9 @@ type GeneraService interface {
 
 	// Create a new genus. The newly created genus's ID is written to genus.Id
 	Create(genus *Genus) (created bool, err error)
+
+	// Update an existing genus.
+	Update(id int64, genus *Genus) (updated bool, err error)
 }
 
 var (
@@ -105,10 +108,32 @@ func (s *generaService) List(opt *GenusListOptions) ([]*Genus, error) {
 	return genera, nil
 }
 
+func (s *generaService) Update(id int64, genus *Genus) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.UpdateGenus, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("PUT", url.String(), genus)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &genus)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockGeneraService struct {
 	Get_    func(id int64) (*Genus, error)
 	List_   func(opt *GenusListOptions) ([]*Genus, error)
-	Create_ func(post *Genus) (bool, error)
+	Create_ func(genus *Genus) (bool, error)
+	Update_ func(id int64, genus *Genus) (bool, error)
 }
 
 var _ GeneraService = &MockGeneraService{}
@@ -132,4 +157,11 @@ func (s *MockGeneraService) List(opt *GenusListOptions) ([]*Genus, error) {
 		return nil, nil
 	}
 	return s.List_(opt)
+}
+
+func (s *MockGeneraService) Update(id int64, genus *Genus) (bool, error) {
+	if s.Update_ == nil {
+		return false, nil
+	}
+	return s.Update_(id, genus)
 }

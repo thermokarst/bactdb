@@ -59,3 +59,22 @@ func serveGenera(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, genera)
 }
+
+func serveUpdateGenus(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+	var genus models.Genus
+	err := json.NewDecoder(r.Body).Decode(&genus)
+	if err != nil {
+		return err
+	}
+
+	updated, err := store.Genera.Update(id, &genus)
+	if err != nil {
+		return err
+	}
+	if updated {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, genus)
+}

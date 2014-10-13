@@ -105,3 +105,34 @@ func TestGeneraService_List(t *testing.T) {
 		t.Errorf("Genera.List return %+v, want %+v", genera, want)
 	}
 }
+
+func TestGeneraService_Update(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &Genus{Id: 1, GenusName: "Test Genus"}
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.UpdateGenus, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "PUT")
+		testBody(t, r, `{"id":1,"genus_name":"Test Genus Updated","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":"0001-01-01T00:00:00Z"}`+"\n")
+
+		w.WriteHeader(http.StatusOK)
+		writeJSON(w, want)
+	})
+
+	genus := &Genus{Id: 1, GenusName: "Test Genus Updated"}
+	updated, err := client.Genera.Update(1, genus)
+	if err != nil {
+		t.Errorf("Genera.Update returned error: %v", err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+}

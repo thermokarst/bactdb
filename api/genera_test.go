@@ -88,3 +88,33 @@ func TestGenus_List(t *testing.T) {
 		t.Errorf("got genera %+v but wanted genera %+v", genera, want)
 	}
 }
+
+func TestGenus_Update(t *testing.T) {
+	setup()
+
+	want := &models.Genus{Id: 1, GenusName: "Test Genus"}
+
+	calledPut := false
+	store.Genera.(*models.MockGeneraService).Update_ = func(id int64, genus *models.Genus) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for genus %d but got %d", want.Id, id)
+		}
+		if !normalizeDeepEqual(want, genus) {
+			t.Errorf("wanted request for genus %d but got %d", want, genus)
+		}
+		calledPut = true
+		return true, nil
+	}
+
+	success, err := apiClient.Genera.Update(1, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPut {
+		t.Error("!calledPut")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}
