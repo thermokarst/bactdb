@@ -16,8 +16,9 @@ import (
 
 // A Client communicates with bactdb's HTTP API.
 type Client struct {
-	Users  UsersService
-	Genera GeneraService
+	Users   UsersService
+	Genera  GeneraService
+	Species SpeciesService
 
 	// BaseURL for HTTP requests to bactdb's API.
 	BaseURL *url.URL
@@ -47,6 +48,7 @@ func NewClient(httpClient *http.Client) *Client {
 	}
 	c.Users = &usersService{c}
 	c.Genera = &generaService{c}
+	c.Species = &speciesService{c}
 	return c
 }
 
