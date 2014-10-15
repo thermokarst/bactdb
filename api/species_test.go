@@ -20,15 +20,15 @@ func TestSpecies_Get(t *testing.T) {
 		return want, nil
 	}
 
-	_, err := apiClient.Species.Get(want.Id)
+	got, err := apiClient.Species.Get(want.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// if !calledGet {
-	// 	t.Error("!calledGet")
-	// }
-	// if !normalizeDeepEqual(want, got) {
-	// 	t.Errorf("got species %+v but wanted species %+v", got, want)
-	// }
+	if !calledGet {
+		t.Error("!calledGet")
+	}
+	if !normalizeDeepEqual(want, got) {
+		t.Errorf("got species %+v but wanted species %+v", got, want)
+	}
 }
