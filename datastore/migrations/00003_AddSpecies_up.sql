@@ -3,13 +3,13 @@
 
 CREATE TABLE species (
     id BIGSERIAL NOT NULL,
-    genusid BIGINT NOT NULL,
-    speciesname CHARACTER VARYING(100),
+    genus_id BIGINT NOT NULL,
+    species_name CHARACTER VARYING(100),
 
-    createdat TIMESTAMP WITH TIME ZONE,
-    updatedat TIMESTAMP WITH TIME ZONE,
-    deletedat TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
 
     CONSTRAINT species_pkey PRIMARY KEY (id),
-    FOREIGN KEY (genusid) REFERENCES genera(id)
+    FOREIGN KEY (genus_id) REFERENCES genera(id)
 );

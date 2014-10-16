@@ -12,10 +12,10 @@ import (
 // A User is a person that has administrative access to bactdb.
 type User struct {
 	Id        int64     `json:"id,omitempty"`
-	UserName  string    `sql:"size:100" json:"user_name"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
+	UserName  string    `json:"user_name"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	DeletedAt time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
 // UsersService interacts with the user-related endpoints in bactdb's API.

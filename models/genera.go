@@ -12,10 +12,10 @@ import (
 // A Genus is a high-level classifier in bactdb.
 type Genus struct {
 	Id        int64     `json:"id,omitempty"`
-	GenusName string    `json:"genus_name"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
+	GenusName string    `db:"genus_name" json:"genus_name"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	DeletedAt time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
 // GeneraService interacts with the genus-related endpoints in bactdb's API.
