@@ -37,3 +37,39 @@ func TestSpeciesService_Get(t *testing.T) {
 		t.Errorf("Species.Get returned %+v, want %+v", species, want)
 	}
 }
+
+func TestSpeciesService_Create(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.CreateSpecies, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "POST")
+		testBody(t, r, `{"id":1,"genus_id":1,"species_name":"Test Species","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":"0001-01-01T00:00:00Z"}`+"\n")
+
+		w.WriteHeader(http.StatusCreated)
+		writeJSON(w, want)
+	})
+
+	species := &Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+	created, err := client.Species.Create(species)
+	if err != nil {
+		t.Errorf("Species.Create returned error: %v", err)
+	}
+
+	if !created {
+		t.Error("!created")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	if !reflect.DeepEqual(species, want) {
+		t.Errorf("Species.Create returned %+v, want %+v", species, want)
+	}
+}

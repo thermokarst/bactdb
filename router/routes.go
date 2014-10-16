@@ -11,5 +11,6 @@ const (
 	UpdateGenus = "genus:update"
 	DeleteGenus = "genus:delete"
 
-	Species = "species"
+	Species       = "species"
+	CreateSpecies = "species:create"
 )

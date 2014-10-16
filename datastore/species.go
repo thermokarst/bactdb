@@ -20,3 +20,10 @@ func (s *speciesStore) Get(id int64) (*models.Species, error) {
 	}
 	return species[0], nil
 }
+
+func (s *speciesStore) Create(species *models.Species) (bool, error) {
+	if err := s.dbh.Insert(species); err != nil {
+		return false, err
+	}
+	return true, nil
+}

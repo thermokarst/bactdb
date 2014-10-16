@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -22,6 +23,9 @@ type Species struct {
 type SpeciesService interface {
 	// Get a species
 	Get(id int64) (*Species, error)
+
+	// Create a species record
+	Create(species *Species) (bool, error)
 }
 
 var (
@@ -55,8 +59,28 @@ func (s *speciesService) Get(id int64) (*Species, error) {
 	return species, nil
 }
 
+func (s *speciesService) Create(species *Species) (bool, error) {
+	url, err := s.client.url(router.CreateSpecies, nil, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("POST", url.String(), species)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &species)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusCreated, nil
+}
+
 type MockSpeciesService struct {
-	Get_ func(id int64) (*Species, error)
+	Get_    func(id int64) (*Species, error)
+	Create_ func(species *Species) (bool, error)
 }
 
 var _ SpeciesService = &MockSpeciesService{}
@@ -66,4 +90,11 @@ func (s *MockSpeciesService) Get(id int64) (*Species, error) {
 		return nil, nil
 	}
 	return s.Get_(id)
+}
+
+func (s *MockSpeciesService) Create(species *Species) (bool, error) {
+	if s.Create_ == nil {
+		return false, nil
+	}
+	return s.Create_(species)
 }

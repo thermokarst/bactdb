@@ -32,3 +32,30 @@ func TestSpecies_Get(t *testing.T) {
 		t.Errorf("got species %+v but wanted species %+v", got, want)
 	}
 }
+
+func TestSpecies_Create(t *testing.T) {
+	setup()
+
+	want := &models.Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+
+	calledPost := false
+	store.Species.(*models.MockSpeciesService).Create_ = func(species *models.Species) (bool, error) {
+		if !normalizeDeepEqual(want, species) {
+			t.Errorf("wanted request for species %d but got %d", want, species)
+		}
+		calledPost = true
+		return true, nil
+	}
+
+	success, err := apiClient.Species.Create(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPost {
+		t.Error("!calledPost")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

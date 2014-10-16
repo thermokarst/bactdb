@@ -18,6 +18,7 @@ func API() *mux.Router {
 	m.Path("/genera/{Id:.+}").Methods("DELETE").Name(DeleteGenus)
 
 	// Species
+	m.Path("/species").Methods("POST").Name(CreateSpecies)
 	m.Path("/species/{Id:.+}").Methods("GET").Name(Species)
 
 	return m

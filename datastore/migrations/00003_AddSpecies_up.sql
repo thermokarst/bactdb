@@ -3,7 +3,7 @@
 
 CREATE TABLE species (
     id BIGSERIAL NOT NULL,
-    genusid BIGINT,
+    genusid BIGINT NOT NULL,
     speciesname CHARACTER VARYING(100),
 
     createdat TIMESTAMP WITH TIME ZONE,
