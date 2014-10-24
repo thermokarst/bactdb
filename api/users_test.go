@@ -6,10 +6,16 @@ import (
 	"github.com/thermokarst/bactdb/models"
 )
 
+func newUser() *models.User {
+	user := models.NewUser()
+	user.Id = 1
+	return user
+}
+
 func TestUser_Get(t *testing.T) {
 	setup()
 
-	wantUser := &models.User{Id: 1, UserName: "Test User"}
+	wantUser := newUser()
 
 	calledGet := false
 	store.Users.(*models.MockUsersService).Get_ = func(id int64) (*models.User, error) {
@@ -36,7 +42,7 @@ func TestUser_Get(t *testing.T) {
 func TestUser_Create(t *testing.T) {
 	setup()
 
-	wantUser := &models.User{Id: 1, UserName: "Test User"}
+	wantUser := newUser()
 
 	calledPost := false
 	store.Users.(*models.MockUsersService).Create_ = func(user *models.User) (bool, error) {
@@ -63,7 +69,7 @@ func TestUser_Create(t *testing.T) {
 func TestUser_List(t *testing.T) {
 	setup()
 
-	wantUsers := []*models.User{{Id: 1, UserName: "Test User"}}
+	wantUsers := []*models.User{newUser()}
 	wantOpt := &models.UserListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}}
 
 	calledList := false

@@ -6,10 +6,17 @@ import (
 	"github.com/thermokarst/bactdb/models"
 )
 
+func newSpecies() *models.Species {
+	species := models.NewSpecies()
+	species.Id = 1
+	species.GenusId = 1
+	return species
+}
+
 func TestSpecies_Get(t *testing.T) {
 	setup()
 
-	want := &models.Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+	want := newSpecies()
 
 	calledGet := false
 	store.Species.(*models.MockSpeciesService).Get_ = func(id int64) (*models.Species, error) {
@@ -36,7 +43,7 @@ func TestSpecies_Get(t *testing.T) {
 func TestSpecies_Create(t *testing.T) {
 	setup()
 
-	want := &models.Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+	want := newSpecies()
 
 	calledPost := false
 	store.Species.(*models.MockSpeciesService).Create_ = func(species *models.Species) (bool, error) {
@@ -63,7 +70,7 @@ func TestSpecies_Create(t *testing.T) {
 func TestSpecies_List(t *testing.T) {
 	setup()
 
-	want := []*models.Species{{Id: 1, GenusId: 1, SpeciesName: "Test Species"}}
+	want := []*models.Species{newSpecies()}
 	wantOpt := &models.SpeciesListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}}
 
 	calledList := false
@@ -92,7 +99,7 @@ func TestSpecies_List(t *testing.T) {
 func TestSpecies_Update(t *testing.T) {
 	setup()
 
-	want := &models.Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+	want := newSpecies()
 
 	calledPut := false
 	store.Species.(*models.MockSpeciesService).Update_ = func(id int64, species *models.Species) (bool, error) {
@@ -122,7 +129,7 @@ func TestSpecies_Update(t *testing.T) {
 func TestSpecies_Delete(t *testing.T) {
 	setup()
 
-	want := &models.Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+	want := newSpecies()
 
 	calledDelete := false
 	store.Species.(*models.MockSpeciesService).Delete_ = func(id int64) (bool, error) {

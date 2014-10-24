@@ -18,6 +18,10 @@ type Genus struct {
 	DeletedAt time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
+func NewGenus() *Genus {
+	return &Genus{GenusName: "Test Genus"}
+}
+
 // GeneraService interacts with the genus-related endpoints in bactdb's API.
 type GeneraService interface {
 	// Get a genus.

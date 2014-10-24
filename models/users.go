@@ -18,6 +18,10 @@ type User struct {
 	DeletedAt time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
+func NewUser() *User {
+	return &User{UserName: "Test User"}
+}
+
 // UsersService interacts with the user-related endpoints in bactdb's API.
 type UsersService interface {
 	// Get a user.

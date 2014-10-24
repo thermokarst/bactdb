@@ -8,11 +8,18 @@ import (
 	"github.com/thermokarst/bactdb/router"
 )
 
+func newSpecies() *Species {
+	species := NewSpecies()
+	species.Id = 1
+	species.GenusId = 1
+	return species
+}
+
 func TestSpeciesService_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := &Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+	want := newSpecies()
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.Species, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
@@ -22,11 +29,10 @@ func TestSpeciesService_Get(t *testing.T) {
 		writeJSON(w, want)
 	})
 
-	species, err := client.Species.Get(1)
+	species, err := client.Species.Get(want.Id)
 	if err != nil {
 		t.Errorf("Species.Get returned error: %v", err)
 	}
-
 	if !called {
 		t.Fatal("!called")
 	}
@@ -42,7 +48,7 @@ func TestSpeciesService_Create(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := &Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+	want := newSpecies()
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.CreateSpecies, nil), func(w http.ResponseWriter, r *http.Request) {
@@ -54,16 +60,14 @@ func TestSpeciesService_Create(t *testing.T) {
 		writeJSON(w, want)
 	})
 
-	species := &Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+	species := newSpecies()
 	created, err := client.Species.Create(species)
 	if err != nil {
 		t.Errorf("Species.Create returned error: %v", err)
 	}
-
 	if !created {
 		t.Error("!created")
 	}
-
 	if !called {
 		t.Fatal("!called")
 	}
@@ -78,7 +82,7 @@ func TestSpeciesService_List(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := []*Species{{Id: 1, GenusId: 1, SpeciesName: "Test Species"}}
+	want := []*Species{newSpecies()}
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.SpeciesList, nil), func(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +114,7 @@ func TestSpeciesService_Update(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := &Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+	want := newSpecies()
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.UpdateSpecies, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
@@ -122,16 +126,15 @@ func TestSpeciesService_Update(t *testing.T) {
 		writeJSON(w, want)
 	})
 
-	species := &Species{Id: 1, GenusId: 1, SpeciesName: "Test Species Updated"}
-	updated, err := client.Species.Update(1, species)
+	species := newSpecies()
+	species.SpeciesName = "Test Species Updated"
+	updated, err := client.Species.Update(species.Id, species)
 	if err != nil {
 		t.Errorf("Species.Update returned error: %v", err)
 	}
-
 	if !updated {
 		t.Error("!updated")
 	}
-
 	if !called {
 		t.Fatal("!called")
 	}
@@ -141,7 +144,7 @@ func TestSpeciesService_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := &Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+	want := newSpecies()
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.DeleteSpecies, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
@@ -152,15 +155,13 @@ func TestSpeciesService_Delete(t *testing.T) {
 		writeJSON(w, want)
 	})
 
-	deleted, err := client.Species.Delete(1)
+	deleted, err := client.Species.Delete(want.Id)
 	if err != nil {
 		t.Errorf("Species.Delete returned error: %v", err)
 	}
-
 	if !deleted {
 		t.Error("!deleted")
 	}
-
 	if !called {
 		t.Fatal("!called")
 	}

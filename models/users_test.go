@@ -8,11 +8,17 @@ import (
 	"github.com/thermokarst/bactdb/router"
 )
 
+func newUser() *User {
+	user := NewUser()
+	user.Id = 1
+	return user
+}
+
 func TestUsersService_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := &User{Id: 1, UserName: "Test User"}
+	want := newUser()
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.User, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +48,7 @@ func TestUsersService_Create(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := &User{Id: 1, UserName: "Test User"}
+	want := newUser()
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.CreateUser, nil), func(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +60,7 @@ func TestUsersService_Create(t *testing.T) {
 		writeJSON(w, want)
 	})
 
-	user := &User{Id: 1, UserName: "Test User"}
+	user := newUser()
 	created, err := client.Users.Create(user)
 	if err != nil {
 		t.Errorf("Users.Create returned error: %v", err)
@@ -78,7 +84,7 @@ func TestUsersService_List(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := []*User{{Id: 1, UserName: "Test User"}}
+	want := []*User{newUser()}
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.Users, nil), func(w http.ResponseWriter, r *http.Request) {

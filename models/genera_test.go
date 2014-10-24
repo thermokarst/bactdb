@@ -8,11 +8,17 @@ import (
 	"github.com/thermokarst/bactdb/router"
 )
 
+func newGenus() *Genus {
+	genus := NewGenus()
+	genus.Id = 1
+	return genus
+}
+
 func TestGeneraService_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := &Genus{Id: 1, GenusName: "Test Genus"}
+	want := newGenus()
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.Genus, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +28,7 @@ func TestGeneraService_Get(t *testing.T) {
 		writeJSON(w, want)
 	})
 
-	genus, err := client.Genera.Get(1)
+	genus, err := client.Genera.Get(want.Id)
 	if err != nil {
 		t.Errorf("Genera.Get returned error: %v", err)
 	}
@@ -42,7 +48,7 @@ func TestGeneraService_Create(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := &Genus{Id: 1, GenusName: "Test Genus"}
+	want := newGenus()
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.CreateGenus, nil), func(w http.ResponseWriter, r *http.Request) {
@@ -54,16 +60,14 @@ func TestGeneraService_Create(t *testing.T) {
 		writeJSON(w, want)
 	})
 
-	genus := &Genus{Id: 1, GenusName: "Test Genus"}
+	genus := newGenus()
 	created, err := client.Genera.Create(genus)
 	if err != nil {
 		t.Errorf("Genera.Create returned error: %v", err)
 	}
-
 	if !created {
 		t.Error("!created")
 	}
-
 	if !called {
 		t.Fatal("!called")
 	}
@@ -78,7 +82,7 @@ func TestGeneraService_List(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := []*Genus{{Id: 1, GenusName: "Test Genus"}}
+	want := []*Genus{newGenus()}
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.Genera, nil), func(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +114,7 @@ func TestGeneraService_Update(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := &Genus{Id: 1, GenusName: "Test Genus"}
+	want := newGenus()
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.UpdateGenus, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
@@ -122,8 +126,9 @@ func TestGeneraService_Update(t *testing.T) {
 		writeJSON(w, want)
 	})
 
-	genus := &Genus{Id: 1, GenusName: "Test Genus Updated"}
-	updated, err := client.Genera.Update(1, genus)
+	genus := newGenus()
+	genus.GenusName = "Test Genus Updated"
+	updated, err := client.Genera.Update(genus.Id, genus)
 	if err != nil {
 		t.Errorf("Genera.Update returned error: %v", err)
 	}
@@ -141,7 +146,7 @@ func TestGeneraService_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
-	want := &Genus{Id: 1, GenusName: "Test Genus"}
+	want := newGenus()
 
 	var called bool
 	mux.HandleFunc(urlPath(t, router.DeleteGenus, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
@@ -156,11 +161,9 @@ func TestGeneraService_Delete(t *testing.T) {
 	if err != nil {
 		t.Errorf("Genera.Delete returned error: %v", err)
 	}
-
 	if !deleted {
 		t.Error("!deleted")
 	}
-
 	if !called {
 		t.Fatal("!called")
 	}

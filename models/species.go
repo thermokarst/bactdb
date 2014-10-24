@@ -19,6 +19,10 @@ type Species struct {
 	DeletedAt   time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
+func NewSpecies() *Species {
+	return &Species{SpeciesName: "Test Species"}
+}
+
 // SpeciesService interacts with the species-related endpoints in bactdb's API.
 type SpeciesService interface {
 	// Get a species

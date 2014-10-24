@@ -6,10 +6,16 @@ import (
 	"github.com/thermokarst/bactdb/models"
 )
 
+func newGenus() *models.Genus {
+	genus := models.NewGenus()
+	genus.Id = 1
+	return genus
+}
+
 func TestGenus_Get(t *testing.T) {
 	setup()
 
-	want := &models.Genus{Id: 1, GenusName: "Test Genus"}
+	want := newGenus()
 
 	calledGet := false
 	store.Genera.(*models.MockGeneraService).Get_ = func(id int64) (*models.Genus, error) {
@@ -36,7 +42,7 @@ func TestGenus_Get(t *testing.T) {
 func TestGenus_Create(t *testing.T) {
 	setup()
 
-	want := &models.Genus{Id: 1, GenusName: "Test Genus"}
+	want := newGenus()
 
 	calledPost := false
 	store.Genera.(*models.MockGeneraService).Create_ = func(genus *models.Genus) (bool, error) {
@@ -63,7 +69,7 @@ func TestGenus_Create(t *testing.T) {
 func TestGenus_List(t *testing.T) {
 	setup()
 
-	want := []*models.Genus{{Id: 1, GenusName: "Test Genus"}}
+	want := []*models.Genus{newGenus()}
 	wantOpt := &models.GenusListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}}
 
 	calledList := false
@@ -83,7 +89,6 @@ func TestGenus_List(t *testing.T) {
 	if !calledList {
 		t.Error("!calledList")
 	}
-
 	if !normalizeDeepEqual(&want, &genera) {
 		t.Errorf("got genera %+v but wanted genera %+v", genera, want)
 	}
@@ -92,7 +97,7 @@ func TestGenus_List(t *testing.T) {
 func TestGenus_Update(t *testing.T) {
 	setup()
 
-	want := &models.Genus{Id: 1, GenusName: "Test Genus"}
+	want := newGenus()
 
 	calledPut := false
 	store.Genera.(*models.MockGeneraService).Update_ = func(id int64, genus *models.Genus) (bool, error) {
@@ -122,7 +127,7 @@ func TestGenus_Update(t *testing.T) {
 func TestGenus_Delete(t *testing.T) {
 	setup()
 
-	want := &models.Genus{Id: 1, GenusName: "Test Genus"}
+	want := newGenus()
 
 	calledDelete := false
 	store.Genera.(*models.MockGeneraService).Delete_ = func(id int64) (bool, error) {
