@@ -111,8 +111,8 @@ func TestSpeciesStore_Update_db(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	created := &model.Species{GenusId: genus.Id, SpeciesName: "Test Species"}
-	_, err := d.Species.Create(created)
+	species := &models.Species{GenusId: genus.Id, SpeciesName: "Test Species"}
+	created, err := d.Species.Create(species)
 	if err != nil {
 		t.Fatal(err)
 	}

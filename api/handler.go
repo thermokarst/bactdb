@@ -32,6 +32,7 @@ func Handler() *mux.Router {
 	m.Get(router.Species).Handler(handler(serveSpecies))
 	m.Get(router.CreateSpecies).Handler(handler(serveCreateSpecies))
 	m.Get(router.SpeciesList).Handler(handler(serveSpeciesList))
+	m.Get(router.UpdateSpecies).Handler(handler(serveUpdateSpecies))
 
 	return m
 }

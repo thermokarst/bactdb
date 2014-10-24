@@ -88,3 +88,33 @@ func TestSpecies_List(t *testing.T) {
 		t.Errorf("got species %+v but wanted species %+v", species, want)
 	}
 }
+
+func TestSpecies_Update(t *testing.T) {
+	setup()
+
+	want := &models.Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+
+	calledPut := false
+	store.Species.(*models.MockSpeciesService).Update_ = func(id int64, species *models.Species) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for species %d but got %d", want.Id, id)
+		}
+		if !normalizeDeepEqual(want, species) {
+			t.Errorf("wanted request for species %d but got %d", want, species)
+		}
+		calledPut = true
+		return true, nil
+	}
+
+	success, err := apiClient.Species.Update(1, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPut {
+		t.Error("!calledPut")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

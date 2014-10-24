@@ -39,3 +39,25 @@ func (s *speciesStore) List(opt *models.SpeciesListOptions) ([]*models.Species, 
 	}
 	return species, nil
 }
+
+func (s *speciesStore) Update(id int64, species *models.Species) (bool, error) {
+	_, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	if id != species.Id {
+		return false, models.ErrSpeciesNotFound
+	}
+
+	changed, err := s.dbh.Update(species)
+	if err != nil {
+		return false, err
+	}
+
+	if changed == 0 {
+		return false, ErrNoRowsUpdated
+	}
+
+	return true, nil
+}

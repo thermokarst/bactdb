@@ -57,3 +57,22 @@ func serveSpeciesList(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, species)
 }
+
+func serveUpdateSpecies(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+	var species models.Species
+	err := json.NewDecoder(r.Body).Decode(&species)
+	if err != nil {
+		return err
+	}
+
+	updated, err := store.Species.Update(id, &species)
+	if err != nil {
+		return err
+	}
+	if updated {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, species)
+}
