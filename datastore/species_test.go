@@ -96,3 +96,38 @@ func TestSpeciesStore_List_db(t *testing.T) {
 		t.Errorf("got species %+v, want %+v", species, want)
 	}
 }
+
+func TestSpeciesStore_Update_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	// Test on a clean database
+	tx.Exec(`DELETE FROM species;`)
+
+	d := NewDatastore(nil)
+	// Add a new record
+	genus := &models.Genus{GenusName: "Test Genus"}
+	_, err := d.Genera.Create(genus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	created := &model.Species{GenusId: genus.Id, SpeciesName: "Test Species"}
+	_, err := d.Species.Create(created)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Error("!created")
+	}
+
+	// Tweak it
+	species.SpeciesName = "Updated Species"
+	updated, err := d.Species.Update(species.Id, species)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+}

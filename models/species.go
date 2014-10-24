@@ -29,6 +29,9 @@ type SpeciesService interface {
 
 	// Create a species record
 	Create(species *Species) (bool, error)
+
+	// Update an existing species
+	Update(id int64, species *Species) (updated bool, err error)
 }
 
 var (
@@ -105,10 +108,32 @@ func (s *speciesService) List(opt *SpeciesListOptions) ([]*Species, error) {
 	return species, nil
 }
 
+func (s *speciesService) Update(id int64, species *Species) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.UpdateSpecies, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("PUT", url.String(), species)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &species)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockSpeciesService struct {
 	Get_    func(id int64) (*Species, error)
 	List_   func(opt *SpeciesListOptions) ([]*Species, error)
 	Create_ func(species *Species) (bool, error)
+	Update_ func(id int64, species *Species) (bool, error)
 }
 
 var _ SpeciesService = &MockSpeciesService{}
@@ -132,4 +157,11 @@ func (s *MockSpeciesService) List(opt *SpeciesListOptions) ([]*Species, error) {
 		return nil, nil
 	}
 	return s.List_(opt)
+}
+
+func (s *MockSpeciesService) Update(id int64, species *Species) (bool, error) {
+	if s.Update_ == nil {
+		return false, nil
+	}
+	return s.Update_(id, species)
 }
