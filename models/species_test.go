@@ -136,3 +136,32 @@ func TestSpeciesService_Update(t *testing.T) {
 		t.Fatal("!called")
 	}
 }
+
+func TestSpeciesService_Delete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.DeleteSpecies, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "DELETE")
+
+		w.WriteHeader(http.StatusOK)
+		writeJSON(w, want)
+	})
+
+	deleted, err := client.Species.Delete(1)
+	if err != nil {
+		t.Errorf("Species.Delete returned error: %v", err)
+	}
+
+	if !deleted {
+		t.Error("!deleted")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+}

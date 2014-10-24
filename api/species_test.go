@@ -118,3 +118,30 @@ func TestSpecies_Update(t *testing.T) {
 		t.Error("!success")
 	}
 }
+
+func TestSpecies_Delete(t *testing.T) {
+	setup()
+
+	want := &models.Species{Id: 1, GenusId: 1, SpeciesName: "Test Species"}
+
+	calledDelete := false
+	store.Species.(*models.MockSpeciesService).Delete_ = func(id int64) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for species %d but got %d", want.Id, id)
+		}
+		calledDelete = true
+		return true, nil
+	}
+
+	success, err := apiClient.Species.Delete(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledDelete {
+		t.Error("!calledDelete")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

@@ -13,6 +13,7 @@ func TestSpeciesStore_Get_db(t *testing.T) {
 
 	// Test on a clean database
 	tx.Exec(`DELETE FROM species;`)
+	tx.Exec(`DELETE FROM genera;`)
 
 	wantGenus := &models.Genus{GenusName: "Test Genus"}
 	if err := tx.Insert(wantGenus); err != nil {
@@ -42,6 +43,7 @@ func TestSpeciesStore_Create_db(t *testing.T) {
 
 	// Test on a clean database
 	tx.Exec(`DELETE FROM species;`)
+	tx.Exec(`DELETE FROM genera;`)
 
 	genus := &models.Genus{}
 	if err := tx.Insert(genus); err != nil {
@@ -70,6 +72,7 @@ func TestSpeciesStore_List_db(t *testing.T) {
 
 	// Test on a clean database
 	tx.Exec(`DELETE FROM species;`)
+	tx.Exec(`DELETE FROM genera;`)
 
 	genus := &models.Genus{}
 
@@ -103,6 +106,7 @@ func TestSpeciesStore_Update_db(t *testing.T) {
 
 	// Test on a clean database
 	tx.Exec(`DELETE FROM species;`)
+	tx.Exec(`DELETE FROM genera;`)
 
 	d := NewDatastore(nil)
 	// Add a new record
@@ -129,5 +133,40 @@ func TestSpeciesStore_Update_db(t *testing.T) {
 
 	if !updated {
 		t.Error("!updated")
+	}
+}
+
+func TestSpeciesStore_Delete_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	// Test on a clean database
+	tx.Exec(`DELETE FROM species;`)
+	tx.Exec(`DELETE FROM genera;`)
+
+	d := NewDatastore(tx)
+	// Add a new record
+	genus := &models.Genus{GenusName: "Test Genus"}
+	_, err := d.Genera.Create(genus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	species := &models.Species{GenusId: genus.Id, SpeciesName: "Test Species"}
+	created, err := d.Species.Create(species)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Error("!created")
+	}
+
+	// Delete it
+	deleted, err := d.Species.Delete(species.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !deleted {
+		t.Error("!delete")
 	}
 }

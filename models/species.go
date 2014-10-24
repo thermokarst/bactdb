@@ -32,6 +32,9 @@ type SpeciesService interface {
 
 	// Update an existing species
 	Update(id int64, species *Species) (updated bool, err error)
+
+	// Delete an existing species
+	Delete(id int64) (deleted bool, err error)
 }
 
 var (
@@ -129,11 +132,34 @@ func (s *speciesService) Update(id int64, species *Species) (bool, error) {
 	return resp.StatusCode == http.StatusOK, nil
 }
 
+func (s *speciesService) Delete(id int64) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.DeleteSpecies, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("DELETE", url.String(), nil)
+	if err != nil {
+		return false, err
+	}
+
+	var species *Species
+	resp, err := s.client.Do(req, &species)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockSpeciesService struct {
 	Get_    func(id int64) (*Species, error)
 	List_   func(opt *SpeciesListOptions) ([]*Species, error)
 	Create_ func(species *Species) (bool, error)
 	Update_ func(id int64, species *Species) (bool, error)
+	Delete_ func(id int64) (bool, error)
 }
 
 var _ SpeciesService = &MockSpeciesService{}
@@ -164,4 +190,11 @@ func (s *MockSpeciesService) Update(id int64, species *Species) (bool, error) {
 		return false, nil
 	}
 	return s.Update_(id, species)
+}
+
+func (s *MockSpeciesService) Delete(id int64) (bool, error) {
+	if s.Delete_ == nil {
+		return false, nil
+	}
+	return s.Delete_(id)
 }

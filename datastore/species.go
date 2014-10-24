@@ -61,3 +61,19 @@ func (s *speciesStore) Update(id int64, species *models.Species) (bool, error) {
 
 	return true, nil
 }
+
+func (s *speciesStore) Delete(id int64) (bool, error) {
+	species, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	deleted, err := s.dbh.Delete(species)
+	if err != nil {
+		return false, err
+	}
+	if deleted == 0 {
+		return false, ErrNoRowsDeleted
+	}
+	return true, nil
+}

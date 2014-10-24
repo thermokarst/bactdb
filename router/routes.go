@@ -15,4 +15,5 @@ const (
 	CreateSpecies = "species:create"
 	SpeciesList   = "species:list"
 	UpdateSpecies = "species:update"
+	DeleteSpecies = "species:delete"
 )
