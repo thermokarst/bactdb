@@ -3,11 +3,11 @@
 
 CREATE TABLE genera (
     id BIGSERIAL NOT NULL,
-    genusname CHARACTER VARYING(100),
+    genus_name CHARACTER VARYING(100),
 
-    createdat TIMESTAMP WITH TIME ZONE,
-    updatedat TIMESTAMP WITH TIME ZONE,
-    deletedat TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
 
     CONSTRAINT genus_pkey PRIMARY KEY (id)
 );
@@ -15,5 +15,5 @@ CREATE TABLE genera (
 CREATE UNIQUE INDEX genusname_idx
     ON genera
     USING btree
-    (genusname COLLATE pg_catalog."default");
+    (genus_name COLLATE pg_catalog."default");
 

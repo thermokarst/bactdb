@@ -10,4 +10,10 @@ const (
 	Genera      = "genera"
 	UpdateGenus = "genus:update"
 	DeleteGenus = "genus:delete"
+
+	Species       = "species"
+	CreateSpecies = "species:create"
+	SpeciesList   = "species:list"
+	UpdateSpecies = "species:update"
+	DeleteSpecies = "species:delete"
 )

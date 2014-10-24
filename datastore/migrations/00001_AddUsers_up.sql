@@ -5,9 +5,9 @@ CREATE TABLE users (
     id BIGSERIAL NOT NULL,
     username CHARACTER VARYING(100),
 
-    createdat TIMESTAMP WITH TIME ZONE,
-    updatedat TIMESTAMP WITH TIME ZONE,
-    deletedat TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
 
     CONSTRAINT users_pkey PRIMARY KEY (id)
 );
