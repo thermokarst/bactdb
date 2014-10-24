@@ -24,6 +24,9 @@ type SpeciesService interface {
 	// Get a species
 	Get(id int64) (*Species, error)
 
+	// List all species
+	List(opt *SpeciesListOptions) ([]*Species, error)
+
 	// Create a species record
 	Create(species *Species) (bool, error)
 }
@@ -78,8 +81,33 @@ func (s *speciesService) Create(species *Species) (bool, error) {
 	return resp.StatusCode == http.StatusCreated, nil
 }
 
+type SpeciesListOptions struct {
+	ListOptions
+}
+
+func (s *speciesService) List(opt *SpeciesListOptions) ([]*Species, error) {
+	url, err := s.client.url(router.SpeciesList, nil, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest("GET", url.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var species []*Species
+	_, err = s.client.Do(req, &species)
+	if err != nil {
+		return nil, err
+	}
+
+	return species, nil
+}
+
 type MockSpeciesService struct {
 	Get_    func(id int64) (*Species, error)
+	List_   func(opt *SpeciesListOptions) ([]*Species, error)
 	Create_ func(species *Species) (bool, error)
 }
 
@@ -97,4 +125,11 @@ func (s *MockSpeciesService) Create(species *Species) (bool, error) {
 		return false, nil
 	}
 	return s.Create_(species)
+}
+
+func (s *MockSpeciesService) List(opt *SpeciesListOptions) ([]*Species, error) {
+	if s.List_ == nil {
+		return nil, nil
+	}
+	return s.List_(opt)
 }

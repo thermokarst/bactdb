@@ -40,3 +40,20 @@ func serveCreateSpecies(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, species)
 }
+
+func serveSpeciesList(w http.ResponseWriter, r *http.Request) error {
+	var opt models.SpeciesListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	species, err := store.Species.List(&opt)
+	if err != nil {
+		return err
+	}
+	if species == nil {
+		species = []*models.Species{}
+	}
+
+	return writeJSON(w, species)
+}

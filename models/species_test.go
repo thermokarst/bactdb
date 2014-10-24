@@ -73,3 +73,35 @@ func TestSpeciesService_Create(t *testing.T) {
 		t.Errorf("Species.Create returned %+v, want %+v", species, want)
 	}
 }
+
+func TestSpeciesService_List(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := []*Species{{Id: 1, GenusId: 1, SpeciesName: "Test Species"}}
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.SpeciesList, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "GET")
+		testFormValues(t, r, values{})
+
+		writeJSON(w, want)
+	})
+
+	species, err := client.Species.List(nil)
+	if err != nil {
+		t.Errorf("Species.List returned error: %v", err)
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	for _, u := range want {
+		normalizeTime(&u.CreatedAt, &u.UpdatedAt, &u.DeletedAt)
+	}
+	if !reflect.DeepEqual(species, want) {
+		t.Errorf("Species.List return %+v, want %+v", species, want)
+	}
+}

@@ -59,3 +59,32 @@ func TestSpecies_Create(t *testing.T) {
 		t.Error("!success")
 	}
 }
+
+func TestSpecies_List(t *testing.T) {
+	setup()
+
+	want := []*models.Species{{Id: 1, GenusId: 1, SpeciesName: "Test Species"}}
+	wantOpt := &models.SpeciesListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}}
+
+	calledList := false
+	store.Species.(*models.MockSpeciesService).List_ = func(opt *models.SpeciesListOptions) ([]*models.Species, error) {
+		if !normalizeDeepEqual(wantOpt, opt) {
+			t.Errorf("wanted options %d but got %d", wantOpt, opt)
+		}
+		calledList = true
+		return want, nil
+	}
+
+	species, err := apiClient.Species.List(wantOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledList {
+		t.Error("!calledList")
+	}
+
+	if !normalizeDeepEqual(&want, &species) {
+		t.Errorf("got species %+v but wanted species %+v", species, want)
+	}
+}

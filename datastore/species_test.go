@@ -63,3 +63,36 @@ func TestSpeciesStore_Create_db(t *testing.T) {
 		t.Error("want nonzero species.Id after submitting")
 	}
 }
+
+func TestSpeciesStore_List_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	// Test on a clean database
+	tx.Exec(`DELETE FROM species;`)
+
+	genus := &models.Genus{}
+
+	if err := tx.Insert(genus); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []*models.Species{{Id: 1, GenusId: genus.Id, SpeciesName: "Test Species"}}
+
+	if err := tx.Insert(want[0]); err != nil {
+		t.Fatal(err)
+	}
+
+	d := NewDatastore(tx)
+	species, err := d.Species.List(&models.SpeciesListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, g := range want {
+		normalizeTime(&g.CreatedAt, &g.UpdatedAt, &g.DeletedAt)
+	}
+	if !reflect.DeepEqual(species, want) {
+		t.Errorf("got species %+v, want %+v", species, want)
+	}
+}

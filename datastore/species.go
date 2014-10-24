@@ -27,3 +27,15 @@ func (s *speciesStore) Create(species *models.Species) (bool, error) {
 	}
 	return true, nil
 }
+
+func (s *speciesStore) List(opt *models.SpeciesListOptions) ([]*models.Species, error) {
+	if opt == nil {
+		opt = &models.SpeciesListOptions{}
+	}
+	var species []*models.Species
+	err := s.dbh.Select(&species, `SELECT * FROM species LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	if err != nil {
+		return nil, err
+	}
+	return species, nil
+}
