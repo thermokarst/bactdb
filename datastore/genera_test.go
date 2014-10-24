@@ -4,23 +4,33 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jmoiron/modl"
 	"github.com/thermokarst/bactdb/models"
 )
 
-func TestGeneraStore_Get_db(t *testing.T) {
-	want := &models.Genus{Id: 1, GenusName: "Test Genus"}
+func insertGenus(t *testing.T, tx *modl.Transaction) *models.Genus {
+	// Test on a clean database
+	tx.Exec(`DELETE FROM genera;`)
 
+	genus := newGenus()
+	if err := tx.Insert(genus); err != nil {
+		t.Fatal(err)
+	}
+	return genus
+}
+
+func newGenus() *models.Genus {
+	return &models.Genus{GenusName: "Test Genus"}
+}
+
+func TestGeneraStore_Get_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM genera;`)
-	if err := tx.Insert(want); err != nil {
-		t.Fatal(err)
-	}
+	want := insertGenus(t, tx)
 
 	d := NewDatastore(tx)
-	genus, err := d.Genera.Get(1)
+	genus, err := d.Genera.Get(want.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,13 +42,10 @@ func TestGeneraStore_Get_db(t *testing.T) {
 }
 
 func TestGeneraStore_Create_db(t *testing.T) {
-	genus := &models.Genus{Id: 1, GenusName: "Test Genus"}
-
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM genera;`)
+	genus := newGenus()
 
 	d := NewDatastore(tx)
 	created, err := d.Genera.Create(genus)
@@ -55,16 +62,11 @@ func TestGeneraStore_Create_db(t *testing.T) {
 }
 
 func TestGeneraStore_List_db(t *testing.T) {
-	want := []*models.Genus{{Id: 1, GenusName: "Test Genus"}}
-
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM genera;`)
-	if err := tx.Insert(want[0]); err != nil {
-		t.Fatal(err)
-	}
+	genus := insertGenus(t, tx)
+	want := []*models.Genus{genus}
 
 	d := NewDatastore(tx)
 	genera, err := d.Genera.List(&models.GenusListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}})
@@ -84,19 +86,9 @@ func TestGeneraStore_Update_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM genera;`)
+	genus := insertGenus(t, tx)
 
-	d := NewDatastore(nil)
-	// Add a new record
-	genus := &models.Genus{GenusName: "Test Genus"}
-	created, err := d.Genera.Create(genus)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !created {
-		t.Error("!created")
-	}
+	d := NewDatastore(tx)
 
 	// Tweak it
 	genus.GenusName = "Updated Genus"
@@ -114,19 +106,9 @@ func TestGeneraStore_Delete_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM genera;`)
+	genus := insertGenus(t, tx)
 
 	d := NewDatastore(tx)
-	// Add a new record
-	genus := &models.Genus{GenusName: "Test Genus"}
-	created, err := d.Genera.Create(genus)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !created {
-		t.Error("!created")
-	}
 
 	// Delete it
 	deleted, err := d.Genera.Delete(genus.Id)

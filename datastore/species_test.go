@@ -4,29 +4,35 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jmoiron/modl"
 	"github.com/thermokarst/bactdb/models"
 )
+
+func insertSpecies(t *testing.T, tx *modl.Transaction) *models.Species {
+	// clean up our target table
+	tx.Exec(`DELETE FROM species;`)
+	species := newSpecies(t, tx)
+	if err := tx.Insert(species); err != nil {
+		t.Fatal(err)
+	}
+	return species
+}
+
+func newSpecies(t *testing.T, tx *modl.Transaction) *models.Species {
+	// we want to create and insert a genus record, too
+	genus := insertGenus(t, tx)
+	return &models.Species{GenusId: genus.Id, SpeciesName: "Test Species"}
+}
 
 func TestSpeciesStore_Get_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM species;`)
-	tx.Exec(`DELETE FROM genera;`)
-
-	wantGenus := &models.Genus{GenusName: "Test Genus"}
-	if err := tx.Insert(wantGenus); err != nil {
-		t.Fatal(err)
-	}
-
-	want := &models.Species{Id: 1, GenusId: wantGenus.Id, SpeciesName: "Test Species"}
-	if err := tx.Insert(want); err != nil {
-		t.Fatal(err)
-	}
+	want := insertSpecies(t, tx)
 
 	d := NewDatastore(tx)
-	species, err := d.Species.Get(1)
+
+	species, err := d.Species.Get(want.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,23 +47,14 @@ func TestSpeciesStore_Create_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM species;`)
-	tx.Exec(`DELETE FROM genera;`)
-
-	genus := &models.Genus{}
-	if err := tx.Insert(genus); err != nil {
-		t.Fatal(err)
-	}
-
-	species := &models.Species{Id: 1, GenusId: genus.Id, SpeciesName: "Test Species"}
+	species := newSpecies(t, tx)
 
 	d := NewDatastore(tx)
+
 	created, err := d.Species.Create(species)
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if !created {
 		t.Error("!created")
 	}
@@ -70,23 +67,11 @@ func TestSpeciesStore_List_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM species;`)
-	tx.Exec(`DELETE FROM genera;`)
-
-	genus := &models.Genus{}
-
-	if err := tx.Insert(genus); err != nil {
-		t.Fatal(err)
-	}
-
-	want := []*models.Species{{Id: 1, GenusId: genus.Id, SpeciesName: "Test Species"}}
-
-	if err := tx.Insert(want[0]); err != nil {
-		t.Fatal(err)
-	}
+	want_species := insertSpecies(t, tx)
+	want := []*models.Species{want_species}
 
 	d := NewDatastore(tx)
+
 	species, err := d.Species.List(&models.SpeciesListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}})
 	if err != nil {
 		t.Fatal(err)
@@ -104,25 +89,9 @@ func TestSpeciesStore_Update_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM species;`)
-	tx.Exec(`DELETE FROM genera;`)
+	species := insertSpecies(t, tx)
 
-	d := NewDatastore(nil)
-	// Add a new record
-	genus := &models.Genus{GenusName: "Test Genus"}
-	_, err := d.Genera.Create(genus)
-	if err != nil {
-		t.Fatal(err)
-	}
-	species := &models.Species{GenusId: genus.Id, SpeciesName: "Test Species"}
-	created, err := d.Species.Create(species)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !created {
-		t.Error("!created")
-	}
+	d := NewDatastore(tx)
 
 	// Tweak it
 	species.SpeciesName = "Updated Species"
@@ -140,25 +109,9 @@ func TestSpeciesStore_Delete_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM species;`)
-	tx.Exec(`DELETE FROM genera;`)
+	species := insertSpecies(t, tx)
 
 	d := NewDatastore(tx)
-	// Add a new record
-	genus := &models.Genus{GenusName: "Test Genus"}
-	_, err := d.Genera.Create(genus)
-	if err != nil {
-		t.Fatal(err)
-	}
-	species := &models.Species{GenusId: genus.Id, SpeciesName: "Test Species"}
-	created, err := d.Species.Create(species)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !created {
-		t.Error("!created")
-	}
 
 	// Delete it
 	deleted, err := d.Species.Delete(species.Id)

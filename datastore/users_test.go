@@ -4,23 +4,34 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jmoiron/modl"
 	"github.com/thermokarst/bactdb/models"
 )
 
-func TestUsersStore_Get_db(t *testing.T) {
-	want := &models.User{Id: 1, UserName: "Test User"}
+func insertUser(t *testing.T, tx *modl.Transaction) *models.User {
+	// Test on a clean database
+	tx.Exec(`DELETE FROM users;`)
 
+	user := newUser()
+	if err := tx.Insert(user); err != nil {
+		t.Fatal(err)
+	}
+	return user
+}
+
+func newUser() *models.User {
+	return &models.User{UserName: "Test User"}
+}
+
+func TestUsersStore_Get_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM users;`)
-	if err := tx.Insert(want); err != nil {
-		t.Fatal(err)
-	}
+	want := insertUser(t, tx)
 
 	d := NewDatastore(tx)
-	user, err := d.Users.Get(1)
+
+	user, err := d.Users.Get(want.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,15 +43,13 @@ func TestUsersStore_Get_db(t *testing.T) {
 }
 
 func TestUsersStore_Create_db(t *testing.T) {
-	user := &models.User{Id: 1, UserName: "Test User"}
-
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM users;`)
+	user := newUser()
 
 	d := NewDatastore(tx)
+
 	created, err := d.Users.Create(user)
 	if err != nil {
 		t.Fatal(err)
@@ -55,18 +64,14 @@ func TestUsersStore_Create_db(t *testing.T) {
 }
 
 func TestUsersStore_List_db(t *testing.T) {
-	want := []*models.User{{Id: 1, UserName: "Test User"}}
-
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	// Test on a clean database
-	tx.Exec(`DELETE FROM users;`)
-	if err := tx.Insert(want[0]); err != nil {
-		t.Fatal(err)
-	}
+	user := insertUser(t, tx)
+	want := []*models.User{user}
 
 	d := NewDatastore(tx)
+
 	users, err := d.Users.List(&models.UserListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}})
 	if err != nil {
 		t.Fatal(err)
