@@ -107,6 +107,7 @@ func TestUsersService_List(t *testing.T) {
 	for _, u := range want {
 		normalizeTime(&u.CreatedAt, &u.UpdatedAt, &u.DeletedAt)
 	}
+
 	if !reflect.DeepEqual(users, want) {
 		t.Errorf("Users.List return %+v, want %+v", users, want)
 	}

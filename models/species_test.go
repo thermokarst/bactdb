@@ -33,6 +33,7 @@ func TestSpeciesService_Get(t *testing.T) {
 	if err != nil {
 		t.Errorf("Species.Get returned error: %v", err)
 	}
+
 	if !called {
 		t.Fatal("!called")
 	}
@@ -65,9 +66,11 @@ func TestSpeciesService_Create(t *testing.T) {
 	if err != nil {
 		t.Errorf("Species.Create returned error: %v", err)
 	}
+
 	if !created {
 		t.Error("!created")
 	}
+
 	if !called {
 		t.Fatal("!called")
 	}
@@ -105,6 +108,7 @@ func TestSpeciesService_List(t *testing.T) {
 	for _, u := range want {
 		normalizeTime(&u.CreatedAt, &u.UpdatedAt, &u.DeletedAt)
 	}
+
 	if !reflect.DeepEqual(species, want) {
 		t.Errorf("Species.List return %+v, want %+v", species, want)
 	}
@@ -132,9 +136,11 @@ func TestSpeciesService_Update(t *testing.T) {
 	if err != nil {
 		t.Errorf("Species.Update returned error: %v", err)
 	}
+
 	if !updated {
 		t.Error("!updated")
 	}
+
 	if !called {
 		t.Fatal("!called")
 	}
@@ -159,9 +165,11 @@ func TestSpeciesService_Delete(t *testing.T) {
 	if err != nil {
 		t.Errorf("Species.Delete returned error: %v", err)
 	}
+
 	if !deleted {
 		t.Error("!deleted")
 	}
+
 	if !called {
 		t.Fatal("!called")
 	}

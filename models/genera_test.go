@@ -65,14 +65,17 @@ func TestGeneraService_Create(t *testing.T) {
 	if err != nil {
 		t.Errorf("Genera.Create returned error: %v", err)
 	}
+
 	if !created {
 		t.Error("!created")
 	}
+
 	if !called {
 		t.Fatal("!called")
 	}
 
 	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+
 	if !reflect.DeepEqual(genus, want) {
 		t.Errorf("Genera.Create returned %+v, want %+v", genus, want)
 	}
@@ -105,6 +108,7 @@ func TestGeneraService_List(t *testing.T) {
 	for _, u := range want {
 		normalizeTime(&u.CreatedAt, &u.UpdatedAt, &u.DeletedAt)
 	}
+
 	if !reflect.DeepEqual(genera, want) {
 		t.Errorf("Genera.List return %+v, want %+v", genera, want)
 	}
@@ -161,9 +165,11 @@ func TestGeneraService_Delete(t *testing.T) {
 	if err != nil {
 		t.Errorf("Genera.Delete returned error: %v", err)
 	}
+
 	if !deleted {
 		t.Error("!deleted")
 	}
+
 	if !called {
 		t.Fatal("!called")
 	}
