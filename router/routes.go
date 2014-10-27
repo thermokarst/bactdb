@@ -1,17 +1,17 @@
 package router
 
 const (
-	User       = "user"
-	CreateUser = "user:create"
-	Users      = "users"
+	User       = "users:get"
+	CreateUser = "users:create"
+	Users      = "users:list"
 
-	Genus       = "genus"
+	Genus       = "genus:get"
 	CreateGenus = "genus:create"
-	Genera      = "genera"
+	Genera      = "genus:list"
 	UpdateGenus = "genus:update"
 	DeleteGenus = "genus:delete"
 
-	Species       = "species"
+	Species       = "species:get"
 	CreateSpecies = "species:create"
 	SpeciesList   = "species:list"
 	UpdateSpecies = "species:update"
