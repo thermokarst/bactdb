@@ -12,6 +12,7 @@ type Datastore struct {
 	Users   models.UsersService
 	Genera  models.GeneraService
 	Species models.SpeciesService
+	Strains models.StrainsService
 	dbh     modl.SqlExecutor
 }
 
@@ -31,6 +32,7 @@ func NewDatastore(dbh modl.SqlExecutor) *Datastore {
 	d.Users = &usersStore{d}
 	d.Genera = &generaStore{d}
 	d.Species = &speciesStore{d}
+	d.Strains = &strainsStore{d}
 	return d
 }
 
@@ -39,5 +41,6 @@ func NewMockDatastore() *Datastore {
 		Users:   &models.MockUsersService{},
 		Genera:  &models.MockGeneraService{},
 		Species: &models.MockSpeciesService{},
+		Strains: &models.MockStrainsService{},
 	}
 }

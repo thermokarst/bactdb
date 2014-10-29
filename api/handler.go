@@ -35,6 +35,8 @@ func Handler() *mux.Router {
 	m.Get(router.UpdateSpecies).Handler(handler(serveUpdateSpecies))
 	m.Get(router.DeleteSpecies).Handler(handler(serveDeleteSpecies))
 
+	m.Get(router.Strain).Handler(handler(serveStrain))
+
 	return m
 }
 
