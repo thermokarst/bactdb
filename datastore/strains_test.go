@@ -65,3 +65,25 @@ func TestStrainsStore_Create_db(t *testing.T) {
 		t.Error("want nonzero strain.Id after submitting")
 	}
 }
+
+func TestStrainsStore_List_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	want_strain := insertStrain(t, tx)
+	want := []*models.Strain{want_strain}
+
+	d := NewDatastore(tx)
+
+	strains, err := d.Strains.List(&models.StrainListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, g := range want {
+		normalizeTime(&g.CreatedAt, &g.UpdatedAt, &g.DeletedAt)
+	}
+	if !reflect.DeepEqual(strains, want) {
+		t.Errorf("got strains %+v, want %+v", strains, want)
+	}
+}

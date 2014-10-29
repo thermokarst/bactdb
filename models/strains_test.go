@@ -80,3 +80,36 @@ func TestStrainService_Create(t *testing.T) {
 		t.Errorf("Strains.Create returned %+v, want %+v", strain, want)
 	}
 }
+
+func TestStrainService_List(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := []*Strain{newStrain()}
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.Strains, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "GET")
+		testFormValues(t, r, values{})
+
+		writeJSON(w, want)
+	})
+
+	strains, err := client.Strains.List(nil)
+	if err != nil {
+		t.Errorf("Strains.List returned error: %v", err)
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	for _, u := range want {
+		normalizeTime(&u.CreatedAt, &u.UpdatedAt, &u.DeletedAt)
+	}
+
+	if !reflect.DeepEqual(strains, want) {
+		t.Errorf("Strains.List return %+v, want %+v", strains, want)
+	}
+}

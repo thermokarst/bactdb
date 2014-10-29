@@ -37,6 +37,7 @@ func Handler() *mux.Router {
 
 	m.Get(router.Strain).Handler(handler(serveStrain))
 	m.Get(router.CreateStrain).Handler(handler(serveCreateStrain))
+	m.Get(router.Strains).Handler(handler(serveStrainList))
 
 	return m
 }

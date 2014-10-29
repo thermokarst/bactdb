@@ -67,3 +67,32 @@ func TestStrain_Create(t *testing.T) {
 		t.Error("!success")
 	}
 }
+
+func TestStrain_List(t *testing.T) {
+	setup()
+
+	want := []*models.Strain{newStrain()}
+	wantOpt := &models.StrainListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}}
+
+	calledList := false
+	store.Strains.(*models.MockStrainsService).List_ = func(opt *models.StrainListOptions) ([]*models.Strain, error) {
+		if !normalizeDeepEqual(wantOpt, opt) {
+			t.Errorf("wanted options %d but got %d", wantOpt, opt)
+		}
+		calledList = true
+		return want, nil
+	}
+
+	strains, err := apiClient.Strains.List(wantOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledList {
+		t.Error("!calledList")
+	}
+
+	if !normalizeDeepEqual(&want, &strains) {
+		t.Errorf("got strains %+v but wanted strains %+v", strains, want)
+	}
+}

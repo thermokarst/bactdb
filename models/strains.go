@@ -32,6 +32,9 @@ type StrainsService interface {
 	// Get a strain
 	Get(id int64) (*Strain, error)
 
+	// List all strains
+	List(opt *StrainListOptions) ([]*Strain, error)
+
 	// Create a strain record
 	Create(strain *Strain) (bool, error)
 }
@@ -85,8 +88,33 @@ func (s *strainsService) Create(strain *Strain) (bool, error) {
 	return resp.StatusCode == http.StatusCreated, nil
 }
 
+type StrainListOptions struct {
+	ListOptions
+}
+
+func (s *strainsService) List(opt *StrainListOptions) ([]*Strain, error) {
+	url, err := s.client.url(router.Strains, nil, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest("GET", url.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var strains []*Strain
+	_, err = s.client.Do(req, &strains)
+	if err != nil {
+		return nil, err
+	}
+
+	return strains, nil
+}
+
 type MockStrainsService struct {
 	Get_    func(id int64) (*Strain, error)
+	List_   func(opt *StrainListOptions) ([]*Strain, error)
 	Create_ func(strain *Strain) (bool, error)
 }
 
@@ -104,4 +132,11 @@ func (s *MockStrainsService) Create(strain *Strain) (bool, error) {
 		return false, nil
 	}
 	return s.Create_(strain)
+}
+
+func (s *MockStrainsService) List(opt *StrainListOptions) ([]*Strain, error) {
+	if s.List_ == nil {
+		return nil, nil
+	}
+	return s.List_(opt)
 }

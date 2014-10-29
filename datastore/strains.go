@@ -27,3 +27,15 @@ func (s *strainsStore) Create(strain *models.Strain) (bool, error) {
 	}
 	return true, nil
 }
+
+func (s *strainsStore) List(opt *models.StrainListOptions) ([]*models.Strain, error) {
+	if opt == nil {
+		opt = &models.StrainListOptions{}
+	}
+	var strains []*models.Strain
+	err := s.dbh.Select(&strains, `SELECT * FROM strains LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	if err != nil {
+		return nil, err
+	}
+	return strains, nil
+}

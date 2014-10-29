@@ -40,3 +40,20 @@ func serveCreateStrain(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, strain)
 }
+
+func serveStrainList(w http.ResponseWriter, r *http.Request) error {
+	var opt models.StrainListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	strains, err := store.Strains.List(&opt)
+	if err != nil {
+		return err
+	}
+	if strains == nil {
+		strains = []*models.Strain{}
+	}
+
+	return writeJSON(w, strains)
+}
