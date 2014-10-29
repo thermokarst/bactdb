@@ -107,3 +107,22 @@ func TestStrainsStore_Update_db(t *testing.T) {
 		t.Error("!updated")
 	}
 }
+
+func TestStrainsStore_Delete_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	strain := insertStrain(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Delete it
+	deleted, err := d.Strains.Delete(strain.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !deleted {
+		t.Error("!delete")
+	}
+}

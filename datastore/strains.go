@@ -61,3 +61,19 @@ func (s *strainsStore) Update(id int64, strain *models.Strain) (bool, error) {
 
 	return true, nil
 }
+
+func (s *strainsStore) Delete(id int64) (bool, error) {
+	strain, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	deleted, err := s.dbh.Delete(strain)
+	if err != nil {
+		return false, err
+	}
+	if deleted == 0 {
+		return false, ErrNoRowsDeleted
+	}
+	return true, nil
+}

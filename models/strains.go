@@ -40,6 +40,9 @@ type StrainsService interface {
 
 	// Update an existing strain
 	Update(id int64, strain *Strain) (updated bool, err error)
+
+	// Delete an existing strain
+	Delete(id int64) (deleted bool, err error)
 }
 
 var (
@@ -136,11 +139,34 @@ func (s *strainsService) Update(id int64, strain *Strain) (bool, error) {
 	return resp.StatusCode == http.StatusOK, nil
 }
 
+func (s *strainsService) Delete(id int64) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.DeleteStrain, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("DELETE", url.String(), nil)
+	if err != nil {
+		return false, err
+	}
+
+	var strain *Strain
+	resp, err := s.client.Do(req, &strain)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockStrainsService struct {
 	Get_    func(id int64) (*Strain, error)
 	List_   func(opt *StrainListOptions) ([]*Strain, error)
 	Create_ func(strain *Strain) (bool, error)
 	Update_ func(id int64, strain *Strain) (bool, error)
+	Delete_ func(id int64) (bool, error)
 }
 
 var _ StrainsService = &MockStrainsService{}
@@ -171,4 +197,11 @@ func (s *MockStrainsService) Update(id int64, strain *Strain) (bool, error) {
 		return false, nil
 	}
 	return s.Update_(id, strain)
+}
+
+func (s *MockStrainsService) Delete(id int64) (bool, error) {
+	if s.Delete_ == nil {
+		return false, nil
+	}
+	return s.Delete_(id)
 }

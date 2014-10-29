@@ -76,3 +76,17 @@ func serveUpdateStrain(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, strain)
 }
+
+func serveDeleteStrain(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+
+	deleted, err := store.Strains.Delete(id)
+	if err != nil {
+		return err
+	}
+	if deleted {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, &models.Strain{})
+}
