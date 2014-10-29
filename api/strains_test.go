@@ -40,3 +40,30 @@ func TestStrain_Get(t *testing.T) {
 		t.Errorf("got strain %+v but wanted strain %+v", got, want)
 	}
 }
+
+func TestStrain_Create(t *testing.T) {
+	setup()
+
+	want := newStrain()
+
+	calledPost := false
+	store.Strains.(*models.MockStrainsService).Create_ = func(strain *models.Strain) (bool, error) {
+		if !normalizeDeepEqual(want, strain) {
+			t.Errorf("wanted request for strain %d but got %d", want, strain)
+		}
+		calledPost = true
+		return true, nil
+	}
+
+	success, err := apiClient.Strains.Create(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPost {
+		t.Error("!calledPost")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

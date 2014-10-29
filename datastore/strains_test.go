@@ -45,3 +45,23 @@ func TestStrainsStore_Get_db(t *testing.T) {
 		t.Errorf("got strain %+v, want %+v", strain, want)
 	}
 }
+
+func TestStrainsStore_Create_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	strain := newStrain(t, tx)
+
+	d := NewDatastore(tx)
+
+	created, err := d.Strains.Create(strain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Error("!created")
+	}
+	if strain.Id == 0 {
+		t.Error("want nonzero strain.Id after submitting")
+	}
+}

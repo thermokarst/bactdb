@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -30,6 +31,9 @@ func NewStrain() *Strain {
 type StrainsService interface {
 	// Get a strain
 	Get(id int64) (*Strain, error)
+
+	// Create a strain record
+	Create(strain *Strain) (bool, error)
 }
 
 var (
@@ -62,8 +66,28 @@ func (s *strainsService) Get(id int64) (*Strain, error) {
 	return strain, nil
 }
 
+func (s *strainsService) Create(strain *Strain) (bool, error) {
+	url, err := s.client.url(router.CreateStrain, nil, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("POST", url.String(), strain)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &strain)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusCreated, nil
+}
+
 type MockStrainsService struct {
-	Get_ func(id int64) (*Strain, error)
+	Get_    func(id int64) (*Strain, error)
+	Create_ func(strain *Strain) (bool, error)
 }
 
 var _ StrainsService = &MockStrainsService{}
@@ -73,4 +97,11 @@ func (s *MockStrainsService) Get(id int64) (*Strain, error) {
 		return nil, nil
 	}
 	return s.Get_(id)
+}
+
+func (s *MockStrainsService) Create(strain *Strain) (bool, error) {
+	if s.Create_ == nil {
+		return false, nil
+	}
+	return s.Create_(strain)
 }

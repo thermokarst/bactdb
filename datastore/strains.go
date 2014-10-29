@@ -20,3 +20,10 @@ func (s *strainsStore) Get(id int64) (*models.Strain, error) {
 	}
 	return strain[0], nil
 }
+
+func (s *strainsStore) Create(strain *models.Strain) (bool, error) {
+	if err := s.dbh.Insert(strain); err != nil {
+		return false, err
+	}
+	return true, nil
+}

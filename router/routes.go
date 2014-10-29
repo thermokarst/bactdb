@@ -17,5 +17,6 @@ const (
 	UpdateSpecies = "species:update"
 	DeleteSpecies = "species:delete"
 
-	Strain = "strain:get"
+	Strain       = "strain:get"
+	CreateStrain = "strain:create"
 )
