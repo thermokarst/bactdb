@@ -96,3 +96,33 @@ func TestStrain_List(t *testing.T) {
 		t.Errorf("got strains %+v but wanted strains %+v", strains, want)
 	}
 }
+
+func TestStrain_Update(t *testing.T) {
+	setup()
+
+	want := newStrain()
+
+	calledPut := false
+	store.Strains.(*models.MockStrainsService).Update_ = func(id int64, strain *models.Strain) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for strain %d but got %d", want.Id, id)
+		}
+		if !normalizeDeepEqual(want, strain) {
+			t.Errorf("wanted request for strain %d but got %d", want, strain)
+		}
+		calledPut = true
+		return true, nil
+	}
+
+	success, err := apiClient.Strains.Update(1, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPut {
+		t.Error("!calledPut")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

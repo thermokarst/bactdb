@@ -39,3 +39,25 @@ func (s *strainsStore) List(opt *models.StrainListOptions) ([]*models.Strain, er
 	}
 	return strains, nil
 }
+
+func (s *strainsStore) Update(id int64, strain *models.Strain) (bool, error) {
+	_, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	if id != strain.Id {
+		return false, models.ErrStrainNotFound
+	}
+
+	changed, err := s.dbh.Update(strain)
+	if err != nil {
+		return false, err
+	}
+
+	if changed == 0 {
+		return false, ErrNoRowsUpdated
+	}
+
+	return true, nil
+}

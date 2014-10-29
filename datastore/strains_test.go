@@ -87,3 +87,23 @@ func TestStrainsStore_List_db(t *testing.T) {
 		t.Errorf("got strains %+v, want %+v", strains, want)
 	}
 }
+
+func TestStrainsStore_Update_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	strain := insertStrain(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Tweak it
+	strain.StrainName = "Updated Strain"
+	updated, err := d.Strains.Update(strain.Id, strain)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+}

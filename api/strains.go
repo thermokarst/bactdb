@@ -57,3 +57,22 @@ func serveStrainList(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, strains)
 }
+
+func serveUpdateStrain(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+	var strain models.Strain
+	err := json.NewDecoder(r.Body).Decode(&strain)
+	if err != nil {
+		return err
+	}
+
+	updated, err := store.Strains.Update(id, &strain)
+	if err != nil {
+		return err
+	}
+	if updated {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, strain)
+}

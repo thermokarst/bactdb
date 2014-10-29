@@ -20,4 +20,5 @@ const (
 	Strain       = "strain:get"
 	CreateStrain = "strain:create"
 	Strains      = "strain:list"
+	UpdateStrain = "strain:update"
 )

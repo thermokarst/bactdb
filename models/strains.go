@@ -17,7 +17,7 @@ type Strain struct {
 	StrainType     string    `db:"strain_type" json:"strain_type"`
 	Etymology      string    `db:"etymology" json:"etymology"`
 	AccessionBanks string    `db:"accession_banks" json:"accession_banks"`
-	GenbankEmblDdb string    `db:"genbank_embl_ddb" json:"genbank_eml_ddb"`
+	GenbankEmblDdb string    `db:"genbank_embl_ddb" json:"genbank_embl_ddb"`
 	CreatedAt      time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time `db:"updated_at" json:"updated_at"`
 	DeletedAt      time.Time `db:"deleted_at" json:"deleted_at"`
@@ -37,6 +37,9 @@ type StrainsService interface {
 
 	// Create a strain record
 	Create(strain *Strain) (bool, error)
+
+	// Update an existing strain
+	Update(id int64, strain *Strain) (updated bool, err error)
 }
 
 var (
@@ -112,10 +115,32 @@ func (s *strainsService) List(opt *StrainListOptions) ([]*Strain, error) {
 	return strains, nil
 }
 
+func (s *strainsService) Update(id int64, strain *Strain) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.UpdateStrain, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("PUT", url.String(), strain)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &strain)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockStrainsService struct {
 	Get_    func(id int64) (*Strain, error)
 	List_   func(opt *StrainListOptions) ([]*Strain, error)
 	Create_ func(strain *Strain) (bool, error)
+	Update_ func(id int64, strain *Strain) (bool, error)
 }
 
 var _ StrainsService = &MockStrainsService{}
@@ -139,4 +164,11 @@ func (s *MockStrainsService) List(opt *StrainListOptions) ([]*Strain, error) {
 		return nil, nil
 	}
 	return s.List_(opt)
+}
+
+func (s *MockStrainsService) Update(id int64, strain *Strain) (bool, error) {
+	if s.Update_ == nil {
+		return false, nil
+	}
+	return s.Update_(id, strain)
 }

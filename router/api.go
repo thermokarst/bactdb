@@ -28,6 +28,7 @@ func API() *mux.Router {
 	m.Path("/strains").Methods("GET").Name(Strains)
 	m.Path("/strains").Methods("POST").Name(CreateStrain)
 	m.Path("/strains/{Id:.+}").Methods("GET").Name(Strain)
+	m.Path("/strains/{Id:.+}").Methods("PUT").Name(UpdateStrain)
 
 	return m
 }
