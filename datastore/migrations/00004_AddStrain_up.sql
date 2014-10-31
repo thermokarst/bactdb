@@ -3,9 +3,9 @@
 
 CREATE TABLE strains (
     id BIGSERIAL NOT NULL,
-    species_id BIGINT,
-    strain_name CHARACTER VARYING(100),
-    strain_type CHARACTER VARYING(100),
+    species_id BIGINT NOT NULL,
+    strain_name CHARACTER VARYING(100) NOT NULL,
+    strain_type CHARACTER VARYING(100) NOT NULL,
     etymology CHARACTER VARYING(500),
     accession_banks CHARACTER VARYING(100),
     genbank_embl_ddb CHARACTER VARYING(100),
