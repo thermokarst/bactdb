@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 var (
@@ -88,8 +91,17 @@ func testBody(t *testing.T, r *http.Request, want string) {
 	}
 }
 
-func normalizeTime(t ...*time.Time) {
+func normalizeTime(t ...interface{}) {
 	for _, v := range t {
-		*v = v.In(time.UTC)
+		switch u := v.(type) {
+		default:
+			fmt.Printf("unexpected type %T", u)
+		case *time.Time:
+			x, _ := v.(*time.Time)
+			*x = x.In(time.UTC)
+		case *pq.NullTime:
+			x, _ := v.(*pq.NullTime)
+			*x = pq.NullTime{Time: x.Time.In(time.UTC), Valid: x.Valid}
+		}
 	}
 }

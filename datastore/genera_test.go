@@ -36,6 +36,7 @@ func TestGeneraStore_Get_db(t *testing.T) {
 	}
 
 	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	normalizeTime(&genus.CreatedAt, &genus.UpdatedAt, &genus.DeletedAt)
 	if !reflect.DeepEqual(genus, want) {
 		t.Errorf("got genus %+v, want %+v", genus, want)
 	}
@@ -74,8 +75,9 @@ func TestGeneraStore_List_db(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, g := range want {
-		normalizeTime(&g.CreatedAt, &g.UpdatedAt, &g.DeletedAt)
+	for i := range want {
+		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt, &want[i].DeletedAt)
+		normalizeTime(&genera[i].CreatedAt, &genera[i].UpdatedAt, &genera[i].DeletedAt)
 	}
 	if !reflect.DeepEqual(genera, want) {
 		t.Errorf("got genera %+v, want %+v", genera, want)

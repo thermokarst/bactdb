@@ -40,6 +40,7 @@ func TestStrainsStore_Get_db(t *testing.T) {
 	}
 
 	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	normalizeTime(&strain.CreatedAt, &strain.UpdatedAt, &strain.DeletedAt)
 
 	if !reflect.DeepEqual(strain, want) {
 		t.Errorf("got strain %+v, want %+v", strain, want)
@@ -80,8 +81,9 @@ func TestStrainsStore_List_db(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, g := range want {
-		normalizeTime(&g.CreatedAt, &g.UpdatedAt, &g.DeletedAt)
+	for i := range want {
+		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt, &want[i].DeletedAt)
+		normalizeTime(&strains[i].CreatedAt, &strains[i].UpdatedAt, &strains[i].DeletedAt)
 	}
 	if !reflect.DeepEqual(strains, want) {
 		t.Errorf("got strains %+v, want %+v", strains, want)

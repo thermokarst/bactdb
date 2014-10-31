@@ -38,6 +38,7 @@ func TestSpeciesStore_Get_db(t *testing.T) {
 	}
 
 	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	normalizeTime(&species.CreatedAt, &species.UpdatedAt, &species.DeletedAt)
 	if !reflect.DeepEqual(species, want) {
 		t.Errorf("got species %+v, want %+v", species, want)
 	}
@@ -77,8 +78,9 @@ func TestSpeciesStore_List_db(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, g := range want {
-		normalizeTime(&g.CreatedAt, &g.UpdatedAt, &g.DeletedAt)
+	for i := range want {
+		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt, &want[i].DeletedAt)
+		normalizeTime(&species[i].CreatedAt, &species[i].UpdatedAt, &species[i].DeletedAt)
 	}
 	if !reflect.DeepEqual(species, want) {
 		t.Errorf("got species %+v, want %+v", species, want)

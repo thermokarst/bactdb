@@ -55,7 +55,7 @@ func TestStrainService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateStrain, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"species_id":1,"strain_name":"Test Strain","strain_type":"Test Type","etymology":"Test Etymology","accession_banks":"Test Accession","genbank_embl_ddb":"Test Genbank","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":"0001-01-01T00:00:00Z"}`+"\n")
+		testBody(t, r, `{"id":1,"species_id":1,"strain_name":"Test Strain","strain_type":"Test Type","etymology":"Test Etymology","accession_banks":"Test Accession","genbank_embl_ddb":"Test Genbank","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -124,7 +124,7 @@ func TestStrainService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateStrain, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"species_id":1,"strain_name":"Test Strain Updated","strain_type":"Test Type Updated","etymology":"Test Etymology Updated","accession_banks":"Test Accession Updated","genbank_embl_ddb":"Test Genbank Updated","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":"0001-01-01T00:00:00Z"}`+"\n")
+		testBody(t, r, `{"id":1,"species_id":1,"strain_name":"Test Strain Updated","strain_type":"Test Type Updated","etymology":"Test Etymology Updated","accession_banks":"Test Accession Updated","genbank_embl_ddb":"Test Genbank Updated","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)
 	})
