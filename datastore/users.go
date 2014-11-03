@@ -32,6 +32,9 @@ func (s *usersStore) Get(id int64) (*models.User, error) {
 func (s *usersStore) Create(user *models.User) (bool, error) {
 	retries := 3
 	var wantRetry bool
+	currentTime := time.Now()
+	user.CreatedAt = currentTime
+	user.UpdatedAt = currentTime
 
 retry:
 	retries--

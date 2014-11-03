@@ -1,6 +1,10 @@
 package datastore
 
-import "github.com/thermokarst/bactdb/models"
+import (
+	"time"
+
+	"github.com/thermokarst/bactdb/models"
+)
 
 func init() {
 	DB.AddTableWithName(models.Species{}, "species").SetKeys(true, "Id")
@@ -22,6 +26,9 @@ func (s *speciesStore) Get(id int64) (*models.Species, error) {
 }
 
 func (s *speciesStore) Create(species *models.Species) (bool, error) {
+	currentTime := time.Now()
+	species.CreatedAt = currentTime
+	species.UpdatedAt = currentTime
 	if err := s.dbh.Insert(species); err != nil {
 		return false, err
 	}
@@ -50,6 +57,7 @@ func (s *speciesStore) Update(id int64, species *models.Species) (bool, error) {
 		return false, models.ErrSpeciesNotFound
 	}
 
+	species.UpdatedAt = time.Now()
 	changed, err := s.dbh.Update(species)
 	if err != nil {
 		return false, err

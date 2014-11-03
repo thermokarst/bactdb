@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"strings"
+	"time"
 
 	"github.com/thermokarst/bactdb/models"
 )
@@ -26,6 +27,9 @@ func (s *generaStore) Get(id int64) (*models.Genus, error) {
 }
 
 func (s *generaStore) Create(genus *models.Genus) (bool, error) {
+	currentTime := time.Now()
+	genus.CreatedAt = currentTime
+	genus.UpdatedAt = currentTime
 	if err := s.dbh.Insert(genus); err != nil {
 		if strings.Contains(err.Error(), `violates unique constraint "genus_idx"`) {
 			return false, err
@@ -56,6 +60,7 @@ func (s *generaStore) Update(id int64, genus *models.Genus) (bool, error) {
 		return false, models.ErrGenusNotFound
 	}
 
+	genus.UpdatedAt = time.Now()
 	changed, err := s.dbh.Update(genus)
 	if err != nil {
 		return false, err
