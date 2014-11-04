@@ -22,4 +22,6 @@ const (
 	Strains      = "strain:list"
 	UpdateStrain = "strain:update"
 	DeleteStrain = "strain:delete"
+
+	ObservationType = "observation_type:get"
 )

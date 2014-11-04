@@ -9,11 +9,12 @@ import (
 
 // A datastore access point (in PostgreSQL)
 type Datastore struct {
-	Users   models.UsersService
-	Genera  models.GeneraService
-	Species models.SpeciesService
-	Strains models.StrainsService
-	dbh     modl.SqlExecutor
+	Users            models.UsersService
+	Genera           models.GeneraService
+	Species          models.SpeciesService
+	Strains          models.StrainsService
+	ObservationTypes models.ObservationTypesService
+	dbh              modl.SqlExecutor
 }
 
 var (
@@ -33,14 +34,16 @@ func NewDatastore(dbh modl.SqlExecutor) *Datastore {
 	d.Genera = &generaStore{d}
 	d.Species = &speciesStore{d}
 	d.Strains = &strainsStore{d}
+	d.ObservationTypes = &observationTypesStore{d}
 	return d
 }
 
 func NewMockDatastore() *Datastore {
 	return &Datastore{
-		Users:   &models.MockUsersService{},
-		Genera:  &models.MockGeneraService{},
-		Species: &models.MockSpeciesService{},
-		Strains: &models.MockStrainsService{},
+		Users:            &models.MockUsersService{},
+		Genera:           &models.MockGeneraService{},
+		Species:          &models.MockSpeciesService{},
+		Strains:          &models.MockStrainsService{},
+		ObservationTypes: &models.MockObservationTypesService{},
 	}
 }
