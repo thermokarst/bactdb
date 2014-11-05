@@ -42,6 +42,7 @@ func Handler() *mux.Router {
 	m.Get(router.DeleteStrain).Handler(handler(serveDeleteStrain))
 
 	m.Get(router.ObservationType).Handler(handler(serveObservationType))
+	m.Get(router.CreateObservationType).Handler(handler(serveCreateObservationType))
 
 	return m
 }

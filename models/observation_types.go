@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -27,6 +28,9 @@ func NewObservationType() *ObservationType {
 type ObservationTypesService interface {
 	// Get an observation type
 	Get(id int64) (*ObservationType, error)
+
+	// Create an observation type record
+	Create(observation_type *ObservationType) (bool, error)
 }
 
 var (
@@ -59,8 +63,28 @@ func (s *observationTypesService) Get(id int64) (*ObservationType, error) {
 	return observation_type, nil
 }
 
+func (s *observationTypesService) Create(observation_type *ObservationType) (bool, error) {
+	url, err := s.client.url(router.CreateObservationType, nil, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("POST", url.String(), observation_type)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &observation_type)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusCreated, nil
+}
+
 type MockObservationTypesService struct {
-	Get_ func(id int64) (*ObservationType, error)
+	Get_    func(id int64) (*ObservationType, error)
+	Create_ func(observation_type *ObservationType) (bool, error)
 }
 
 var _ ObservationTypesService = &MockObservationTypesService{}
@@ -70,4 +94,11 @@ func (s *MockObservationTypesService) Get(id int64) (*ObservationType, error) {
 		return nil, nil
 	}
 	return s.Get_(id)
+}
+
+func (s *MockObservationTypesService) Create(observation_type *ObservationType) (bool, error) {
+	if s.Create_ == nil {
+		return false, nil
+	}
+	return s.Create_(observation_type)
 }

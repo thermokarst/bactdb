@@ -14,7 +14,7 @@ func newObservationType() *ObservationType {
 	return observation_type
 }
 
-func TestObservation_TypeService_Get(t *testing.T) {
+func TestObservationTypeService_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -41,5 +41,41 @@ func TestObservation_TypeService_Get(t *testing.T) {
 
 	if !reflect.DeepEqual(observation_type, want) {
 		t.Errorf("ObservationTypes.Get return %+v, want %+v", observation_type, want)
+	}
+}
+
+func TestObservationTypeService_Create(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := newObservationType()
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.CreateObservationType, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "POST")
+		testBody(t, r, `{"id":1,"observation_type_name":"Test Obs Type","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+
+		w.WriteHeader(http.StatusCreated)
+		writeJSON(w, want)
+	})
+
+	observation_type := newObservationType()
+	created, err := client.ObservationTypes.Create(observation_type)
+	if err != nil {
+		t.Errorf("ObservationTypes.Create returned error: %v", err)
+	}
+
+	if !created {
+		t.Error("!created")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	if !reflect.DeepEqual(observation_type, want) {
+		t.Errorf("ObservationTypes.Create returned %+v, want %+v", observation_type, want)
 	}
 }

@@ -38,3 +38,30 @@ func TestObservationType_Get(t *testing.T) {
 		t.Errorf("got %+v but wanted %+v", got, want)
 	}
 }
+
+func TestObservationType_Create(t *testing.T) {
+	setup()
+
+	want := newObservationType()
+
+	calledPost := false
+	store.ObservationTypes.(*models.MockObservationTypesService).Create_ = func(observation_type *models.ObservationType) (bool, error) {
+		if !normalizeDeepEqual(want, observation_type) {
+			t.Errorf("wanted request for observation_type %d but got %d", want, observation_type)
+		}
+		calledPost = true
+		return true, nil
+	}
+
+	success, err := apiClient.ObservationTypes.Create(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPost {
+		t.Error("!calledPost")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

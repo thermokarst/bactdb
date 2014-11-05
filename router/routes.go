@@ -23,5 +23,6 @@ const (
 	UpdateStrain = "strain:update"
 	DeleteStrain = "strain:delete"
 
-	ObservationType = "observation_type:get"
+	ObservationType       = "observation_type:get"
+	CreateObservationType = "observation_type:create"
 )

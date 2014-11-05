@@ -1,10 +1,12 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/thermokarst/bactdb/models"
 )
 
 func serveObservationType(w http.ResponseWriter, r *http.Request) error {
@@ -16,6 +18,24 @@ func serveObservationType(w http.ResponseWriter, r *http.Request) error {
 	observation_type, err := store.ObservationTypes.Get(id)
 	if err != nil {
 		return err
+	}
+
+	return writeJSON(w, observation_type)
+}
+
+func serveCreateObservationType(w http.ResponseWriter, r *http.Request) error {
+	var observation_type models.ObservationType
+	err := json.NewDecoder(r.Body).Decode(&observation_type)
+	if err != nil {
+		return err
+	}
+
+	created, err := store.ObservationTypes.Create(&observation_type)
+	if err != nil {
+		return err
+	}
+	if created {
+		w.WriteHeader(http.StatusCreated)
 	}
 
 	return writeJSON(w, observation_type)

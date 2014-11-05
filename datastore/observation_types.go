@@ -1,6 +1,10 @@
 package datastore
 
-import "github.com/thermokarst/bactdb/models"
+import (
+	"time"
+
+	"github.com/thermokarst/bactdb/models"
+)
 
 func init() {
 	DB.AddTableWithName(models.ObservationType{}, "observation_types").SetKeys(true, "Id")
@@ -19,4 +23,14 @@ func (s *observationTypesStore) Get(id int64) (*models.ObservationType, error) {
 		return nil, models.ErrObservationTypeNotFound
 	}
 	return observation_type[0], nil
+}
+
+func (s *observationTypesStore) Create(observation_type *models.ObservationType) (bool, error) {
+	currentTime := time.Now()
+	observation_type.CreatedAt = currentTime
+	observation_type.UpdatedAt = currentTime
+	if err := s.dbh.Insert(observation_type); err != nil {
+		return false, err
+	}
+	return true, nil
 }
