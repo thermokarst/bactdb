@@ -34,3 +34,15 @@ func (s *observationTypesStore) Create(observation_type *models.ObservationType)
 	}
 	return true, nil
 }
+
+func (s *observationTypesStore) List(opt *models.ObservationTypeListOptions) ([]*models.ObservationType, error) {
+	if opt == nil {
+		opt = &models.ObservationTypeListOptions{}
+	}
+	var observation_types []*models.ObservationType
+	err := s.dbh.Select(&observation_types, `SELECT * FROM observation_types LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	if err != nil {
+		return nil, err
+	}
+	return observation_types, nil
+}

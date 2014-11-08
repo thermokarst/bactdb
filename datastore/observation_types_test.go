@@ -62,3 +62,26 @@ func TestObservationTypesStore_Create_db(t *testing.T) {
 		t.Error("want nonzero observation_type.Id after submitting")
 	}
 }
+
+func TestObservationTypesStore_List_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	want_observation_type := insertObservationType(t, tx)
+	want := []*models.ObservationType{want_observation_type}
+
+	d := NewDatastore(tx)
+
+	observation_types, err := d.ObservationTypes.List(&models.ObservationTypeListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := range want {
+		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt, &want[i].DeletedAt)
+		normalizeTime(&observation_types[i].CreatedAt, &observation_types[i].UpdatedAt, &observation_types[i].DeletedAt)
+	}
+	if !reflect.DeepEqual(observation_types, want) {
+		t.Errorf("got observation_types %+v, want %+v", observation_types, want)
+	}
+}

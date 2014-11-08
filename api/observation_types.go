@@ -40,3 +40,20 @@ func serveCreateObservationType(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, observation_type)
 }
+
+func serveObservationTypeList(w http.ResponseWriter, r *http.Request) error {
+	var opt models.ObservationTypeListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	observation_types, err := store.ObservationTypes.List(&opt)
+	if err != nil {
+		return err
+	}
+	if observation_types == nil {
+		observation_types = []*models.ObservationType{}
+	}
+
+	return writeJSON(w, observation_types)
+}

@@ -25,4 +25,5 @@ const (
 
 	ObservationType       = "observation_type:get"
 	CreateObservationType = "observation_type:create"
+	ObservationTypes      = "observation_type:list"
 )

@@ -79,3 +79,36 @@ func TestObservationTypeService_Create(t *testing.T) {
 		t.Errorf("ObservationTypes.Create returned %+v, want %+v", observation_type, want)
 	}
 }
+
+func TestObservationTypeService_List(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := []*ObservationType{newObservationType()}
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.ObservationTypes, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "GET")
+		testFormValues(t, r, values{})
+
+		writeJSON(w, want)
+	})
+
+	observation_types, err := client.ObservationTypes.List(nil)
+	if err != nil {
+		t.Errorf("ObservationTypes.List returned error: %v", err)
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	for _, u := range want {
+		normalizeTime(&u.CreatedAt, &u.UpdatedAt, &u.DeletedAt)
+	}
+
+	if !reflect.DeepEqual(observation_types, want) {
+		t.Errorf("ObservationTypes.List return %+v, want %+v", observation_types, want)
+	}
+}
