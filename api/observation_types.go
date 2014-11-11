@@ -76,3 +76,17 @@ func serveUpdateObservationType(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, observation_type)
 }
+
+func serveDeleteObservationType(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+
+	deleted, err := store.ObservationTypes.Delete(id)
+	if err != nil {
+		return err
+	}
+	if deleted {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, &models.ObservationType{})
+}

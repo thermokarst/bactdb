@@ -105,3 +105,22 @@ func TestObservationTypesStore_Update_db(t *testing.T) {
 		t.Error("!updated")
 	}
 }
+
+func TestObservationTypesStore_Delete_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	observation_type := insertObservationType(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Delete it
+	deleted, err := d.ObservationTypes.Delete(observation_type.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !deleted {
+		t.Error("!delete")
+	}
+}

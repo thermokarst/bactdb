@@ -45,6 +45,7 @@ func Handler() *mux.Router {
 	m.Get(router.CreateObservationType).Handler(handler(serveCreateObservationType))
 	m.Get(router.ObservationTypes).Handler(handler(serveObservationTypeList))
 	m.Get(router.UpdateObservationType).Handler(handler(serveUpdateObservationType))
+	m.Get(router.DeleteObservationType).Handler(handler(serveDeleteObservationType))
 
 	return m
 }

@@ -27,4 +27,5 @@ const (
 	CreateObservationType = "observation_type:create"
 	ObservationTypes      = "observation_type:list"
 	UpdateObservationType = "observation_type:update"
+	DeleteObservationType = "observation_type:delete"
 )

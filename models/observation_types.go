@@ -37,6 +37,9 @@ type ObservationTypesService interface {
 
 	// Update an existing observation type
 	Update(id int64, observation_type *ObservationType) (updated bool, err error)
+
+	// Delete an existing observation type
+	Delete(id int64) (deleted bool, err error)
 }
 
 var (
@@ -133,11 +136,34 @@ func (s *observationTypesService) Update(id int64, observation_type *Observation
 	return resp.StatusCode == http.StatusOK, nil
 }
 
+func (s *observationTypesService) Delete(id int64) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.DeleteObservationType, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("DELETE", url.String(), nil)
+	if err != nil {
+		return false, err
+	}
+
+	var observation_type *ObservationType
+	resp, err := s.client.Do(req, &observation_type)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockObservationTypesService struct {
 	Get_    func(id int64) (*ObservationType, error)
 	List_   func(opt *ObservationTypeListOptions) ([]*ObservationType, error)
 	Create_ func(observation_type *ObservationType) (bool, error)
 	Update_ func(id int64, observation_type *ObservationType) (bool, error)
+	Delete_ func(id int64) (bool, error)
 }
 
 var _ ObservationTypesService = &MockObservationTypesService{}
@@ -168,4 +194,11 @@ func (s *MockObservationTypesService) Update(id int64, observation_type *Observa
 		return false, nil
 	}
 	return s.Update_(id, observation_type)
+}
+
+func (s *MockObservationTypesService) Delete(id int64) (bool, error) {
+	if s.Delete_ == nil {
+		return false, nil
+	}
+	return s.Delete_(id)
 }

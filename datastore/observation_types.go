@@ -69,3 +69,19 @@ func (s *observationTypesStore) Update(id int64, observation_type *models.Observ
 
 	return true, nil
 }
+
+func (s *observationTypesStore) Delete(id int64) (bool, error) {
+	observation_type, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	deleted, err := s.dbh.Delete(observation_type)
+	if err != nil {
+		return false, err
+	}
+	if deleted == 0 {
+		return false, ErrNoRowsDeleted
+	}
+	return true, nil
+}
