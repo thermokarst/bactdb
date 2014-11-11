@@ -85,3 +85,23 @@ func TestObservationTypesStore_List_db(t *testing.T) {
 		t.Errorf("got observation_types %+v, want %+v", observation_types, want)
 	}
 }
+
+func TestObservationTypesStore_Update_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	observation_type := insertObservationType(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Tweak it
+	observation_type.ObservationTypeName = "Updated Obs Type"
+	updated, err := d.ObservationTypes.Update(observation_type.Id, observation_type)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+}

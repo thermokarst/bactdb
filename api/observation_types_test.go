@@ -94,3 +94,33 @@ func TestObservationType_List(t *testing.T) {
 		t.Errorf("got observation_types %+v but wanted observation_types %+v", observation_types, want)
 	}
 }
+
+func TestObservationType_Update(t *testing.T) {
+	setup()
+
+	want := newObservationType()
+
+	calledPut := false
+	store.ObservationTypes.(*models.MockObservationTypesService).Update_ = func(id int64, observation_type *models.ObservationType) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for observation_type %d but got %d", want.Id, id)
+		}
+		if !normalizeDeepEqual(want, observation_type) {
+			t.Errorf("wanted request for observation_type %d but got %d", want, observation_type)
+		}
+		calledPut = true
+		return true, nil
+	}
+
+	success, err := apiClient.ObservationTypes.Update(want.Id, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPut {
+		t.Error("!calledPut")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}
