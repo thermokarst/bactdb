@@ -1,7 +1,7 @@
 -- bactdb
 -- Matthew R Dillon
 
-CREATE TABLE text_measurements (
+CREATE TABLE text_measurement_types (
     id BIGSERIAL NOT NULL,
     text_measurement_name CHARACTER VARYING(100),
 
