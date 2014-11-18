@@ -38,5 +38,8 @@ func API() *mux.Router {
 	m.Path("/observation_types/{Id:.+}").Methods("PUT").Name(UpdateObservationType)
 	m.Path("/observation_types/{Id:.+}").Methods("DELETE").Name(DeleteObservationType)
 
+	// Observations
+	m.Path("/observations/{Id:.+}").Methods("GET").Name(Observation)
+
 	return m
 }

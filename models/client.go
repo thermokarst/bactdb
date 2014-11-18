@@ -21,6 +21,7 @@ type Client struct {
 	Species          SpeciesService
 	Strains          StrainsService
 	ObservationTypes ObservationTypesService
+	Observations     ObservationsService
 
 	// BaseURL for HTTP requests to bactdb's API.
 	BaseURL *url.URL
@@ -53,6 +54,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Species = &speciesService{c}
 	c.Strains = &strainsService{c}
 	c.ObservationTypes = &observationTypesService{c}
+	c.Observations = &observationsService{c}
 	return c
 }
 

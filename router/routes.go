@@ -28,4 +28,6 @@ const (
 	ObservationTypes      = "observation_type:list"
 	UpdateObservationType = "observation_type:update"
 	DeleteObservationType = "observation_type:delete"
+
+	Observation = "observation:get"
 )
