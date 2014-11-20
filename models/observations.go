@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -28,6 +29,9 @@ func NewObservation() *Observation {
 type ObservationsService interface {
 	// Get an observation
 	Get(id int64) (*Observation, error)
+
+	// Create an observation
+	Create(observation *Observation) (bool, error)
 }
 
 var (
@@ -60,8 +64,28 @@ func (s *observationsService) Get(id int64) (*Observation, error) {
 	return observation, nil
 }
 
+func (s *observationsService) Create(observation *Observation) (bool, error) {
+	url, err := s.client.url(router.CreateObservation, nil, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("POST", url.String(), observation)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &observation)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusCreated, nil
+}
+
 type MockObservationsService struct {
-	Get_ func(id int64) (*Observation, error)
+	Get_    func(id int64) (*Observation, error)
+	Create_ func(observation *Observation) (bool, error)
 }
 
 var _ObservationsService = &MockObservationsService{}
@@ -71,4 +95,11 @@ func (s *MockObservationsService) Get(id int64) (*Observation, error) {
 		return nil, nil
 	}
 	return s.Get_(id)
+}
+
+func (s *MockObservationsService) Create(observation *Observation) (bool, error) {
+	if s.Create_ == nil {
+		return false, nil
+	}
+	return s.Create_(observation)
 }

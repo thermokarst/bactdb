@@ -45,3 +45,23 @@ func TestObservationsStore_Get_db(t *testing.T) {
 		t.Errorf("got observation %+v, want %+v", observation, want)
 	}
 }
+
+func TestObservationsStore_Create_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	observation := newObservation(t, tx)
+
+	d := NewDatastore(tx)
+
+	created, err := d.Observations.Create(observation)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Error("!created")
+	}
+	if observation.Id == 0 {
+		t.Error("want nonzero observation.Id after submitting")
+	}
+}
