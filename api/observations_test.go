@@ -65,3 +65,32 @@ func TestObservation_Create(t *testing.T) {
 		t.Error("!success")
 	}
 }
+
+func TestObservation_List(t *testing.T) {
+	setup()
+
+	want := []*models.Observation{newObservation()}
+	wantOpt := &models.ObservationListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}}
+
+	calledList := false
+	store.Observations.(*models.MockObservationsService).List_ = func(opt *models.ObservationListOptions) ([]*models.Observation, error) {
+		if !normalizeDeepEqual(wantOpt, opt) {
+			t.Errorf("wanted options %d but got %d", wantOpt, opt)
+		}
+		calledList = true
+		return want, nil
+	}
+
+	observations, err := apiClient.Observations.List(wantOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledList {
+		t.Error("!calledList")
+	}
+
+	if !normalizeDeepEqual(&want, &observations) {
+		t.Errorf("got observations %+v but wanted observations %+v", observations, want)
+	}
+}

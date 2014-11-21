@@ -34,3 +34,15 @@ func (s *observationsStore) Create(observation *models.Observation) (bool, error
 	}
 	return true, nil
 }
+
+func (s *observationsStore) List(opt *models.ObservationListOptions) ([]*models.Observation, error) {
+	if opt == nil {
+		opt = &models.ObservationListOptions{}
+	}
+	var observations []*models.Observation
+	err := s.dbh.Select(&observations, `SELECT * FROM observations LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	if err != nil {
+		return nil, err
+	}
+	return observations, nil
+}

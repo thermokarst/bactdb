@@ -65,3 +65,26 @@ func TestObservationsStore_Create_db(t *testing.T) {
 		t.Error("want nonzero observation.Id after submitting")
 	}
 }
+
+func TestObservationsStore_List_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	want_observation := insertObservation(t, tx)
+	want := []*models.Observation{want_observation}
+
+	d := NewDatastore(tx)
+
+	observations, err := d.Observations.List(&models.ObservationListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := range want {
+		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt, &want[i].DeletedAt)
+		normalizeTime(&observations[i].CreatedAt, &observations[i].UpdatedAt, &observations[i].DeletedAt)
+	}
+	if !reflect.DeepEqual(observations, want) {
+		t.Errorf("got observations %+v, want %+v", observations, want)
+	}
+}

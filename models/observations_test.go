@@ -79,3 +79,36 @@ func TestObservationService_Create(t *testing.T) {
 		t.Errorf("Observations.Create returned %+v, want %+v", observation, want)
 	}
 }
+
+func TestObservationService_List(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := []*Observation{newObservation()}
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.Observations, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "GET")
+		testFormValues(t, r, values{})
+
+		writeJSON(w, want)
+	})
+
+	observations, err := client.Observations.List(nil)
+	if err != nil {
+		t.Errorf("Observations.List returned error: %v", err)
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	for _, u := range want {
+		normalizeTime(&u.CreatedAt, &u.UpdatedAt, &u.DeletedAt)
+	}
+
+	if !reflect.DeepEqual(observations, want) {
+		t.Errorf("Observations.List return %+v, want %+v", observations, want)
+	}
+}

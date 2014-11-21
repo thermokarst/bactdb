@@ -30,6 +30,9 @@ type ObservationsService interface {
 	// Get an observation
 	Get(id int64) (*Observation, error)
 
+	// List all observations
+	List(opt *ObservationListOptions) ([]*Observation, error)
+
 	// Create an observation
 	Create(observation *Observation) (bool, error)
 }
@@ -83,8 +86,33 @@ func (s *observationsService) Create(observation *Observation) (bool, error) {
 	return resp.StatusCode == http.StatusCreated, nil
 }
 
+type ObservationListOptions struct {
+	ListOptions
+}
+
+func (s *observationsService) List(opt *ObservationListOptions) ([]*Observation, error) {
+	url, err := s.client.url(router.Observations, nil, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest("GET", url.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var observations []*Observation
+	_, err = s.client.Do(req, &observations)
+	if err != nil {
+		return nil, err
+	}
+
+	return observations, nil
+}
+
 type MockObservationsService struct {
 	Get_    func(id int64) (*Observation, error)
+	List_   func(opt *ObservationListOptions) ([]*Observation, error)
 	Create_ func(observation *Observation) (bool, error)
 }
 
@@ -102,4 +130,11 @@ func (s *MockObservationsService) Create(observation *Observation) (bool, error)
 		return false, nil
 	}
 	return s.Create_(observation)
+}
+
+func (s *MockObservationsService) List(opt *ObservationListOptions) ([]*Observation, error) {
+	if s.List_ == nil {
+		return nil, nil
+	}
+	return s.List_(opt)
 }

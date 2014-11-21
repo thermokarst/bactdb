@@ -31,4 +31,5 @@ const (
 
 	Observation       = "observation:get"
 	CreateObservation = "observation:create"
+	Observations      = "observation:list"
 )

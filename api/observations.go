@@ -40,3 +40,20 @@ func serveCreateObservation(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, observation)
 }
+
+func serveObservationList(w http.ResponseWriter, r *http.Request) error {
+	var opt models.ObservationListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	observations, err := store.Observations.List(&opt)
+	if err != nil {
+		return err
+	}
+	if observations == nil {
+		observations = []*models.Observation{}
+	}
+
+	return writeJSON(w, observations)
+}
