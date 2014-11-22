@@ -50,6 +50,7 @@ func Handler() *mux.Router {
 	m.Get(router.Observation).Handler(handler(serveObservation))
 	m.Get(router.CreateObservation).Handler(handler(serveCreateObservation))
 	m.Get(router.Observations).Handler(handler(serveObservationList))
+	m.Get(router.UpdateObservation).Handler(handler(serveUpdateObservation))
 
 	return m
 }

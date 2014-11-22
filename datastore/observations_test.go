@@ -88,3 +88,23 @@ func TestObservationsStore_List_db(t *testing.T) {
 		t.Errorf("got observations %+v, want %+v", observations, want)
 	}
 }
+
+func TestObservationsStore_Update_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	observation := insertObservation(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Tweak it
+	observation.ObservationName = "Updated Obs"
+	updated, err := d.Observations.Update(observation.Id, observation)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+}

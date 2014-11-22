@@ -57,3 +57,22 @@ func serveObservationList(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, observations)
 }
+
+func serveUpdateObservation(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+	var observation models.Observation
+	err := json.NewDecoder(r.Body).Decode(&observation)
+	if err != nil {
+		return err
+	}
+
+	updated, err := store.Observations.Update(id, &observation)
+	if err != nil {
+		return err
+	}
+	if updated {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, observation)
+}

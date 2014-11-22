@@ -35,6 +35,9 @@ type ObservationsService interface {
 
 	// Create an observation
 	Create(observation *Observation) (bool, error)
+
+	// Update an observation
+	Update(id int64, Observation *Observation) (updated bool, err error)
 }
 
 var (
@@ -110,10 +113,32 @@ func (s *observationsService) List(opt *ObservationListOptions) ([]*Observation,
 	return observations, nil
 }
 
+func (s *observationsService) Update(id int64, observation *Observation) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.UpdateObservation, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("PUT", url.String(), observation)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &observation)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockObservationsService struct {
 	Get_    func(id int64) (*Observation, error)
 	List_   func(opt *ObservationListOptions) ([]*Observation, error)
 	Create_ func(observation *Observation) (bool, error)
+	Update_ func(id int64, observation *Observation) (bool, error)
 }
 
 var _ObservationsService = &MockObservationsService{}
@@ -137,4 +162,11 @@ func (s *MockObservationsService) List(opt *ObservationListOptions) ([]*Observat
 		return nil, nil
 	}
 	return s.List_(opt)
+}
+
+func (s *MockObservationsService) Update(id int64, observation *Observation) (bool, error) {
+	if s.Update_ == nil {
+		return false, nil
+	}
+	return s.Update_(id, observation)
 }

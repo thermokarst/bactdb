@@ -94,3 +94,33 @@ func TestObservation_List(t *testing.T) {
 		t.Errorf("got observations %+v but wanted observations %+v", observations, want)
 	}
 }
+
+func TestObservation_Update(t *testing.T) {
+	setup()
+
+	want := newObservation()
+
+	calledPut := false
+	store.Observations.(*models.MockObservationsService).Update_ = func(id int64, observation *models.Observation) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for observation %d but got %d", want.Id, id)
+		}
+		if !normalizeDeepEqual(want, observation) {
+			t.Errorf("wanted request for observation %d but got %d", want, observation)
+		}
+		calledPut = true
+		return true, nil
+	}
+
+	success, err := apiClient.Observations.Update(want.Id, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPut {
+		t.Error("!calledPut")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

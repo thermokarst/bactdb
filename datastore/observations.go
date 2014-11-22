@@ -46,3 +46,26 @@ func (s *observationsStore) List(opt *models.ObservationListOptions) ([]*models.
 	}
 	return observations, nil
 }
+
+func (s *observationsStore) Update(id int64, observation *models.Observation) (bool, error) {
+	_, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	if id != observation.Id {
+		return false, models.ErrObservationNotFound
+	}
+
+	observation.UpdatedAt = time.Now()
+	changed, err := s.dbh.Update(observation)
+	if err != nil {
+		return false, err
+	}
+
+	if changed == 0 {
+		return false, ErrNoRowsUpdated
+	}
+
+	return true, nil
+}
