@@ -33,4 +33,5 @@ const (
 	CreateObservation = "observation:create"
 	Observations      = "observation:list"
 	UpdateObservation = "observation:update"
+	DeleteObservation = "observation:delete"
 )

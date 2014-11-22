@@ -143,3 +143,32 @@ func TestObservationService_Update(t *testing.T) {
 		t.Fatal("!called")
 	}
 }
+
+func TestObservationService_Delete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := newObservation()
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.DeleteObservation, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "DELETE")
+
+		w.WriteHeader(http.StatusOK)
+		writeJSON(w, want)
+	})
+
+	deleted, err := client.Observations.Delete(want.Id)
+	if err != nil {
+		t.Errorf("Observations.Delete returned error: %v", err)
+	}
+
+	if !deleted {
+		t.Error("!deleted")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+}
