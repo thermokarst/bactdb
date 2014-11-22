@@ -1,7 +1,7 @@
 -- bactdb
 -- Matthew R Dillon
 
-CREATE TABLE strainsobsmeasurements (
+CREATE TABLE measurements (
     id BIGSERIAL NOT NULL,
     strainsobservations_id BIGINT,
     text_measurement_type_id BIGINT NULL,
