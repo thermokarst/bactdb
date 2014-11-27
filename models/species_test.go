@@ -55,7 +55,7 @@ func TestSpeciesService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateSpecies, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"genus_id":1,"species_name":"Test Species","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+		testBody(t, r, `{"id":1,"genusId":1,"speciesName":"Test Species","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -124,7 +124,7 @@ func TestSpeciesService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateSpecies, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"genus_id":1,"species_name":"Test Species Updated","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+		testBody(t, r, `{"id":1,"genusId":1,"speciesName":"Test Species Updated","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
 
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)

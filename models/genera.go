@@ -13,10 +13,10 @@ import (
 // A Genus is a high-level classifier in bactdb.
 type Genus struct {
 	Id        int64       `json:"id,omitempty"`
-	GenusName string      `db:"genus_name" json:"genus_name"`
-	CreatedAt time.Time   `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time   `db:"updated_at" json:"updated_at"`
-	DeletedAt pq.NullTime `db:"deleted_at" json:"deleted_at"`
+	GenusName string      `db:"genus_name" json:"genusName"`
+	CreatedAt time.Time   `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time   `db:"updated_at" json:"updatedAt"`
+	DeletedAt pq.NullTime `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewGenus() *Genus {

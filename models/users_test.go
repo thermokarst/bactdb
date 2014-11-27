@@ -54,7 +54,7 @@ func TestUsersService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateUser, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"user_name":"Test User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","deleted_at":"0001-01-01T00:00:00Z"}`+"\n")
+		testBody(t, r, `{"id":1,"userName":"Test User","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":"0001-01-01T00:00:00Z"}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)

@@ -13,10 +13,10 @@ import (
 // An Observation Type is a lookup type
 type ObservationType struct {
 	Id                  int64       `json:"id,omitempty"`
-	ObservationTypeName string      `db:"observation_type_name" json:"observation_type_name"`
-	CreatedAt           time.Time   `db:"created_at" json:"created_at"`
-	UpdatedAt           time.Time   `db:"updated_at" json:"updated_at"`
-	DeletedAt           pq.NullTime `db:"deleted_at" json:"deleted_at"`
+	ObservationTypeName string      `db:"observation_type_name" json:"observationTypeName"`
+	CreatedAt           time.Time   `db:"created_at" json:"createdAt"`
+	UpdatedAt           time.Time   `db:"updated_at" json:"updatedAt"`
+	DeletedAt           pq.NullTime `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewObservationType() *ObservationType {

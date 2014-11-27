@@ -13,11 +13,11 @@ import (
 // A Species is a high-level classifier in bactdb.
 type Species struct {
 	Id          int64       `json:"id,omitempty"`
-	GenusId     int64       `db:"genus_id" json:"genus_id"`
-	SpeciesName string      `db:"species_name" json:"species_name"`
-	CreatedAt   time.Time   `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time   `db:"updated_at" json:"updated_at"`
-	DeletedAt   pq.NullTime `db:"deleted_at" json:"deleted_at"`
+	GenusId     int64       `db:"genus_id" json:"genusId"`
+	SpeciesName string      `db:"species_name" json:"speciesName"`
+	CreatedAt   time.Time   `db:"created_at" json:"createdAt"`
+	UpdatedAt   time.Time   `db:"updated_at" json:"updatedAt"`
+	DeletedAt   pq.NullTime `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewSpecies() *Species {

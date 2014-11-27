@@ -13,15 +13,15 @@ import (
 // A Strain is a subclass of species
 type Strain struct {
 	Id             int64       `json:"id,omitempty"`
-	SpeciesId      int64       `db:"species_id" json:"species_id"`
-	StrainName     string      `db:"strain_name" json:"strain_name"`
-	StrainType     string      `db:"strain_type" json:"strain_type"`
+	SpeciesId      int64       `db:"species_id" json:"speciesId"`
+	StrainName     string      `db:"strain_name" json:"strainName"`
+	StrainType     string      `db:"strain_type" json:"strainType"`
 	Etymology      string      `db:"etymology" json:"etymology"`
-	AccessionBanks string      `db:"accession_banks" json:"accession_banks"`
-	GenbankEmblDdb string      `db:"genbank_embl_ddb" json:"genbank_embl_ddb"`
-	CreatedAt      time.Time   `db:"created_at" json:"created_at"`
-	UpdatedAt      time.Time   `db:"updated_at" json:"updated_at"`
-	DeletedAt      pq.NullTime `db:"deleted_at" json:"deleted_at"`
+	AccessionBanks string      `db:"accession_banks" json:"accessionBanks"`
+	GenbankEmblDdb string      `db:"genbank_embl_ddb" json:"genbankEmblDdb"`
+	CreatedAt      time.Time   `db:"created_at" json:"createdAt"`
+	UpdatedAt      time.Time   `db:"updated_at" json:"updatedAt"`
+	DeletedAt      pq.NullTime `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewStrain() *Strain {
