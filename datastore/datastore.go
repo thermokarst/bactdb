@@ -9,13 +9,14 @@ import (
 
 // A datastore access point (in PostgreSQL)
 type Datastore struct {
-	Users            models.UsersService
-	Genera           models.GeneraService
-	Species          models.SpeciesService
-	Strains          models.StrainsService
-	ObservationTypes models.ObservationTypesService
-	Observations     models.ObservationsService
-	dbh              modl.SqlExecutor
+	Users                models.UsersService
+	Genera               models.GeneraService
+	Species              models.SpeciesService
+	Strains              models.StrainsService
+	ObservationTypes     models.ObservationTypesService
+	Observations         models.ObservationsService
+	TextMeasurementTypes models.TextMeasurementTypesService
+	dbh                  modl.SqlExecutor
 }
 
 var (
@@ -37,16 +38,18 @@ func NewDatastore(dbh modl.SqlExecutor) *Datastore {
 	d.Strains = &strainsStore{d}
 	d.ObservationTypes = &observationTypesStore{d}
 	d.Observations = &observationsStore{d}
+	d.TextMeasurementTypes = &textMeasurementTypesStore{d}
 	return d
 }
 
 func NewMockDatastore() *Datastore {
 	return &Datastore{
-		Users:            &models.MockUsersService{},
-		Genera:           &models.MockGeneraService{},
-		Species:          &models.MockSpeciesService{},
-		Strains:          &models.MockStrainsService{},
-		ObservationTypes: &models.MockObservationTypesService{},
-		Observations:     &models.MockObservationsService{},
+		Users:                &models.MockUsersService{},
+		Genera:               &models.MockGeneraService{},
+		Species:              &models.MockSpeciesService{},
+		Strains:              &models.MockStrainsService{},
+		ObservationTypes:     &models.MockObservationTypesService{},
+		Observations:         &models.MockObservationsService{},
+		TextMeasurementTypes: &models.MockTextMeasurementTypesService{},
 	}
 }
