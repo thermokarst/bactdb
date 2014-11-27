@@ -29,6 +29,9 @@ type TextMeasurementTypesService interface {
 	// Get a text measurement type
 	Get(id int64) (*TextMeasurementType, error)
 
+	// List all text measurement types
+	List(opt *TextMeasurementTypeListOptions) ([]*TextMeasurementType, error)
+
 	// Create a text measurement type
 	Create(text_measurement_type *TextMeasurementType) (bool, error)
 }
@@ -82,8 +85,33 @@ func (s *textMeasurementTypesService) Create(text_measurement_type *TextMeasurem
 	return resp.StatusCode == http.StatusCreated, nil
 }
 
+type TextMeasurementTypeListOptions struct {
+	ListOptions
+}
+
+func (s *textMeasurementTypesService) List(opt *TextMeasurementTypeListOptions) ([]*TextMeasurementType, error) {
+	url, err := s.client.url(router.TextMeasurementTypes, nil, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest("GET", url.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var text_measurement_types []*TextMeasurementType
+	_, err = s.client.Do(req, &text_measurement_types)
+	if err != nil {
+		return nil, err
+	}
+
+	return text_measurement_types, nil
+}
+
 type MockTextMeasurementTypesService struct {
 	Get_    func(id int64) (*TextMeasurementType, error)
+	List_   func(opt *TextMeasurementTypeListOptions) ([]*TextMeasurementType, error)
 	Create_ func(text_measurement_type *TextMeasurementType) (bool, error)
 }
 
@@ -101,4 +129,11 @@ func (s *MockTextMeasurementTypesService) Create(text_measurement_type *TextMeas
 		return false, nil
 	}
 	return s.Create_(text_measurement_type)
+}
+
+func (s *MockTextMeasurementTypesService) List(opt *TextMeasurementTypeListOptions) ([]*TextMeasurementType, error) {
+	if s.List_ == nil {
+		return nil, nil
+	}
+	return s.List_(opt)
 }

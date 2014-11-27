@@ -62,3 +62,26 @@ func TestTextMeasurementTypesStore_Create_db(t *testing.T) {
 		t.Error("want nonzero text_measurement_type.Id after submitting")
 	}
 }
+
+func TestTextMeasurementTypesStore_List_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	want_text_measurement_type := insertTextMeasurementType(t, tx)
+	want := []*models.TextMeasurementType{want_text_measurement_type}
+
+	d := NewDatastore(tx)
+
+	text_measurement_types, err := d.TextMeasurementTypes.List(&models.TextMeasurementTypeListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := range want {
+		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt, &want[i].DeletedAt)
+		normalizeTime(&text_measurement_types[i].CreatedAt, &text_measurement_types[i].UpdatedAt, &text_measurement_types[i].DeletedAt)
+	}
+	if !reflect.DeepEqual(text_measurement_types, want) {
+		t.Errorf("got text_measurement_types %+v, want %+v", text_measurement_types, want)
+	}
+}

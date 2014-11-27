@@ -40,3 +40,20 @@ func serveCreateTextMeasurementType(w http.ResponseWriter, r *http.Request) erro
 
 	return writeJSON(w, text_measurement_type)
 }
+
+func serveTextMeasurementTypeList(w http.ResponseWriter, r *http.Request) error {
+	var opt models.TextMeasurementTypeListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	text_measurement_types, err := store.TextMeasurementTypes.List(&opt)
+	if err != nil {
+		return err
+	}
+	if text_measurement_types == nil {
+		text_measurement_types = []*models.TextMeasurementType{}
+	}
+
+	return writeJSON(w, text_measurement_types)
+}

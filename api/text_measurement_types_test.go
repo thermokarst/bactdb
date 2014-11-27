@@ -65,3 +65,32 @@ func TestTextMeasurementType_Create(t *testing.T) {
 		t.Error("!success")
 	}
 }
+
+func TestTextMeasurementType_List(t *testing.T) {
+	setup()
+
+	want := []*models.TextMeasurementType{newTextMeasurementType()}
+	wantOpt := &models.TextMeasurementTypeListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}}
+
+	calledList := false
+	store.TextMeasurementTypes.(*models.MockTextMeasurementTypesService).List_ = func(opt *models.TextMeasurementTypeListOptions) ([]*models.TextMeasurementType, error) {
+		if !normalizeDeepEqual(wantOpt, opt) {
+			t.Errorf("wanted options %d but got %d", wantOpt, opt)
+		}
+		calledList = true
+		return want, nil
+	}
+
+	text_measurement_types, err := apiClient.TextMeasurementTypes.List(wantOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledList {
+		t.Error("!calledList")
+	}
+
+	if !normalizeDeepEqual(&want, &text_measurement_types) {
+		t.Errorf("got text_measurement_types %+v but wanted text_measurement_types %+v", text_measurement_types, want)
+	}
+}

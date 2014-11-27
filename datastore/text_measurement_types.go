@@ -34,3 +34,15 @@ func (s *textMeasurementTypesStore) Create(text_measurement_type *models.TextMea
 	}
 	return true, nil
 }
+
+func (s *textMeasurementTypesStore) List(opt *models.TextMeasurementTypeListOptions) ([]*models.TextMeasurementType, error) {
+	if opt == nil {
+		opt = &models.TextMeasurementTypeListOptions{}
+	}
+	var text_measurement_types []*models.TextMeasurementType
+	err := s.dbh.Select(&text_measurement_types, `SELECT * FROM text_measurement_types LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	if err != nil {
+		return nil, err
+	}
+	return text_measurement_types, nil
+}
