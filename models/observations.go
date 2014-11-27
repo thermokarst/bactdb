@@ -167,7 +167,7 @@ type MockObservationsService struct {
 	Delete_ func(id int64) (bool, error)
 }
 
-var _ObservationsService = &MockObservationsService{}
+var _ ObservationsService = &MockObservationsService{}
 
 func (s *MockObservationsService) Get(id int64) (*Observation, error) {
 	if s.Get_ == nil {
