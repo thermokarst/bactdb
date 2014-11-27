@@ -54,6 +54,7 @@ func Handler() *mux.Router {
 	m.Get(router.DeleteObservation).Handler(handler(serveDeleteObservation))
 
 	m.Get(router.TextMeasurementType).Handler(handler(serveTextMeasurementType))
+	m.Get(router.CreateTextMeasurementType).Handler(handler(serveCreateTextMeasurementType))
 
 	return m
 }

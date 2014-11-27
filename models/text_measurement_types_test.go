@@ -43,3 +43,39 @@ func TestTextMeasurementTypeService_Get(t *testing.T) {
 		t.Errorf("TextMeasurementTypes.Get return %+v, want %+v", text_measurement_type, want)
 	}
 }
+
+func TestTextMeasurementTypeService_Create(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := newTextMeasurementType()
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.CreateTextMeasurementType, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "POST")
+		testBody(t, r, `{"id":1,"textMeasurementName":"Test Text Measurement Type","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+
+		w.WriteHeader(http.StatusCreated)
+		writeJSON(w, want)
+	})
+
+	text_measurement_type := newTextMeasurementType()
+	created, err := client.TextMeasurementTypes.Create(text_measurement_type)
+	if err != nil {
+		t.Errorf("TextMeasurementTypes.Create returned error: %v", err)
+	}
+
+	if !created {
+		t.Error("!created")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	if !reflect.DeepEqual(text_measurement_type, want) {
+		t.Errorf("TextMeasurementTypes.Create returned %+v, want %+v", text_measurement_type, want)
+	}
+}

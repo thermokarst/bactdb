@@ -38,3 +38,30 @@ func TestTextMeasurementType_Get(t *testing.T) {
 		t.Errorf("got %+v but wanted %+v", got, want)
 	}
 }
+
+func TestTextMeasurementType_Create(t *testing.T) {
+	setup()
+
+	want := newTextMeasurementType()
+
+	calledPost := false
+	store.TextMeasurementTypes.(*models.MockTextMeasurementTypesService).Create_ = func(text_measurement_type *models.TextMeasurementType) (bool, error) {
+		if !normalizeDeepEqual(want, text_measurement_type) {
+			t.Errorf("wanted request for text_measurement_type %d but got %d", want, text_measurement_type)
+		}
+		calledPost = true
+		return true, nil
+	}
+
+	success, err := apiClient.TextMeasurementTypes.Create(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPost {
+		t.Error("!calledPost")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

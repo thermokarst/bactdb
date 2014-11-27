@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -27,6 +28,9 @@ func NewTextMeasurementType() *TextMeasurementType {
 type TextMeasurementTypesService interface {
 	// Get a text measurement type
 	Get(id int64) (*TextMeasurementType, error)
+
+	// Create a text measurement type
+	Create(text_measurement_type *TextMeasurementType) (bool, error)
 }
 
 var (
@@ -59,8 +63,28 @@ func (s *textMeasurementTypesService) Get(id int64) (*TextMeasurementType, error
 	return text_measurement_type, nil
 }
 
+func (s *textMeasurementTypesService) Create(text_measurement_type *TextMeasurementType) (bool, error) {
+	url, err := s.client.url(router.CreateTextMeasurementType, nil, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("POST", url.String(), text_measurement_type)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &text_measurement_type)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusCreated, nil
+}
+
 type MockTextMeasurementTypesService struct {
-	Get_ func(id int64) (*TextMeasurementType, error)
+	Get_    func(id int64) (*TextMeasurementType, error)
+	Create_ func(text_measurement_type *TextMeasurementType) (bool, error)
 }
 
 var _ TextMeasurementTypesService = &MockTextMeasurementTypesService{}
@@ -70,4 +94,11 @@ func (s *MockTextMeasurementTypesService) Get(id int64) (*TextMeasurementType, e
 		return nil, nil
 	}
 	return s.Get_(id)
+}
+
+func (s *MockTextMeasurementTypesService) Create(text_measurement_type *TextMeasurementType) (bool, error) {
+	if s.Create_ == nil {
+		return false, nil
+	}
+	return s.Create_(text_measurement_type)
 }

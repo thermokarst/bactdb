@@ -1,6 +1,10 @@
 package datastore
 
-import "github.com/thermokarst/bactdb/models"
+import (
+	"time"
+
+	"github.com/thermokarst/bactdb/models"
+)
 
 func init() {
 	DB.AddTableWithName(models.TextMeasurementType{}, "text_measurement_types").SetKeys(true, "Id")
@@ -19,4 +23,14 @@ func (s *textMeasurementTypesStore) Get(id int64) (*models.TextMeasurementType, 
 		return nil, models.ErrTextMeasurementTypeNotFound
 	}
 	return text_measurement_type[0], nil
+}
+
+func (s *textMeasurementTypesStore) Create(text_measurement_type *models.TextMeasurementType) (bool, error) {
+	currentTime := time.Now()
+	text_measurement_type.CreatedAt = currentTime
+	text_measurement_type.UpdatedAt = currentTime
+	if err := s.dbh.Insert(text_measurement_type); err != nil {
+		return false, err
+	}
+	return true, nil
 }

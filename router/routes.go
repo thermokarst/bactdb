@@ -35,5 +35,6 @@ const (
 	UpdateObservation = "observation:update"
 	DeleteObservation = "observation:delete"
 
-	TextMeasurementType = "text_measurement_type:get"
+	TextMeasurementType       = "text_measurement_type:get"
+	CreateTextMeasurementType = "text_measurement_type:create"
 )

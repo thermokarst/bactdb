@@ -42,3 +42,23 @@ func TestTextMeasurementTypesStore_Get_db(t *testing.T) {
 		t.Errorf("got text_measurement_type %+v, want %+v", text_measurement_type, want)
 	}
 }
+
+func TestTextMeasurementTypesStore_Create_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	text_measurement_type := newTextMeasurementType(t, tx)
+
+	d := NewDatastore(tx)
+
+	created, err := d.TextMeasurementTypes.Create(text_measurement_type)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Error("!created")
+	}
+	if text_measurement_type.Id == 0 {
+		t.Error("want nonzero text_measurement_type.Id after submitting")
+	}
+}
