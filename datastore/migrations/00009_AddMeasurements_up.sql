@@ -3,7 +3,8 @@
 
 CREATE TABLE measurements (
     id BIGSERIAL NOT NULL,
-    strainsobservations_id BIGINT,
+    strain_id BIGINT,
+    observation_id BIGINT,
     text_measurement_type_id BIGINT NULL,
     measurement_value NUMERIC(6, 4) NULL,
     confidence_interval NUMERIC(6, 4) NULL,
@@ -14,7 +15,8 @@ CREATE TABLE measurements (
     deleted_at TIMESTAMP WITH TIME ZONE,
 
     CONSTRAINT strainsobsmeasurements_pkey PRIMARY KEY (id),
-    FOREIGN KEY (strainsobservations_id) REFERENCES strainsobservations(id),
+    FOREIGN KEY (strain_id) REFERENCES strains(id),
+    FOREIGN KEY (observation_id) REFERENCES observations(id),
     FOREIGN KEY (text_measurement_type_id) REFERENCES text_measurement_types(id),
     FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
     CONSTRAINT exclusive_data_type CHECK (
