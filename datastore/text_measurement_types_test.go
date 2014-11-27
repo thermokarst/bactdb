@@ -85,3 +85,23 @@ func TestTextMeasurementTypesStore_List_db(t *testing.T) {
 		t.Errorf("got text_measurement_types %+v, want %+v", text_measurement_types, want)
 	}
 }
+
+func TestTextMeasurementTypesStore_Update_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	text_measurement_type := insertTextMeasurementType(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Tweak it
+	text_measurement_type.TextMeasurementName = "Updated Text Measurement Type"
+	updated, err := d.TextMeasurementTypes.Update(text_measurement_type.Id, text_measurement_type)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+}

@@ -112,3 +112,34 @@ func TestTextMeasurementTypeService_List(t *testing.T) {
 		t.Errorf("TextMeasurementTypes.List return %+v, want %+v", text_measurement_type, want)
 	}
 }
+
+func TestTextMeasurementTypeService_Update(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := newTextMeasurementType()
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.UpdateTextMeasurementType, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "PUT")
+		testBody(t, r, `{"id":1,"textMeasurementName":"Test Text Measurement Type Updated","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+		w.WriteHeader(http.StatusOK)
+		writeJSON(w, want)
+	})
+
+	text_measurement_type := newTextMeasurementType()
+	text_measurement_type.TextMeasurementName = "Test Text Measurement Type Updated"
+	updated, err := client.TextMeasurementTypes.Update(text_measurement_type.Id, text_measurement_type)
+	if err != nil {
+		t.Errorf("TextMeasurementTypes.Update returned error: %v", err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+}

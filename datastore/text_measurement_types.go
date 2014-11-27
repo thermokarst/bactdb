@@ -46,3 +46,26 @@ func (s *textMeasurementTypesStore) List(opt *models.TextMeasurementTypeListOpti
 	}
 	return text_measurement_types, nil
 }
+
+func (s *textMeasurementTypesStore) Update(id int64, text_measurement_type *models.TextMeasurementType) (bool, error) {
+	_, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	if id != text_measurement_type.Id {
+		return false, models.ErrObservationNotFound
+	}
+
+	text_measurement_type.UpdatedAt = time.Now()
+	changed, err := s.dbh.Update(text_measurement_type)
+	if err != nil {
+		return false, err
+	}
+
+	if changed == 0 {
+		return false, ErrNoRowsUpdated
+	}
+
+	return true, nil
+}

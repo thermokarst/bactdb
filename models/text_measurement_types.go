@@ -34,6 +34,9 @@ type TextMeasurementTypesService interface {
 
 	// Create a text measurement type
 	Create(text_measurement_type *TextMeasurementType) (bool, error)
+
+	// Updated a text measurement type
+	Update(id int64, TextMeasurementType *TextMeasurementType) (updated bool, err error)
 }
 
 var (
@@ -109,10 +112,32 @@ func (s *textMeasurementTypesService) List(opt *TextMeasurementTypeListOptions) 
 	return text_measurement_types, nil
 }
 
+func (s *textMeasurementTypesService) Update(id int64, text_measurement_type *TextMeasurementType) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.UpdateTextMeasurementType, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("PUT", url.String(), text_measurement_type)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &text_measurement_type)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockTextMeasurementTypesService struct {
 	Get_    func(id int64) (*TextMeasurementType, error)
 	List_   func(opt *TextMeasurementTypeListOptions) ([]*TextMeasurementType, error)
 	Create_ func(text_measurement_type *TextMeasurementType) (bool, error)
+	Update_ func(id int64, text_measurement_type *TextMeasurementType) (bool, error)
 }
 
 var _ TextMeasurementTypesService = &MockTextMeasurementTypesService{}
@@ -136,4 +161,11 @@ func (s *MockTextMeasurementTypesService) List(opt *TextMeasurementTypeListOptio
 		return nil, nil
 	}
 	return s.List_(opt)
+}
+
+func (s *MockTextMeasurementTypesService) Update(id int64, text_measurement_type *TextMeasurementType) (bool, error) {
+	if s.Update_ == nil {
+		return false, nil
+	}
+	return s.Update_(id, text_measurement_type)
 }

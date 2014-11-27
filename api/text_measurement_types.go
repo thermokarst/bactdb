@@ -57,3 +57,22 @@ func serveTextMeasurementTypeList(w http.ResponseWriter, r *http.Request) error 
 
 	return writeJSON(w, text_measurement_types)
 }
+
+func serveUpdateTextMeasurementType(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+	var text_measurement_type models.TextMeasurementType
+	err := json.NewDecoder(r.Body).Decode(&text_measurement_type)
+	if err != nil {
+		return err
+	}
+
+	updated, err := store.TextMeasurementTypes.Update(id, &text_measurement_type)
+	if err != nil {
+		return err
+	}
+	if updated {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, text_measurement_type)
+}

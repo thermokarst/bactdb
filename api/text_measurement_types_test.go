@@ -94,3 +94,33 @@ func TestTextMeasurementType_List(t *testing.T) {
 		t.Errorf("got text_measurement_types %+v but wanted text_measurement_types %+v", text_measurement_types, want)
 	}
 }
+
+func TestTextMeasurementType_Update(t *testing.T) {
+	setup()
+
+	want := newTextMeasurementType()
+
+	calledPut := false
+	store.TextMeasurementTypes.(*models.MockTextMeasurementTypesService).Update_ = func(id int64, text_measurement_type *models.TextMeasurementType) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for text_measurement_type %d but got %d", want.Id, id)
+		}
+		if !normalizeDeepEqual(want, text_measurement_type) {
+			t.Errorf("wanted request for text_measurement_type %d but got %d", want, text_measurement_type)
+		}
+		calledPut = true
+		return true, nil
+	}
+
+	success, err := apiClient.TextMeasurementTypes.Update(want.Id, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPut {
+		t.Error("!calledPut")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

@@ -49,6 +49,7 @@ func API() *mux.Router {
 	m.Path("/text_measurement_types/").Methods("GET").Name(TextMeasurementTypes)
 	m.Path("/text_measurement_types/").Methods("POST").Name(CreateTextMeasurementType)
 	m.Path("/text_measurement_types/{Id:.+}").Methods("GET").Name(TextMeasurementType)
+	m.Path("/text_measurement_types/{Id:.+}").Methods("PUT").Name(UpdateTextMeasurementType)
 
 	return m
 }
