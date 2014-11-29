@@ -143,3 +143,32 @@ func TestTextMeasurementTypeService_Update(t *testing.T) {
 		t.Fatal("!called")
 	}
 }
+
+func TestTextMeasurementTypeService_Delete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := newTextMeasurementType()
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.DeleteTextMeasurementType, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "DELETE")
+
+		w.WriteHeader(http.StatusOK)
+		writeJSON(w, want)
+	})
+
+	deleted, err := client.TextMeasurementTypes.Delete(want.Id)
+	if err != nil {
+		t.Errorf("TextMeasurementTypes.Delete returned error: %v", err)
+	}
+
+	if !deleted {
+		t.Error("!deleted")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+}

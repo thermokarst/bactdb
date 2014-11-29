@@ -105,3 +105,22 @@ func TestTextMeasurementTypesStore_Update_db(t *testing.T) {
 		t.Error("!updated")
 	}
 }
+
+func TestTextMeasurementTypesStore_Delete_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	text_measurement_type := insertTextMeasurementType(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Delete it
+	deleted, err := d.TextMeasurementTypes.Delete(text_measurement_type.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !deleted {
+		t.Error("!delete")
+	}
+}

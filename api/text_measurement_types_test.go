@@ -124,3 +124,30 @@ func TestTextMeasurementType_Update(t *testing.T) {
 		t.Error("!success")
 	}
 }
+
+func TestTextMeasurementType_Delete(t *testing.T) {
+	setup()
+
+	want := newTextMeasurementType()
+
+	calledDelete := false
+	store.TextMeasurementTypes.(*models.MockTextMeasurementTypesService).Delete_ = func(id int64) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for text_measurement_type %d but got %d", want.Id, id)
+		}
+		calledDelete = true
+		return true, nil
+	}
+
+	success, err := apiClient.TextMeasurementTypes.Delete(want.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledDelete {
+		t.Error("!calledDelete")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

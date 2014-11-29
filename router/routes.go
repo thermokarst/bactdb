@@ -39,4 +39,5 @@ const (
 	CreateTextMeasurementType = "text_measurement_type:create"
 	TextMeasurementTypes      = "text_measurement_type:list"
 	UpdateTextMeasurementType = "text_measurement_type:update"
+	DeleteTextMeasurementType = "text_measurement_type:delete"
 )

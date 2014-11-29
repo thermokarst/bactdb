@@ -69,3 +69,19 @@ func (s *textMeasurementTypesStore) Update(id int64, text_measurement_type *mode
 
 	return true, nil
 }
+
+func (s *textMeasurementTypesStore) Delete(id int64) (bool, error) {
+	text_measurement_type, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	deleted, err := s.dbh.Delete(text_measurement_type)
+	if err != nil {
+		return false, err
+	}
+	if deleted == 0 {
+		return false, ErrNoRowsDeleted
+	}
+	return true, nil
+}

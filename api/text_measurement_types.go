@@ -76,3 +76,17 @@ func serveUpdateTextMeasurementType(w http.ResponseWriter, r *http.Request) erro
 
 	return writeJSON(w, text_measurement_type)
 }
+
+func serveDeleteTextMeasurementType(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+
+	deleted, err := store.TextMeasurementTypes.Delete(id)
+	if err != nil {
+		return err
+	}
+	if deleted {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, &models.TextMeasurementType{})
+}
