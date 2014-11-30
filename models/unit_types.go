@@ -1,0 +1,75 @@
+package models
+
+import (
+	"errors"
+	"strconv"
+	"time"
+
+	"github.com/lib/pq"
+	"github.com/thermokarst/bactdb/router"
+)
+
+// A UnitType is a lookup type
+type UnitType struct {
+	Id        int64       `json:id,omitempty"`
+	Name      string      `db:"name" json:"name"`
+	Symbol    string      `db:"symbol" json:"symbol"`
+	CreatedAt time.Time   `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time   `db:"updated_at" json:"updatedAt"`
+	DeletedAt pq.NullTime `db:"deleted_at" json:"deletedAt"`
+}
+
+func NewUnitType() *UnitType {
+	return &UnitType{
+		Name:   "Test Unit Type",
+		Symbol: "x",
+	}
+}
+
+type UnitTypesService interface {
+	// Get a unit type
+	Get(id int64) (*UnitType, error)
+}
+
+var (
+	ErrUnitTypeNotFound = errors.New("unit type not found")
+)
+
+type unitTypesService struct {
+	client *Client
+}
+
+func (s *unitTypesService) Get(id int64) (*UnitType, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.UnitType, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest("GET", url.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var unit_type *UnitType
+	_, err = s.client.Do(req, &unit_type)
+	if err != nil {
+		return nil, err
+	}
+
+	return unit_type, nil
+}
+
+type MockUnitTypesService struct {
+	Get_ func(id int64) (*UnitType, error)
+}
+
+var _ UnitTypesService = &MockUnitTypesService{}
+
+func (s *MockUnitTypesService) Get(id int64) (*UnitType, error) {
+	if s.Get_ == nil {
+		return nil, nil
+	}
+	return s.Get_(id)
+}
