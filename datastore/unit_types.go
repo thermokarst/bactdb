@@ -69,3 +69,19 @@ func (s *unitTypesStore) Update(id int64, unit_type *models.UnitType) (bool, err
 
 	return true, nil
 }
+
+func (s *unitTypesStore) Delete(id int64) (bool, error) {
+	unit_type, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	deleted, err := s.dbh.Delete(unit_type)
+	if err != nil {
+		return false, err
+	}
+	if deleted == 0 {
+		return false, ErrNoRowsDeleted
+	}
+	return true, nil
+}

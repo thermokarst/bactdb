@@ -105,3 +105,22 @@ func TestUnitTypesStore_Update_db(t *testing.T) {
 		t.Error("!updated")
 	}
 }
+
+func TestUnitTypesStore_Delete_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	unit_type := insertUnitType(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Delete it
+	deleted, err := d.UnitTypes.Delete(unit_type.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !deleted {
+		t.Error("!delete")
+	}
+}

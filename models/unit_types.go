@@ -39,6 +39,9 @@ type UnitTypesService interface {
 
 	// Update a unit type
 	Update(id int64, UnitType *UnitType) (bool, error)
+
+	// Delete a unit type
+	Delete(id int64) (deleted bool, err error)
 }
 
 var (
@@ -135,11 +138,34 @@ func (s *unitTypesService) Update(id int64, unit_type *UnitType) (bool, error) {
 	return resp.StatusCode == http.StatusOK, nil
 }
 
+func (s *unitTypesService) Delete(id int64) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.DeleteUnitType, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("DELETE", url.String(), nil)
+	if err != nil {
+		return false, err
+	}
+
+	var unit_type *UnitType
+	resp, err := s.client.Do(req, &unit_type)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockUnitTypesService struct {
 	Get_    func(id int64) (*UnitType, error)
 	List_   func(opt *UnitTypeListOptions) ([]*UnitType, error)
 	Create_ func(unit_type *UnitType) (bool, error)
 	Update_ func(id int64, unit_type *UnitType) (bool, error)
+	Delete_ func(id int64) (bool, error)
 }
 
 var _ UnitTypesService = &MockUnitTypesService{}
@@ -170,4 +196,11 @@ func (s *MockUnitTypesService) Update(id int64, unit_type *UnitType) (bool, erro
 		return false, nil
 	}
 	return s.Update_(id, unit_type)
+}
+
+func (s *MockUnitTypesService) Delete(id int64) (bool, error) {
+	if s.Delete_ == nil {
+		return false, nil
+	}
+	return s.Delete_(id)
 }

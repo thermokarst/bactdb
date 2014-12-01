@@ -45,4 +45,5 @@ const (
 	CreateUnitType = "unit_type:create"
 	UnitTypes      = "unit_type:list"
 	UpdateUnitType = "unit_type:update"
+	DeleteUnitType = "unit_type:delete"
 )
