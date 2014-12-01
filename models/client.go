@@ -24,6 +24,7 @@ type Client struct {
 	Observations         ObservationsService
 	TextMeasurementTypes TextMeasurementTypesService
 	UnitTypes            UnitTypesService
+	Measurements         MeasurementsService
 
 	// BaseURL for HTTP requests to bactdb's API.
 	BaseURL *url.URL
@@ -59,6 +60,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Observations = &observationsService{c}
 	c.TextMeasurementTypes = &textMeasurementTypesService{c}
 	c.UnitTypes = &unitTypesService{c}
+	c.Measurements = &measurementsService{c}
 	return c
 }
 
