@@ -44,4 +44,5 @@ const (
 	UnitType       = "unit_type:get"
 	CreateUnitType = "unit_type:create"
 	UnitTypes      = "unit_type:list"
+	UpdateUnitType = "unit_type:update"
 )

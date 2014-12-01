@@ -36,6 +36,9 @@ type UnitTypesService interface {
 
 	// Create a unit type
 	Create(unit_type *UnitType) (bool, error)
+
+	// Update a unit type
+	Update(id int64, UnitType *UnitType) (bool, error)
 }
 
 var (
@@ -111,10 +114,32 @@ func (s *unitTypesService) List(opt *UnitTypeListOptions) ([]*UnitType, error) {
 	return unit_types, nil
 }
 
+func (s *unitTypesService) Update(id int64, unit_type *UnitType) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.UpdateUnitType, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("PUT", url.String(), unit_type)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &unit_type)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockUnitTypesService struct {
 	Get_    func(id int64) (*UnitType, error)
 	List_   func(opt *UnitTypeListOptions) ([]*UnitType, error)
 	Create_ func(unit_type *UnitType) (bool, error)
+	Update_ func(id int64, unit_type *UnitType) (bool, error)
 }
 
 var _ UnitTypesService = &MockUnitTypesService{}
@@ -138,4 +163,11 @@ func (s *MockUnitTypesService) List(opt *UnitTypeListOptions) ([]*UnitType, erro
 		return nil, nil
 	}
 	return s.List_(opt)
+}
+
+func (s *MockUnitTypesService) Update(id int64, unit_type *UnitType) (bool, error) {
+	if s.Update_ == nil {
+		return false, nil
+	}
+	return s.Update_(id, unit_type)
 }

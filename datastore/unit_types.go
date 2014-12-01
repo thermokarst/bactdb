@@ -46,3 +46,26 @@ func (s *unitTypesStore) List(opt *models.UnitTypeListOptions) ([]*models.UnitTy
 	}
 	return unit_types, nil
 }
+
+func (s *unitTypesStore) Update(id int64, unit_type *models.UnitType) (bool, error) {
+	_, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	if id != unit_type.Id {
+		return false, models.ErrUnitTypeNotFound
+	}
+
+	unit_type.UpdatedAt = time.Now()
+	changed, err := s.dbh.Update(unit_type)
+	if err != nil {
+		return false, err
+	}
+
+	if changed == 0 {
+		return false, ErrNoRowsUpdated
+	}
+
+	return true, nil
+}

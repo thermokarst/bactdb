@@ -57,3 +57,22 @@ func serveUnitTypeList(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, unit_types)
 }
+
+func serveUpdateUnitType(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+	var unit_type models.UnitType
+	err := json.NewDecoder(r.Body).Decode(&unit_type)
+	if err != nil {
+		return err
+	}
+
+	updated, err := store.UnitTypes.Update(id, &unit_type)
+	if err != nil {
+		return err
+	}
+	if updated {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, unit_type)
+}

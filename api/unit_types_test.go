@@ -94,3 +94,33 @@ func TestUnitType_List(t *testing.T) {
 		t.Errorf("got unit_types %+v but wanted unit_types %+v", unit_types, want)
 	}
 }
+
+func TestUnitType_Update(t *testing.T) {
+	setup()
+
+	want := newUnitType()
+
+	calledPut := false
+	store.UnitTypes.(*models.MockUnitTypesService).Update_ = func(id int64, unit_type *models.UnitType) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for unit_type %d but got %d", want.Id, id)
+		}
+		if !normalizeDeepEqual(want, unit_type) {
+			t.Errorf("wanted request for unit_type %d but got %d", want, unit_type)
+		}
+		calledPut = true
+		return true, nil
+	}
+
+	success, err := apiClient.UnitTypes.Update(want.Id, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPut {
+		t.Error("!calledPut")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

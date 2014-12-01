@@ -85,3 +85,23 @@ func TestUnitTypesStore_List_db(t *testing.T) {
 		t.Errorf("got unit_types %+v, want %+v", unit_types, want)
 	}
 }
+
+func TestUnitTypesStore_Update_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	unit_type := insertUnitType(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Tweak it
+	unit_type.Name = "Updated Unit Type"
+	updated, err := d.UnitTypes.Update(unit_type.Id, unit_type)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+}
