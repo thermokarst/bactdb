@@ -43,3 +43,39 @@ func TestUnitTypeService_Get(t *testing.T) {
 		t.Errorf("UnitTypes.Get return %+v, want %+v", unit_type, want)
 	}
 }
+
+func TestUnitTypeService_Create(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := newUnitType()
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.CreateUnitType, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "POST")
+		testBody(t, r, `{"id":1,"name":"Test Unit Type","symbol":"x","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+
+		w.WriteHeader(http.StatusCreated)
+		writeJSON(w, want)
+	})
+
+	unit_type := newUnitType()
+	created, err := client.UnitTypes.Create(unit_type)
+	if err != nil {
+		t.Errorf("UnitTypes.Create returned error: %v", err)
+	}
+
+	if !created {
+		t.Error("!created")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	if !reflect.DeepEqual(unit_type, want) {
+		t.Errorf("UnitTypes.Create returned %+v, want %+v", unit_type, want)
+	}
+}

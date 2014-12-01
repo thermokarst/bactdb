@@ -42,3 +42,23 @@ func TestUnitTypesStore_Get_db(t *testing.T) {
 		t.Errorf("got unit_type %+v, want %+v", unit_type, want)
 	}
 }
+
+func TestUnitTypesStore_Create_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	unit_type := newUnitType(t, tx)
+
+	d := NewDatastore(tx)
+
+	created, err := d.UnitTypes.Create(unit_type)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Error("!created")
+	}
+	if unit_type.Id == 0 {
+		t.Error("want nonzero unit_type.Id after submitting")
+	}
+}

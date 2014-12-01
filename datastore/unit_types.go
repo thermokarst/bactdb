@@ -1,6 +1,10 @@
 package datastore
 
-import "github.com/thermokarst/bactdb/models"
+import (
+	"time"
+
+	"github.com/thermokarst/bactdb/models"
+)
 
 func init() {
 	DB.AddTableWithName(models.UnitType{}, "unit_types").SetKeys(true, "Id")
@@ -19,4 +23,14 @@ func (s *unitTypesStore) Get(id int64) (*models.UnitType, error) {
 		return nil, models.ErrUnitTypeNotFound
 	}
 	return unit_type[0], nil
+}
+
+func (s *unitTypesStore) Create(unit_type *models.UnitType) (bool, error) {
+	currentTime := time.Now()
+	unit_type.CreatedAt = currentTime
+	unit_type.UpdatedAt = currentTime
+	if err := s.dbh.Insert(unit_type); err != nil {
+		return false, err
+	}
+	return true, nil
 }

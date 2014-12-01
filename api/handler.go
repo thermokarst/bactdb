@@ -60,6 +60,7 @@ func Handler() *mux.Router {
 	m.Get(router.DeleteTextMeasurementType).Handler(handler(serveDeleteTextMeasurementType))
 
 	m.Get(router.UnitType).Handler(handler(serveUnitType))
+	m.Get(router.CreateUnitType).Handler(handler(serveCreateUnitType))
 
 	return m
 }

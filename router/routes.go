@@ -41,5 +41,6 @@ const (
 	UpdateTextMeasurementType = "text_measurement_type:update"
 	DeleteTextMeasurementType = "text_measurement_type:delete"
 
-	UnitType = "unit_type:get"
+	UnitType       = "unit_type:get"
+	CreateUnitType = "unit_type:create"
 )
