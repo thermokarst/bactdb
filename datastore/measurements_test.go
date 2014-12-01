@@ -55,3 +55,23 @@ func TestMeasurementsStore_Get_db(t *testing.T) {
 		t.Errorf("got measurement %+v, want %+v", measurement, want)
 	}
 }
+
+func TestMeasurementsStore_Create_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	measurement := newMeasurement(t, tx)
+
+	d := NewDatastore(tx)
+
+	created, err := d.Measurements.Create(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Error("!created")
+	}
+	if measurement.Id == 0 {
+		t.Error("want nonzero measurement.Id after submitting")
+	}
+}

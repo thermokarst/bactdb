@@ -47,5 +47,6 @@ const (
 	UpdateUnitType = "unit_type:update"
 	DeleteUnitType = "unit_type:delete"
 
-	Measurement = "measurement:get"
+	Measurement       = "measurement:get"
+	CreateMeasurement = "measurements:create"
 )

@@ -1,10 +1,12 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/thermokarst/bactdb/models"
 )
 
 func serveMeasurement(w http.ResponseWriter, r *http.Request) error {
@@ -16,6 +18,24 @@ func serveMeasurement(w http.ResponseWriter, r *http.Request) error {
 	measurement, err := store.Measurements.Get(id)
 	if err != nil {
 		return err
+	}
+
+	return writeJSON(w, measurement)
+}
+
+func serveCreateMeasurement(w http.ResponseWriter, r *http.Request) error {
+	var measurement models.Measurement
+	err := json.NewDecoder(r.Body).Decode(&measurement)
+	if err != nil {
+		return err
+	}
+
+	created, err := store.Measurements.Create(&measurement)
+	if err != nil {
+		return err
+	}
+	if created {
+		w.WriteHeader(http.StatusCreated)
 	}
 
 	return writeJSON(w, measurement)

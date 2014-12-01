@@ -38,3 +38,30 @@ func TestMeasurement_Get(t *testing.T) {
 		t.Errorf("got %+v but wanted %+v", got, want)
 	}
 }
+
+func TestMeasurement_Create(t *testing.T) {
+	setup()
+
+	want := newMeasurement()
+
+	calledPost := false
+	store.Measurements.(*models.MockMeasurementsService).Create_ = func(measurement *models.Measurement) (bool, error) {
+		if !normalizeDeepEqual(want, measurement) {
+			t.Errorf("wanted request for measurement %d but got %d", want, measurement)
+		}
+		calledPost = true
+		return true, nil
+	}
+
+	success, err := apiClient.Measurements.Create(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPost {
+		t.Error("!calledPost")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -36,6 +37,9 @@ func NewMeasurement() *Measurement {
 type MeasurementsService interface {
 	// Get a measurement
 	Get(id int64) (*Measurement, error)
+
+	// Create a measurement
+	Create(measurement *Measurement) (bool, error)
 }
 
 var (
@@ -68,8 +72,28 @@ func (s *measurementsService) Get(id int64) (*Measurement, error) {
 	return measurement, nil
 }
 
+func (s *measurementsService) Create(measurement *Measurement) (bool, error) {
+	url, err := s.client.url(router.CreateMeasurement, nil, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("POST", url.String(), measurement)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &measurement)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusCreated, nil
+}
+
 type MockMeasurementsService struct {
-	Get_ func(id int64) (*Measurement, error)
+	Get_    func(id int64) (*Measurement, error)
+	Create_ func(measurement *Measurement) (bool, error)
 }
 
 var _ MeasurementsService = &MockMeasurementsService{}
@@ -79,4 +103,11 @@ func (s *MockMeasurementsService) Get(id int64) (*Measurement, error) {
 		return nil, nil
 	}
 	return s.Get_(id)
+}
+
+func (s *MockMeasurementsService) Create(measurement *Measurement) (bool, error) {
+	if s.Create_ == nil {
+		return false, nil
+	}
+	return s.Create_(measurement)
 }

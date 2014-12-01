@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"net/http"
 	"reflect"
 	"testing"
@@ -11,6 +12,9 @@ import (
 func newMeasurement() *Measurement {
 	measurement := NewMeasurement()
 	measurement.Id = 1
+	measurement.StrainId = 1
+	measurement.ObservationId = 1
+	measurement.UnitTypeId = sql.NullInt64{Int64: 1, Valid: true}
 	return measurement
 }
 
@@ -41,5 +45,41 @@ func TestMeasurementService_Get(t *testing.T) {
 
 	if !reflect.DeepEqual(measurement, want) {
 		t.Errorf("Measurements.Get return %+v, want %+v", measurement, want)
+	}
+}
+
+func TestMeasurementService_Create(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := newMeasurement()
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.CreateMeasurement, nil), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "POST")
+		testBody(t, r, `{"id":1,"strainId":1,"observationId":1,"textMeasurementTypeId":{"Int64":0,"Valid":false},"measurementValue":{"Float64":1.23,"Valid":true},"confidenceInterval":{"Float64":0,"Valid":false},"unitTypeId":{"Int64":1,"Valid":true},"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+
+		w.WriteHeader(http.StatusCreated)
+		writeJSON(w, want)
+	})
+
+	measurement := newMeasurement()
+	created, err := client.Measurements.Create(measurement)
+	if err != nil {
+		t.Errorf("Measurements.Create returned error: %v", err)
+	}
+
+	if !created {
+		t.Error("!created")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+
+	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	if !reflect.DeepEqual(measurement, want) {
+		t.Errorf("Measurements.Create returned %+v, want %+v", measurement, want)
 	}
 }
