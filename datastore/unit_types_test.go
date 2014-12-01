@@ -62,3 +62,26 @@ func TestUnitTypesStore_Create_db(t *testing.T) {
 		t.Error("want nonzero unit_type.Id after submitting")
 	}
 }
+
+func TestUnitTypesStore_List_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	want_unit_type := insertUnitType(t, tx)
+	want := []*models.UnitType{want_unit_type}
+
+	d := NewDatastore(tx)
+
+	unit_types, err := d.UnitTypes.List(&models.UnitTypeListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := range want {
+		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt, &want[i].DeletedAt)
+		normalizeTime(&unit_types[i].CreatedAt, &unit_types[i].UpdatedAt, &unit_types[i].DeletedAt)
+	}
+	if !reflect.DeepEqual(unit_types, want) {
+		t.Errorf("got unit_types %+v, want %+v", unit_types, want)
+	}
+}

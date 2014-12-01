@@ -40,3 +40,20 @@ func serveCreateUnitType(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, unit_type)
 }
+
+func serveUnitTypeList(w http.ResponseWriter, r *http.Request) error {
+	var opt models.UnitTypeListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	unit_types, err := store.UnitTypes.List(&opt)
+	if err != nil {
+		return err
+	}
+	if unit_types == nil {
+		unit_types = []*models.UnitType{}
+	}
+
+	return writeJSON(w, unit_types)
+}

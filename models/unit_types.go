@@ -31,6 +31,9 @@ type UnitTypesService interface {
 	// Get a unit type
 	Get(id int64) (*UnitType, error)
 
+	// List all unit types
+	List(opt *UnitTypeListOptions) ([]*UnitType, error)
+
 	// Create a unit type
 	Create(unit_type *UnitType) (bool, error)
 }
@@ -84,8 +87,33 @@ func (s *unitTypesService) Create(unit_type *UnitType) (bool, error) {
 	return resp.StatusCode == http.StatusCreated, nil
 }
 
+type UnitTypeListOptions struct {
+	ListOptions
+}
+
+func (s *unitTypesService) List(opt *UnitTypeListOptions) ([]*UnitType, error) {
+	url, err := s.client.url(router.UnitTypes, nil, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest("GET", url.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var unit_types []*UnitType
+	_, err = s.client.Do(req, &unit_types)
+	if err != nil {
+		return nil, err
+	}
+
+	return unit_types, nil
+}
+
 type MockUnitTypesService struct {
 	Get_    func(id int64) (*UnitType, error)
+	List_   func(opt *UnitTypeListOptions) ([]*UnitType, error)
 	Create_ func(unit_type *UnitType) (bool, error)
 }
 
@@ -103,4 +131,11 @@ func (s *MockUnitTypesService) Create(unit_type *UnitType) (bool, error) {
 		return false, nil
 	}
 	return s.Create_(unit_type)
+}
+
+func (s *MockUnitTypesService) List(opt *UnitTypeListOptions) ([]*UnitType, error) {
+	if s.List_ == nil {
+		return nil, nil
+	}
+	return s.List_(opt)
 }

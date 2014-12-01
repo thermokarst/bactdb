@@ -34,3 +34,15 @@ func (s *unitTypesStore) Create(unit_type *models.UnitType) (bool, error) {
 	}
 	return true, nil
 }
+
+func (s *unitTypesStore) List(opt *models.UnitTypeListOptions) ([]*models.UnitType, error) {
+	if opt == nil {
+		opt = &models.UnitTypeListOptions{}
+	}
+	var unit_types []*models.UnitType
+	err := s.dbh.Select(&unit_types, `SELECT * FROM unit_types LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	if err != nil {
+		return nil, err
+	}
+	return unit_types, nil
+}

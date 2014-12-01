@@ -65,3 +65,32 @@ func TestUnitType_Create(t *testing.T) {
 		t.Error("!success")
 	}
 }
+
+func TestUnitType_List(t *testing.T) {
+	setup()
+
+	want := []*models.UnitType{newUnitType()}
+	wantOpt := &models.UnitTypeListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}}
+
+	calledList := false
+	store.UnitTypes.(*models.MockUnitTypesService).List_ = func(opt *models.UnitTypeListOptions) ([]*models.UnitType, error) {
+		if !normalizeDeepEqual(wantOpt, opt) {
+			t.Errorf("wanted options %d but got %d", wantOpt, opt)
+		}
+		calledList = true
+		return want, nil
+	}
+
+	unit_types, err := apiClient.UnitTypes.List(wantOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledList {
+		t.Error("!calledList")
+	}
+
+	if !normalizeDeepEqual(&want, &unit_types) {
+		t.Errorf("got unit_types %+v but wanted unit_types %+v", unit_types, want)
+	}
+}

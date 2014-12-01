@@ -61,6 +61,7 @@ func Handler() *mux.Router {
 
 	m.Get(router.UnitType).Handler(handler(serveUnitType))
 	m.Get(router.CreateUnitType).Handler(handler(serveCreateUnitType))
+	m.Get(router.UnitTypes).Handler(handler(serveUnitTypeList))
 
 	return m
 }
