@@ -54,7 +54,7 @@ func (s *textMeasurementTypesStore) Update(id int64, text_measurement_type *mode
 	}
 
 	if id != text_measurement_type.Id {
-		return false, models.ErrObservationNotFound
+		return false, models.ErrTextMeasurementTypeNotFound
 	}
 
 	text_measurement_type.UpdatedAt = time.Now()
