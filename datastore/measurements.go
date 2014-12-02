@@ -69,3 +69,19 @@ func (s *measurementsStore) Update(id int64, measurement *models.Measurement) (b
 
 	return true, nil
 }
+
+func (s *measurementsStore) Delete(id int64) (bool, error) {
+	measurement, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	deleted, err := s.dbh.Delete(measurement)
+	if err != nil {
+		return false, err
+	}
+	if deleted == 0 {
+		return false, ErrNoRowsDeleted
+	}
+	return true, nil
+}

@@ -51,4 +51,5 @@ const (
 	CreateMeasurement = "measurements:create"
 	Measurements      = "measurements:list"
 	UpdateMeasurement = "measurements:update"
+	DeleteMeasurement = "measurements:delete"
 )

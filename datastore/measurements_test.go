@@ -118,3 +118,22 @@ func TestMeasurementsStore_Update_db(t *testing.T) {
 		t.Error("!updated")
 	}
 }
+
+func TestMeasurementsStore_Delete_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	measurement := insertMeasurement(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Delete it
+	deleted, err := d.Measurements.Delete(measurement.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !deleted {
+		t.Error("!delete")
+	}
+}

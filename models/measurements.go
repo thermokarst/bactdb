@@ -46,6 +46,9 @@ type MeasurementsService interface {
 
 	// Update an existing measurement
 	Update(id int64, MeasurementType *Measurement) (bool, error)
+
+	// Delete a measurement
+	Delete(id int64) (deleted bool, err error)
 }
 
 var (
@@ -142,11 +145,34 @@ func (s *measurementsService) Update(id int64, measurement *Measurement) (bool, 
 	return resp.StatusCode == http.StatusOK, nil
 }
 
+func (s *measurementsService) Delete(id int64) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.DeleteMeasurement, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("DELETE", url.String(), nil)
+	if err != nil {
+		return false, err
+	}
+
+	var measurement *Measurement
+	resp, err := s.client.Do(req, &measurement)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockMeasurementsService struct {
 	Get_    func(id int64) (*Measurement, error)
 	List_   func(opt *MeasurementListOptions) ([]*Measurement, error)
 	Create_ func(measurement *Measurement) (bool, error)
 	Update_ func(id int64, measurement *Measurement) (bool, error)
+	Delete_ func(id int64) (bool, error)
 }
 
 var _ MeasurementsService = &MockMeasurementsService{}
@@ -177,4 +203,11 @@ func (s *MockMeasurementsService) Update(id int64, measurement *Measurement) (bo
 		return false, nil
 	}
 	return s.Update_(id, measurement)
+}
+
+func (s *MockMeasurementsService) Delete(id int64) (bool, error) {
+	if s.Delete_ == nil {
+		return false, nil
+	}
+	return s.Delete_(id)
 }

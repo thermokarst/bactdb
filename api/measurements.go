@@ -76,3 +76,17 @@ func serveUpdateMeasurement(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, measurement)
 }
+
+func serveDeleteMeasurement(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+
+	deleted, err := store.Measurements.Delete(id)
+	if err != nil {
+		return err
+	}
+	if deleted {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, &models.Measurement{})
+}
