@@ -75,3 +75,26 @@ func TestMeasurementsStore_Create_db(t *testing.T) {
 		t.Error("want nonzero measurement.Id after submitting")
 	}
 }
+
+func TestMeasurementsStore_List_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	want_measurement := insertMeasurement(t, tx)
+	want := []*models.Measurement{want_measurement}
+
+	d := NewDatastore(tx)
+
+	measurements, err := d.Measurements.List(&models.MeasurementListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := range want {
+		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt, &want[i].DeletedAt)
+		normalizeTime(&measurements[i].CreatedAt, &measurements[i].UpdatedAt, &measurements[i].DeletedAt)
+	}
+	if !reflect.DeepEqual(measurements, want) {
+		t.Errorf("got measurements %+v, want %+v", measurements, want)
+	}
+}

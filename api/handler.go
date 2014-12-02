@@ -67,6 +67,7 @@ func Handler() *mux.Router {
 
 	m.Get(router.Measurement).Handler(handler(serveMeasurement))
 	m.Get(router.CreateMeasurement).Handler(handler(serveCreateMeasurement))
+	m.Get(router.Measurements).Handler(handler(serveMeasurementList))
 
 	return m
 }

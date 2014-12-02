@@ -34,3 +34,15 @@ func (s *measurementsStore) Create(measurement *models.Measurement) (bool, error
 	}
 	return true, nil
 }
+
+func (s *measurementsStore) List(opt *models.MeasurementListOptions) ([]*models.Measurement, error) {
+	if opt == nil {
+		opt = &models.MeasurementListOptions{}
+	}
+	var measurements []*models.Measurement
+	err := s.dbh.Select(&measurements, `SELECT * FROM measurements LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	if err != nil {
+		return nil, err
+	}
+	return measurements, nil
+}

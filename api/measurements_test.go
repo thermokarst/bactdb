@@ -65,3 +65,32 @@ func TestMeasurement_Create(t *testing.T) {
 		t.Error("!success")
 	}
 }
+
+func TestMeasurement_List(t *testing.T) {
+	setup()
+
+	want := []*models.Measurement{newMeasurement()}
+	wantOpt := &models.MeasurementListOptions{ListOptions: models.ListOptions{Page: 1, PerPage: 10}}
+
+	calledList := false
+	store.Measurements.(*models.MockMeasurementsService).List_ = func(opt *models.MeasurementListOptions) ([]*models.Measurement, error) {
+		if !normalizeDeepEqual(wantOpt, opt) {
+			t.Errorf("wanted options %d but got %d", wantOpt, opt)
+		}
+		calledList = true
+		return want, nil
+	}
+
+	measurements, err := apiClient.Measurements.List(wantOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledList {
+		t.Error("!calledList")
+	}
+
+	if !normalizeDeepEqual(&want, &measurements) {
+		t.Errorf("got measurements %+v but wanted measurements %+v", measurements, want)
+	}
+}

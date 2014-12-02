@@ -60,6 +60,7 @@ func API() *mux.Router {
 	m.Path("/unit_types/{Id:.+}").Methods("DELETE").Name(DeleteUnitType)
 
 	// Measurements
+	m.Path("/measurements/").Methods("GET").Name(Measurements)
 	m.Path("/measurements/").Methods("POST").Name(CreateMeasurement)
 	m.Path("/measurements/{Id:.+}").Methods("GET").Name(Measurement)
 
