@@ -46,3 +46,26 @@ func (s *measurementsStore) List(opt *models.MeasurementListOptions) ([]*models.
 	}
 	return measurements, nil
 }
+
+func (s *measurementsStore) Update(id int64, measurement *models.Measurement) (bool, error) {
+	_, err := s.Get(id)
+	if err != nil {
+		return false, err
+	}
+
+	if id != measurement.Id {
+		return false, models.ErrMeasurementNotFound
+	}
+
+	measurement.UpdatedAt = time.Now()
+	changed, err := s.dbh.Update(measurement)
+	if err != nil {
+		return false, err
+	}
+
+	if changed == 0 {
+		return false, ErrNoRowsUpdated
+	}
+
+	return true, nil
+}

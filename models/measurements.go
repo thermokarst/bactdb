@@ -43,6 +43,9 @@ type MeasurementsService interface {
 
 	// Create a measurement
 	Create(measurement *Measurement) (bool, error)
+
+	// Update an existing measurement
+	Update(id int64, MeasurementType *Measurement) (bool, error)
 }
 
 var (
@@ -118,10 +121,32 @@ func (s *measurementsService) List(opt *MeasurementListOptions) ([]*Measurement,
 	return measurements, nil
 }
 
+func (s *measurementsService) Update(id int64, measurement *Measurement) (bool, error) {
+	strId := strconv.FormatInt(id, 10)
+
+	url, err := s.client.url(router.UpdateMeasurement, map[string]string{"Id": strId}, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := s.client.NewRequest("PUT", url.String(), measurement)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := s.client.Do(req, &measurement)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type MockMeasurementsService struct {
 	Get_    func(id int64) (*Measurement, error)
 	List_   func(opt *MeasurementListOptions) ([]*Measurement, error)
 	Create_ func(measurement *Measurement) (bool, error)
+	Update_ func(id int64, measurement *Measurement) (bool, error)
 }
 
 var _ MeasurementsService = &MockMeasurementsService{}
@@ -145,4 +170,11 @@ func (s *MockMeasurementsService) List(opt *MeasurementListOptions) ([]*Measurem
 		return nil, nil
 	}
 	return s.List_(opt)
+}
+
+func (s *MockMeasurementsService) Update(id int64, measurement *Measurement) (bool, error) {
+	if s.Update_ == nil {
+		return false, nil
+	}
+	return s.Update_(id, measurement)
 }

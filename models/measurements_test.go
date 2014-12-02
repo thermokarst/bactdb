@@ -116,3 +116,34 @@ func TestMeasurementService_List(t *testing.T) {
 		t.Errorf("Measurements.List return %+v, want %+v", measurements, want)
 	}
 }
+
+func TestMeasurementService_Update(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := newMeasurement()
+
+	var called bool
+	mux.HandleFunc(urlPath(t, router.UpdateMeasurement, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		testMethod(t, r, "PUT")
+		testBody(t, r, `{"id":1,"strainId":1,"observationId":1,"textMeasurementTypeId":{"Int64":0,"Valid":false},"measurementValue":{"Float64":4.56,"Valid":true},"confidenceInterval":{"Float64":0,"Valid":false},"unitTypeId":{"Int64":1,"Valid":true},"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+		w.WriteHeader(http.StatusOK)
+		writeJSON(w, want)
+	})
+
+	measurement := newMeasurement()
+	measurement.MeasurementValue = sql.NullFloat64{Float64: 4.56, Valid: true}
+	updated, err := client.Measurements.Update(measurement.Id, measurement)
+	if err != nil {
+		t.Errorf("Measurements.Update returned error: %v", err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+
+	if !called {
+		t.Fatal("!called")
+	}
+}

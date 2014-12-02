@@ -50,4 +50,5 @@ const (
 	Measurement       = "measurements:get"
 	CreateMeasurement = "measurements:create"
 	Measurements      = "measurements:list"
+	UpdateMeasurement = "measurements:update"
 )

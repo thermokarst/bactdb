@@ -94,3 +94,33 @@ func TestMeasurement_List(t *testing.T) {
 		t.Errorf("got measurements %+v but wanted measurements %+v", measurements, want)
 	}
 }
+
+func TestMeasurement_Update(t *testing.T) {
+	setup()
+
+	want := newMeasurement()
+
+	calledPut := false
+	store.Measurements.(*models.MockMeasurementsService).Update_ = func(id int64, measurement *models.Measurement) (bool, error) {
+		if id != want.Id {
+			t.Errorf("wanted request for measurement %d but got %d", want.Id, id)
+		}
+		if !normalizeDeepEqual(want, measurement) {
+			t.Errorf("wanted request for measurement %d but got %d", want, measurement)
+		}
+		calledPut = true
+		return true, nil
+	}
+
+	success, err := apiClient.Measurements.Update(want.Id, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledPut {
+		t.Error("!calledPut")
+	}
+	if !success {
+		t.Error("!success")
+	}
+}

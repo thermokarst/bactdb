@@ -98,3 +98,23 @@ func TestMeasurementsStore_List_db(t *testing.T) {
 		t.Errorf("got measurements %+v, want %+v", measurements, want)
 	}
 }
+
+func TestMeasurementsStore_Update_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	measurement := insertMeasurement(t, tx)
+
+	d := NewDatastore(tx)
+
+	// Tweak it
+	measurement.MeasurementValue = sql.NullFloat64{Float64: 4.56, Valid: true}
+	updated, err := d.Measurements.Update(measurement.Id, measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !updated {
+		t.Error("!updated")
+	}
+}

@@ -57,3 +57,22 @@ func serveMeasurementList(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, measurements)
 }
+
+func serveUpdateMeasurement(w http.ResponseWriter, r *http.Request) error {
+	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+	var measurement models.Measurement
+	err := json.NewDecoder(r.Body).Decode(&measurement)
+	if err != nil {
+		return err
+	}
+
+	updated, err := store.Measurements.Update(id, &measurement)
+	if err != nil {
+		return err
+	}
+	if updated {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return writeJSON(w, measurement)
+}
