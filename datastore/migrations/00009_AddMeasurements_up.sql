@@ -6,13 +6,13 @@ CREATE TABLE measurements (
     strain_id BIGINT,
     observation_id BIGINT,
     text_measurement_type_id BIGINT NULL,
-    measurement_value NUMERIC(6, 4) NULL,
-    confidence_interval NUMERIC(6, 4) NULL,
+    measurement_value NUMERIC(8, 3) NULL,
+    confidence_interval NUMERIC(8, 3) NULL,
     unit_type_id BIGINT NULL,
+    notes CHARACTER VARYING(255) NULL,
 
     created_at TIMESTAMP WITH TIME ZONE,
     updated_at TIMESTAMP WITH TIME ZONE,
-    deleted_at TIMESTAMP WITH TIME ZONE,
 
     CONSTRAINT strainsobsmeasurements_pkey PRIMARY KEY (id),
     FOREIGN KEY (strain_id) REFERENCES strains(id),

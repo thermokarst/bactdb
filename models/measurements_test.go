@@ -41,7 +41,7 @@ func TestMeasurementService_Get(t *testing.T) {
 		t.Fatal("!called")
 	}
 
-	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	normalizeTime(&want.CreatedAt, &want.UpdatedAt)
 
 	if !reflect.DeepEqual(measurement, want) {
 		t.Errorf("Measurements.Get return %+v, want %+v", measurement, want)
@@ -58,7 +58,7 @@ func TestMeasurementService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateMeasurement, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"strainId":1,"observationId":1,"textMeasurementTypeId":{"Int64":0,"Valid":false},"measurementValue":{"Float64":1.23,"Valid":true},"confidenceInterval":{"Float64":0,"Valid":false},"unitTypeId":{"Int64":1,"Valid":true},"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+		testBody(t, r, `{"id":1,"strainId":1,"observationId":1,"textMeasurementTypeId":{"Int64":0,"Valid":false},"measurementValue":{"Float64":1.23,"Valid":true},"confidenceInterval":{"Float64":0,"Valid":false},"unitTypeId":{"Int64":1,"Valid":true},"notes":{"String":"","Valid":false},"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z"}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -78,7 +78,7 @@ func TestMeasurementService_Create(t *testing.T) {
 		t.Fatal("!called")
 	}
 
-	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	normalizeTime(&want.CreatedAt, &want.UpdatedAt)
 	if !reflect.DeepEqual(measurement, want) {
 		t.Errorf("Measurements.Create returned %+v, want %+v", measurement, want)
 	}
@@ -109,7 +109,7 @@ func TestMeasurementService_List(t *testing.T) {
 	}
 
 	for _, u := range want {
-		normalizeTime(&u.CreatedAt, &u.UpdatedAt, &u.DeletedAt)
+		normalizeTime(&u.CreatedAt, &u.UpdatedAt)
 	}
 
 	if !reflect.DeepEqual(measurements, want) {
@@ -127,7 +127,7 @@ func TestMeasurementService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateMeasurement, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"strainId":1,"observationId":1,"textMeasurementTypeId":{"Int64":0,"Valid":false},"measurementValue":{"Float64":4.56,"Valid":true},"confidenceInterval":{"Float64":0,"Valid":false},"unitTypeId":{"Int64":1,"Valid":true},"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+		testBody(t, r, `{"id":1,"strainId":1,"observationId":1,"textMeasurementTypeId":{"Int64":0,"Valid":false},"measurementValue":{"Float64":4.56,"Valid":true},"confidenceInterval":{"Float64":0,"Valid":false},"unitTypeId":{"Int64":1,"Valid":true},"notes":{"String":"","Valid":false},"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z"}`+"\n")
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)
 	})

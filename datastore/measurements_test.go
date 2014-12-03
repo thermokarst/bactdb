@@ -48,8 +48,8 @@ func TestMeasurementsStore_Get_db(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
-	normalizeTime(&measurement.CreatedAt, &measurement.UpdatedAt, &measurement.DeletedAt)
+	normalizeTime(&want.CreatedAt, &want.UpdatedAt)
+	normalizeTime(&measurement.CreatedAt, &measurement.UpdatedAt)
 
 	if !reflect.DeepEqual(measurement, want) {
 		t.Errorf("got measurement %+v, want %+v", measurement, want)
@@ -91,8 +91,8 @@ func TestMeasurementsStore_List_db(t *testing.T) {
 	}
 
 	for i := range want {
-		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt, &want[i].DeletedAt)
-		normalizeTime(&measurements[i].CreatedAt, &measurements[i].UpdatedAt, &measurements[i].DeletedAt)
+		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt)
+		normalizeTime(&measurements[i].CreatedAt, &measurements[i].UpdatedAt)
 	}
 	if !reflect.DeepEqual(measurements, want) {
 		t.Errorf("got measurements %+v, want %+v", measurements, want)

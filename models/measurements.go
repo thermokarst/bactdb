@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/thermokarst/bactdb/router"
 )
 
@@ -23,9 +22,9 @@ type Measurement struct {
 	MeasurementValue      sql.NullFloat64 `db:"measurement_value" json:"measurementValue"`
 	ConfidenceInterval    sql.NullFloat64 `db:"confidence_interval" json:"confidenceInterval"`
 	UnitTypeId            sql.NullInt64   `db:"unit_type_id" json:"unitTypeId"`
+	Notes                 sql.NullString  `db:"notes" json:"notes"`
 	CreatedAt             time.Time       `db:"created_at" json:"createdAt"`
 	UpdatedAt             time.Time       `db:"updated_at" json:"updatedAt"`
-	DeletedAt             pq.NullTime     `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewMeasurement() *Measurement {
