@@ -9,6 +9,7 @@ CREATE TABLE strains (
     etymology CHARACTER VARYING(500),
     accession_banks CHARACTER VARYING(100),
     genbank_embl_ddb CHARACTER VARYING(100),
+    isolated_from CHARACTER VARYING(100),
 
     created_at TIMESTAMP WITH TIME ZONE,
     updated_at TIMESTAMP WITH TIME ZONE,

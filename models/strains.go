@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
@@ -12,16 +13,17 @@ import (
 
 // A Strain is a subclass of species
 type Strain struct {
-	Id             int64       `json:"id,omitempty"`
-	SpeciesId      int64       `db:"species_id" json:"speciesId"`
-	StrainName     string      `db:"strain_name" json:"strainName"`
-	StrainType     string      `db:"strain_type" json:"strainType"`
-	Etymology      string      `db:"etymology" json:"etymology"`
-	AccessionBanks string      `db:"accession_banks" json:"accessionBanks"`
-	GenbankEmblDdb string      `db:"genbank_embl_ddb" json:"genbankEmblDdb"`
-	CreatedAt      time.Time   `db:"created_at" json:"createdAt"`
-	UpdatedAt      time.Time   `db:"updated_at" json:"updatedAt"`
-	DeletedAt      pq.NullTime `db:"deleted_at" json:"deletedAt"`
+	Id             int64          `json:"id,omitempty"`
+	SpeciesId      int64          `db:"species_id" json:"speciesId"`
+	StrainName     string         `db:"strain_name" json:"strainName"`
+	StrainType     string         `db:"strain_type" json:"strainType"`
+	Etymology      string         `db:"etymology" json:"etymology"`
+	AccessionBanks string         `db:"accession_banks" json:"accessionBanks"`
+	GenbankEmblDdb string         `db:"genbank_embl_ddb" json:"genbankEmblDdb"`
+	IsolatedFrom   sql.NullString `db:"isolated_from" json:"isolatedFrom"`
+	CreatedAt      time.Time      `db:"created_at" json:"createdAt"`
+	UpdatedAt      time.Time      `db:"updated_at" json:"updatedAt"`
+	DeletedAt      pq.NullTime    `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewStrain() *Strain {
