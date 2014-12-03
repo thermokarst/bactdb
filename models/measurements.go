@@ -19,7 +19,8 @@ type Measurement struct {
 	StrainId              int64           `db:"strain_id" json:"strainId"`
 	ObservationId         int64           `db:"observation_id" json:"observationId"`
 	TextMeasurementTypeId sql.NullInt64   `db:"text_measurement_type_id" json:"textMeasurementTypeId"`
-	MeasurementValue      sql.NullFloat64 `db:"measurement_value" json:"measurementValue"`
+	TxtValue              sql.NullString  `db:"txt_value" json:"txtValue"`
+	NumValue              sql.NullFloat64 `db:"num_value" json:"numValue"`
 	ConfidenceInterval    sql.NullFloat64 `db:"confidence_interval" json:"confidenceInterval"`
 	UnitTypeId            sql.NullInt64   `db:"unit_type_id" json:"unitTypeId"`
 	Notes                 sql.NullString  `db:"notes" json:"notes"`
@@ -29,7 +30,7 @@ type Measurement struct {
 
 func NewMeasurement() *Measurement {
 	return &Measurement{
-		MeasurementValue: sql.NullFloat64{Float64: 1.23, Valid: true},
+		NumValue: sql.NullFloat64{Float64: 1.23, Valid: true},
 	}
 }
 

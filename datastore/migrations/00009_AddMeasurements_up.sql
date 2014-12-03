@@ -6,7 +6,8 @@ CREATE TABLE measurements (
     strain_id BIGINT,
     observation_id BIGINT,
     text_measurement_type_id BIGINT NULL,
-    measurement_value NUMERIC(8, 3) NULL,
+    txt_value CHARACTER VARYING(255) NULL,
+    num_value NUMERIC(8, 3) NULL,
     confidence_interval NUMERIC(8, 3) NULL,
     unit_type_id BIGINT NULL,
     notes CHARACTER VARYING(255) NULL,
@@ -21,12 +22,19 @@ CREATE TABLE measurements (
     FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
     CONSTRAINT exclusive_data_type CHECK (
         (text_measurement_type_id IS NOT NULL
-            AND measurement_value IS NULL
+            AND txt_value IS NULL
+            AND num_value IS NULL
             AND confidence_interval IS NULL
             AND unit_type_id IS NULL)
         OR
         (text_measurement_type_id IS NULL
-            AND measurement_value IS NOT NULL))
-
+            AND txt_value IS NULL
+            AND num_value IS NOT NULL)
+        OR
+        (text_measurement_type_id IS NULL
+            AND txt_value IS NOT NULL
+            AND num_value IS NULL
+            AND confidence_interval IS NULL
+            AND unit_type_id IS NULL))
 );
 
