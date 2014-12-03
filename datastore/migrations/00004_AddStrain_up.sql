@@ -6,16 +6,18 @@ CREATE TABLE strains (
     species_id BIGINT NOT NULL,
     strain_name CHARACTER VARYING(100) NOT NULL,
     strain_type CHARACTER VARYING(100) NOT NULL,
-    etymology CHARACTER VARYING(500),
-    accession_banks CHARACTER VARYING(100),
-    genbank_embl_ddb CHARACTER VARYING(100),
-    isolated_from CHARACTER VARYING(100),
+    etymology CHARACTER VARYING(500) NULL,
+    accession_banks CHARACTER VARYING(100) NULL,
+    genbank_embl_ddb CHARACTER VARYING(100) NULL,
+    isolated_from CHARACTER VARYING(100) NULL,
 
-    created_at TIMESTAMP WITH TIME ZONE,
-    updated_at TIMESTAMP WITH TIME ZONE,
-    deleted_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    deleted_at TIMESTAMP WITH TIME ZONE NULL,
 
     CONSTRAINT strain_pkey PRIMARY KEY (id),
     FOREIGN KEY (species_id) REFERENCES species(id)
 );
+
+CREATE INDEX species_id_idx ON strains (species_id);
 
