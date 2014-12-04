@@ -11,6 +11,7 @@ CREATE TABLE measurements (
     confidence_interval NUMERIC(8, 3) NULL,
     unit_type_id BIGINT NULL,
     notes CHARACTER VARYING(255) NULL,
+    test_method_id BIGINT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -20,6 +21,7 @@ CREATE TABLE measurements (
     FOREIGN KEY (observation_id) REFERENCES observations(id),
     FOREIGN KEY (text_measurement_type_id) REFERENCES text_measurement_types(id),
     FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
+    FOREIGN KEY (test_method_id) REFERENCES test_methods(id),
     CONSTRAINT exclusive_data_type CHECK (
         (text_measurement_type_id IS NOT NULL
             AND txt_value IS NULL
@@ -45,4 +47,6 @@ CREATE INDEX observation_id_idx ON measurements (observation_id);
 CREATE INDEX text_measurement_type_id_idx ON measurements (text_measurement_type_id);
 
 CREATE INDEX unit_type_id_idx ON measurements (unit_type_id);
+
+CREATE INDEX test_method_id_idx ON measurements (test_method_id);
 
