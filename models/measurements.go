@@ -24,6 +24,7 @@ type Measurement struct {
 	ConfidenceInterval    sql.NullFloat64 `db:"confidence_interval" json:"confidenceInterval"`
 	UnitTypeId            sql.NullInt64   `db:"unit_type_id" json:"unitTypeId"`
 	Notes                 sql.NullString  `db:"notes" json:"notes"`
+	TestMethodId          sql.NullInt64   `db:"test_method_id" json:"testMethodId"`
 	CreatedAt             time.Time       `db:"created_at" json:"createdAt"`
 	UpdatedAt             time.Time       `db:"updated_at" json:"updatedAt"`
 }
