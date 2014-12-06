@@ -30,8 +30,8 @@ func newMeasurement(t *testing.T, tx *modl.Transaction) *models.Measurement {
 	return &models.Measurement{
 		StrainId:      strain.Id,
 		ObservationId: observation.Id,
-		NumValue:      sql.NullFloat64{Float64: 1.23, Valid: true},
-		UnitTypeId:    sql.NullInt64{Int64: unit_type.Id, Valid: true},
+		NumValue:      models.NullFloat64{sql.NullFloat64{Float64: 1.23, Valid: true}},
+		UnitTypeId:    models.NullInt64{sql.NullInt64{Int64: unit_type.Id, Valid: true}},
 	}
 }
 
@@ -108,7 +108,7 @@ func TestMeasurementsStore_Update_db(t *testing.T) {
 	d := NewDatastore(tx)
 
 	// Tweak it
-	measurement.NumValue = sql.NullFloat64{Float64: 4.56, Valid: true}
+	measurement.NumValue = models.NullFloat64{sql.NullFloat64{Float64: 4.56, Valid: true}}
 	updated, err := d.Measurements.Update(measurement.Id, measurement)
 	if err != nil {
 		t.Fatal(err)

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/thermokarst/bactdb/models"
@@ -8,6 +9,11 @@ import (
 
 func newMeasurement() *models.Measurement {
 	measurement := models.NewMeasurement()
+	measurement.Id = 1
+	measurement.StrainId = 2
+	measurement.ObservationId = 3
+	measurement.TextMeasurementTypeId = models.NullInt64{sql.NullInt64{Int64: 4, Valid: false}}
+	measurement.UnitTypeId = models.NullInt64{sql.NullInt64{Int64: 5, Valid: true}}
 	return measurement
 }
 

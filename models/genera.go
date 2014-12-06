@@ -6,17 +6,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/thermokarst/bactdb/router"
 )
 
 // A Genus is a high-level classifier in bactdb.
 type Genus struct {
-	Id        int64       `json:"id,omitempty"`
-	GenusName string      `db:"genus_name" json:"genusName"`
-	CreatedAt time.Time   `db:"created_at" json:"createdAt"`
-	UpdatedAt time.Time   `db:"updated_at" json:"updatedAt"`
-	DeletedAt pq.NullTime `db:"deleted_at" json:"deletedAt"`
+	Id        int64     `json:"id,omitempty"`
+	GenusName string    `db:"genus_name" json:"genusName"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewGenus() *Genus {

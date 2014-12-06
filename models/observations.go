@@ -6,18 +6,17 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/thermokarst/bactdb/router"
 )
 
 // An Observation is a lookup type
 type Observation struct {
-	Id                int64       `json:"id,omitempty"`
-	ObservationName   string      `db:"observation_name" json:"observationName"`
-	ObservationTypeId int64       `db:"observation_type_id" json:"observationTypeId"`
-	CreatedAt         time.Time   `db:"created_at" json:"createdAt"`
-	UpdatedAt         time.Time   `db:"updated_at" json:"updatedAt"`
-	DeletedAt         pq.NullTime `db:"deleted_at" json:"deletedAt"`
+	Id                int64     `json:"id,omitempty"`
+	ObservationName   string    `db:"observation_name" json:"observationName"`
+	ObservationTypeId int64     `db:"observation_type_id" json:"observationTypeId"`
+	CreatedAt         time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt         time.Time `db:"updated_at" json:"updatedAt"`
+	DeletedAt         NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewObservation() *Observation {

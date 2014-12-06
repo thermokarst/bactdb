@@ -54,7 +54,7 @@ func TestUnitTypeService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateUnitType, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"name":"Test Unit Type","symbol":"x","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+		testBody(t, r, `{"id":1,"name":"Test Unit Type","symbol":"x","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -123,7 +123,7 @@ func TestUnitTypeService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateUnitType, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"name":"Test Unit Type Updated","symbol":"x","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":{"Time":"0001-01-01T00:00:00Z","Valid":false}}`+"\n")
+		testBody(t, r, `{"id":1,"name":"Test Unit Type Updated","symbol":"x","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)
 	})

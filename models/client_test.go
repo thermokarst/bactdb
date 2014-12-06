@@ -99,9 +99,9 @@ func normalizeTime(t ...interface{}) {
 		case *time.Time:
 			x, _ := v.(*time.Time)
 			*x = x.In(time.UTC)
-		case *pq.NullTime:
-			x, _ := v.(*pq.NullTime)
-			*x = pq.NullTime{Time: x.Time.In(time.UTC), Valid: x.Valid}
+		case *NullTime:
+			x, _ := v.(*NullTime)
+			*x = NullTime{pq.NullTime{Time: x.Time.In(time.UTC), Valid: x.Valid}}
 		}
 	}
 }

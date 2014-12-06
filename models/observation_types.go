@@ -6,17 +6,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/thermokarst/bactdb/router"
 )
 
 // An Observation Type is a lookup type
 type ObservationType struct {
-	Id                  int64       `json:"id,omitempty"`
-	ObservationTypeName string      `db:"observation_type_name" json:"observationTypeName"`
-	CreatedAt           time.Time   `db:"created_at" json:"createdAt"`
-	UpdatedAt           time.Time   `db:"updated_at" json:"updatedAt"`
-	DeletedAt           pq.NullTime `db:"deleted_at" json:"deletedAt"`
+	Id                  int64     `json:"id,omitempty"`
+	ObservationTypeName string    `db:"observation_type_name" json:"observationTypeName"`
+	CreatedAt           time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt           time.Time `db:"updated_at" json:"updatedAt"`
+	DeletedAt           NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewObservationType() *ObservationType {

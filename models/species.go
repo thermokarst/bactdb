@@ -6,18 +6,17 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/thermokarst/bactdb/router"
 )
 
 // A Species is a high-level classifier in bactdb.
 type Species struct {
-	Id          int64       `json:"id,omitempty"`
-	GenusId     int64       `db:"genus_id" json:"genusId"`
-	SpeciesName string      `db:"species_name" json:"speciesName"`
-	CreatedAt   time.Time   `db:"created_at" json:"createdAt"`
-	UpdatedAt   time.Time   `db:"updated_at" json:"updatedAt"`
-	DeletedAt   pq.NullTime `db:"deleted_at" json:"deletedAt"`
+	Id          int64     `json:"id,omitempty"`
+	GenusId     int64     `db:"genus_id" json:"genusId"`
+	SpeciesName string    `db:"species_name" json:"speciesName"`
+	CreatedAt   time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updatedAt"`
+	DeletedAt   NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewSpecies() *Species {

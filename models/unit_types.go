@@ -6,18 +6,17 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/thermokarst/bactdb/router"
 )
 
 // A UnitType is a lookup type
 type UnitType struct {
-	Id        int64       `json:"id,omitempty"`
-	Name      string      `db:"name" json:"name"`
-	Symbol    string      `db:"symbol" json:"symbol"`
-	CreatedAt time.Time   `db:"created_at" json:"createdAt"`
-	UpdatedAt time.Time   `db:"updated_at" json:"updatedAt"`
-	DeletedAt pq.NullTime `db:"deleted_at" json:"deletedAt"`
+	Id        int64     `json:"id,omitempty"`
+	Name      string    `db:"name" json:"name"`
+	Symbol    string    `db:"symbol" json:"symbol"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewUnitType() *UnitType {

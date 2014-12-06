@@ -6,17 +6,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/thermokarst/bactdb/router"
 )
 
 // A TextMeasurementType is a lookup type
 type TextMeasurementType struct {
-	Id                  int64       `json:"id,omitempty"`
-	TextMeasurementName string      `db:"text_measurement_name" json:"textMeasurementName"`
-	CreatedAt           time.Time   `db:"created_at" json:"createdAt"`
-	UpdatedAt           time.Time   `db:"updated_at" json:"updatedAt"`
-	DeletedAt           pq.NullTime `db:"deleted_at" json:"deletedAt"`
+	Id                  int64     `json:"id,omitempty"`
+	TextMeasurementName string    `db:"text_measurement_name" json:"textMeasurementName"`
+	CreatedAt           time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt           time.Time `db:"updated_at" json:"updatedAt"`
+	DeletedAt           NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewTextMeasurementType() *TextMeasurementType {

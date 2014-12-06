@@ -15,23 +15,23 @@ import (
 // has a constraint that will allow one or the other for a particular
 // combination of strain & observation, but not both.
 type Measurement struct {
-	Id                    int64           `json:"id,omitempty"`
-	StrainId              int64           `db:"strain_id" json:"strainId"`
-	ObservationId         int64           `db:"observation_id" json:"observationId"`
-	TextMeasurementTypeId sql.NullInt64   `db:"text_measurement_type_id" json:"textMeasurementTypeId"`
-	TxtValue              sql.NullString  `db:"txt_value" json:"txtValue"`
-	NumValue              sql.NullFloat64 `db:"num_value" json:"numValue"`
-	ConfidenceInterval    sql.NullFloat64 `db:"confidence_interval" json:"confidenceInterval"`
-	UnitTypeId            sql.NullInt64   `db:"unit_type_id" json:"unitTypeId"`
-	Notes                 sql.NullString  `db:"notes" json:"notes"`
-	TestMethodId          sql.NullInt64   `db:"test_method_id" json:"testMethodId"`
-	CreatedAt             time.Time       `db:"created_at" json:"createdAt"`
-	UpdatedAt             time.Time       `db:"updated_at" json:"updatedAt"`
+	Id                    int64       `json:"id,omitempty"`
+	StrainId              int64       `db:"strain_id" json:"strainId"`
+	ObservationId         int64       `db:"observation_id" json:"observationId"`
+	TextMeasurementTypeId NullInt64   `db:"text_measurement_type_id" json:"textMeasurementTypeId"`
+	TxtValue              NullString  `db:"txt_value" json:"txtValue"`
+	NumValue              NullFloat64 `db:"num_value" json:"numValue"`
+	ConfidenceInterval    NullFloat64 `db:"confidence_interval" json:"confidenceInterval"`
+	UnitTypeId            NullInt64   `db:"unit_type_id" json:"unitTypeId"`
+	Notes                 NullString  `db:"notes" json:"notes"`
+	TestMethodId          NullInt64   `db:"test_method_id" json:"testMethodId"`
+	CreatedAt             time.Time   `db:"created_at" json:"createdAt"`
+	UpdatedAt             time.Time   `db:"updated_at" json:"updatedAt"`
 }
 
 func NewMeasurement() *Measurement {
 	return &Measurement{
-		NumValue: sql.NullFloat64{Float64: 1.23, Valid: true},
+		NumValue: NullFloat64{sql.NullFloat64{Float64: 1.23, Valid: true}},
 	}
 }
 
