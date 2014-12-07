@@ -1,8 +1,6 @@
 package api
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -71,6 +69,9 @@ func Handler() *mux.Router {
 	m.Get(router.UpdateMeasurement).Handler(handler(serveUpdateMeasurement))
 	m.Get(router.DeleteMeasurement).Handler(handler(serveDeleteMeasurement))
 
+	m.Get(router.GetToken).Handler(handler(serveToken))
+	m.Get(router.Restricted).Handler(authHandler(restrictedHandler))
+
 	return m
 }
 
@@ -80,7 +81,6 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := h(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error: %s", err)
-		log.Println(err)
+		writeJSON(w, Error{err})
 	}
 }

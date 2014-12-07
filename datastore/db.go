@@ -43,10 +43,6 @@ func Create(path string) {
 	if err != nil {
 		log.Fatal("Error initializing migrations: ", err)
 	}
-
-	pwd, err := os.Getwd()
-	log.Print("current path: ", pwd)
-
 	err = migrator.Migrate()
 	if err != nil {
 		log.Fatal("Error applying migrations: ", err)

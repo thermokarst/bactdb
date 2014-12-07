@@ -52,4 +52,7 @@ const (
 	Measurements      = "measurements:list"
 	UpdateMeasurement = "measurements:update"
 	DeleteMeasurement = "measurements:delete"
+
+	GetToken   = "token:get"
+	Restricted = "restricted:get"
 )

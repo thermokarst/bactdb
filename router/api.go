@@ -66,5 +66,9 @@ func API() *mux.Router {
 	m.Path("/measurements/{Id:.+}").Methods("PUT").Name(UpdateMeasurement)
 	m.Path("/measurements/{Id:.+}").Methods("DELETE").Name(DeleteMeasurement)
 
+	// Authentication
+	m.Path("/token/").Methods("GET").Name(GetToken)
+	m.Path("/restricted/").Methods("GET").Name(Restricted)
+
 	return m
 }
