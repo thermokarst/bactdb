@@ -19,7 +19,7 @@ func insertCharacteristicType(t *testing.T, tx *modl.Transaction) *models.Charac
 }
 
 func newCharacteristicType(t *testing.T, tx *modl.Transaction) *models.CharacteristicType {
-	return &models.CharacteristicType{CharacteristicTypeName: "Test Obs"}
+	return &models.CharacteristicType{CharacteristicTypeName: "Test Char"}
 }
 
 func TestCharacteristicTypesStore_Get_db(t *testing.T) {
@@ -95,7 +95,7 @@ func TestCharacteristicTypesStore_Update_db(t *testing.T) {
 	d := NewDatastore(tx)
 
 	// Tweak it
-	characteristic_type.CharacteristicTypeName = "Updated Obs Type"
+	characteristic_type.CharacteristicTypeName = "Updated Char Type"
 	updated, err := d.CharacteristicTypes.Update(characteristic_type.Id, characteristic_type)
 	if err != nil {
 		t.Fatal(err)

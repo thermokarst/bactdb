@@ -1,5 +1,5 @@
 -- bactdb
 -- Matthew R Dillon
 
-DROP TABLE observations;
+DROP TABLE characteristics;
 

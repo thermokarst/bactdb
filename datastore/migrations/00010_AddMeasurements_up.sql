@@ -4,7 +4,7 @@
 CREATE TABLE measurements (
     id BIGSERIAL NOT NULL,
     strain_id BIGINT NOT NULL,
-    observation_id BIGINT NOT NULL,
+    characteristic_id BIGINT NOT NULL,
     text_measurement_type_id BIGINT NULL,
     txt_value CHARACTER VARYING(255) NULL,
     num_value NUMERIC(8, 3) NULL,
@@ -16,9 +16,9 @@ CREATE TABLE measurements (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
-    CONSTRAINT strainsobsmeasurements_pkey PRIMARY KEY (id),
+    CONSTRAINT strainscharmeasurements_pkey PRIMARY KEY (id),
     FOREIGN KEY (strain_id) REFERENCES strains(id),
-    FOREIGN KEY (observation_id) REFERENCES observations(id),
+    FOREIGN KEY (characteristic_id) REFERENCES characteristics(id),
     FOREIGN KEY (text_measurement_type_id) REFERENCES text_measurement_types(id),
     FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
     FOREIGN KEY (test_method_id) REFERENCES test_methods(id),
@@ -42,7 +42,7 @@ CREATE TABLE measurements (
 
 CREATE INDEX strain_id_idx ON measurements (strain_id);
 
-CREATE INDEX observation_id_idx ON measurements (observation_id);
+CREATE INDEX characteristic_id_idx ON measurements (characteristic_id);
 
 CREATE INDEX text_measurement_type_id_idx ON measurements (text_measurement_type_id);
 

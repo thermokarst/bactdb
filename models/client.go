@@ -20,8 +20,8 @@ type Client struct {
 	Genera               GeneraService
 	Species              SpeciesService
 	Strains              StrainsService
-	CharacteristicTypes     CharacteristicTypesService
-	Observations         ObservationsService
+	CharacteristicTypes  CharacteristicTypesService
+	Characteristics      CharacteristicsService
 	TextMeasurementTypes TextMeasurementTypesService
 	UnitTypes            UnitTypesService
 	Measurements         MeasurementsService
@@ -57,7 +57,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Species = &speciesService{c}
 	c.Strains = &strainsService{c}
 	c.CharacteristicTypes = &characteristicTypesService{c}
-	c.Observations = &observationsService{c}
+	c.Characteristics = &characteristicsService{c}
 	c.TextMeasurementTypes = &textMeasurementTypesService{c}
 	c.UnitTypes = &unitTypesService{c}
 	c.Measurements = &measurementsService{c}

@@ -54,7 +54,7 @@ func TestCharacteristicTypeService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateCharacteristicType, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"characteristicTypeName":"Test Obs Type","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"id":1,"characteristicTypeName":"Test Char Type","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -123,13 +123,13 @@ func TestCharacteristicTypeService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateCharacteristicType, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"characteristicTypeName":"Test Obs Type Updated","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"id":1,"characteristicTypeName":"Test Char Type Updated","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)
 	})
 
 	characteristic_type := newCharacteristicType()
-	characteristic_type.CharacteristicTypeName = "Test Obs Type Updated"
+	characteristic_type.CharacteristicTypeName = "Test Char Type Updated"
 	updated, err := client.CharacteristicTypes.Update(characteristic_type.Id, characteristic_type)
 	if err != nil {
 		t.Errorf("CharacteristicTypes.Update returned error: %v", err)

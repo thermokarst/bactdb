@@ -29,11 +29,11 @@ const (
 	UpdateCharacteristicType = "characteristic_type:update"
 	DeleteCharacteristicType = "characteristic_type:delete"
 
-	Observation       = "observation:get"
-	CreateObservation = "observation:create"
-	Observations      = "observation:list"
-	UpdateObservation = "observation:update"
-	DeleteObservation = "observation:delete"
+	Characteristic       = "characteristic:get"
+	CreateCharacteristic = "characteristic:create"
+	Characteristics      = "characteristic:list"
+	UpdateCharacteristic = "characteristic:update"
+	DeleteCharacteristic = "characteristic:delete"
 
 	TextMeasurementType       = "text_measurement_type:get"
 	CreateTextMeasurementType = "text_measurement_type:create"

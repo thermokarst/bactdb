@@ -20,7 +20,7 @@ type CharacteristicType struct {
 
 func NewCharacteristicType() *CharacteristicType {
 	return &CharacteristicType{
-		CharacteristicTypeName: "Test Obs Type",
+		CharacteristicTypeName: "Test Char Type",
 	}
 }
 

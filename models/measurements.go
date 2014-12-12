@@ -13,11 +13,11 @@ import (
 // A Measurement is the main data type for this application
 // There are two types of supported measurements: text & numerical. The table
 // has a constraint that will allow one or the other for a particular
-// combination of strain & observation, but not both.
+// combination of strain & characteristic, but not both.
 type Measurement struct {
 	Id                    int64       `json:"id,omitempty"`
 	StrainId              int64       `db:"strain_id" json:"strainId"`
-	ObservationId         int64       `db:"observation_id" json:"observationId"`
+	CharacteristicId      int64       `db:"characteristic_id" json:"characteristicId"`
 	TextMeasurementTypeId NullInt64   `db:"text_measurement_type_id" json:"textMeasurementTypeId"`
 	TxtValue              NullString  `db:"txt_value" json:"txtValue"`
 	NumValue              NullFloat64 `db:"num_value" json:"numValue"`

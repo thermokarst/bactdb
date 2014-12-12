@@ -22,16 +22,16 @@ func insertMeasurement(t *testing.T, tx *modl.Transaction) *models.Measurement {
 func newMeasurement(t *testing.T, tx *modl.Transaction) *models.Measurement {
 	// we have a few things to take care of first...
 	strain := insertStrain(t, tx)
-	observation := insertObservation(t, tx)
+	characteristic := insertCharacteristic(t, tx)
 
 	// we want to create and insert a unit type record, too.
 	unit_type := insertUnitType(t, tx)
 
 	return &models.Measurement{
-		StrainId:      strain.Id,
-		ObservationId: observation.Id,
-		NumValue:      models.NullFloat64{sql.NullFloat64{Float64: 1.23, Valid: true}},
-		UnitTypeId:    models.NullInt64{sql.NullInt64{Int64: unit_type.Id, Valid: true}},
+		StrainId:         strain.Id,
+		CharacteristicId: characteristic.Id,
+		NumValue:         models.NullFloat64{sql.NullFloat64{Float64: 1.23, Valid: true}},
+		UnitTypeId:       models.NullInt64{sql.NullInt64{Int64: unit_type.Id, Valid: true}},
 	}
 }
 

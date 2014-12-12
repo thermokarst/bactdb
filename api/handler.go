@@ -45,11 +45,11 @@ func Handler() *mux.Router {
 	m.Get(router.UpdateCharacteristicType).Handler(handler(serveUpdateCharacteristicType))
 	m.Get(router.DeleteCharacteristicType).Handler(handler(serveDeleteCharacteristicType))
 
-	m.Get(router.Observation).Handler(handler(serveObservation))
-	m.Get(router.CreateObservation).Handler(handler(serveCreateObservation))
-	m.Get(router.Observations).Handler(handler(serveObservationList))
-	m.Get(router.UpdateObservation).Handler(handler(serveUpdateObservation))
-	m.Get(router.DeleteObservation).Handler(handler(serveDeleteObservation))
+	m.Get(router.Characteristic).Handler(handler(serveCharacteristic))
+	m.Get(router.CreateCharacteristic).Handler(handler(serveCreateCharacteristic))
+	m.Get(router.Characteristics).Handler(handler(serveCharacteristicList))
+	m.Get(router.UpdateCharacteristic).Handler(handler(serveUpdateCharacteristic))
+	m.Get(router.DeleteCharacteristic).Handler(handler(serveDeleteCharacteristic))
 
 	m.Get(router.TextMeasurementType).Handler(handler(serveTextMeasurementType))
 	m.Get(router.CreateTextMeasurementType).Handler(handler(serveCreateTextMeasurementType))

@@ -38,12 +38,12 @@ func API() *mux.Router {
 	m.Path("/characteristic_types/{Id:.+}").Methods("PUT").Name(UpdateCharacteristicType)
 	m.Path("/characteristic_types/{Id:.+}").Methods("DELETE").Name(DeleteCharacteristicType)
 
-	// Observations
-	m.Path("/observations").Methods("GET").Name(Observations)
-	m.Path("/observations").Methods("POST").Name(CreateObservation)
-	m.Path("/observations/{Id:.+}").Methods("GET").Name(Observation)
-	m.Path("/observations/{Id:.+}").Methods("PUT").Name(UpdateObservation)
-	m.Path("/observations/{Id:.+}").Methods("DELETE").Name(DeleteObservation)
+	// Characteristics
+	m.Path("/characteristics").Methods("GET").Name(Characteristics)
+	m.Path("/characteristics").Methods("POST").Name(CreateCharacteristic)
+	m.Path("/characteristics/{Id:.+}").Methods("GET").Name(Characteristic)
+	m.Path("/characteristics/{Id:.+}").Methods("PUT").Name(UpdateCharacteristic)
+	m.Path("/characteristics/{Id:.+}").Methods("DELETE").Name(DeleteCharacteristic)
 
 	// TextMeasurementTypes
 	m.Path("/text_measurement_types/").Methods("GET").Name(TextMeasurementTypes)

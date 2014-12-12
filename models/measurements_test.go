@@ -13,7 +13,7 @@ func newMeasurement() *Measurement {
 	measurement := NewMeasurement()
 	measurement.Id = 1
 	measurement.StrainId = 1
-	measurement.ObservationId = 1
+	measurement.CharacteristicId = 1
 	measurement.UnitTypeId = NullInt64{sql.NullInt64{Int64: 1, Valid: true}}
 	return measurement
 }
@@ -58,7 +58,7 @@ func TestMeasurementService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateMeasurement, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"strainId":1,"observationId":1,"textMeasurementTypeId":null,"txtValue":null,"numValue":1.23,"confidenceInterval":null,"unitTypeId":1,"notes":null,"testMethodId":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z"}`+"\n")
+		testBody(t, r, `{"id":1,"strainId":1,"characteristicId":1,"textMeasurementTypeId":null,"txtValue":null,"numValue":1.23,"confidenceInterval":null,"unitTypeId":1,"notes":null,"testMethodId":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z"}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -127,7 +127,7 @@ func TestMeasurementService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateMeasurement, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"strainId":1,"observationId":1,"textMeasurementTypeId":null,"txtValue":null,"numValue":4.56,"confidenceInterval":null,"unitTypeId":1,"notes":null,"testMethodId":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z"}`+"\n")
+		testBody(t, r, `{"id":1,"strainId":1,"characteristicId":1,"textMeasurementTypeId":null,"txtValue":null,"numValue":4.56,"confidenceInterval":null,"unitTypeId":1,"notes":null,"testMethodId":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z"}`+"\n")
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)
 	})
