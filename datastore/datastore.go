@@ -13,7 +13,7 @@ type Datastore struct {
 	Genera               models.GeneraService
 	Species              models.SpeciesService
 	Strains              models.StrainsService
-	ObservationTypes     models.ObservationTypesService
+	CharacteristicTypes     models.CharacteristicTypesService
 	Observations         models.ObservationsService
 	TextMeasurementTypes models.TextMeasurementTypesService
 	UnitTypes            models.UnitTypesService
@@ -38,7 +38,7 @@ func NewDatastore(dbh modl.SqlExecutor) *Datastore {
 	d.Genera = &generaStore{d}
 	d.Species = &speciesStore{d}
 	d.Strains = &strainsStore{d}
-	d.ObservationTypes = &observationTypesStore{d}
+	d.CharacteristicTypes = &characteristicTypesStore{d}
 	d.Observations = &observationsStore{d}
 	d.TextMeasurementTypes = &textMeasurementTypesStore{d}
 	d.UnitTypes = &unitTypesStore{d}
@@ -52,7 +52,7 @@ func NewMockDatastore() *Datastore {
 		Genera:               &models.MockGeneraService{},
 		Species:              &models.MockSpeciesService{},
 		Strains:              &models.MockStrainsService{},
-		ObservationTypes:     &models.MockObservationTypesService{},
+		CharacteristicTypes:     &models.MockCharacteristicTypesService{},
 		Observations:         &models.MockObservationsService{},
 		TextMeasurementTypes: &models.MockTextMeasurementTypesService{},
 		UnitTypes:            &models.MockUnitTypesService{},

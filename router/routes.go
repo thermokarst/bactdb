@@ -23,11 +23,11 @@ const (
 	UpdateStrain = "strain:update"
 	DeleteStrain = "strain:delete"
 
-	ObservationType       = "observation_type:get"
-	CreateObservationType = "observation_type:create"
-	ObservationTypes      = "observation_type:list"
-	UpdateObservationType = "observation_type:update"
-	DeleteObservationType = "observation_type:delete"
+	CharacteristicType       = "characteristic_type:get"
+	CreateCharacteristicType = "characteristic_type:create"
+	CharacteristicTypes      = "characteristic_type:list"
+	UpdateCharacteristicType = "characteristic_type:update"
+	DeleteCharacteristicType = "characteristic_type:delete"
 
 	Observation       = "observation:get"
 	CreateObservation = "observation:create"

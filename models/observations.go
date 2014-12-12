@@ -13,7 +13,7 @@ import (
 type Observation struct {
 	Id                int64     `json:"id,omitempty"`
 	ObservationName   string    `db:"observation_name" json:"observationName"`
-	ObservationTypeId int64     `db:"observation_type_id" json:"observationTypeId"`
+	CharacteristicTypeId int64     `db:"characteristic_type_id" json:"characteristicTypeId"`
 	CreatedAt         time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt         time.Time `db:"updated_at" json:"updatedAt"`
 	DeletedAt         NullTime  `db:"deleted_at" json:"deletedAt"`

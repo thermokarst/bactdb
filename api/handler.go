@@ -39,11 +39,11 @@ func Handler() *mux.Router {
 	m.Get(router.UpdateStrain).Handler(handler(serveUpdateStrain))
 	m.Get(router.DeleteStrain).Handler(handler(serveDeleteStrain))
 
-	m.Get(router.ObservationType).Handler(handler(serveObservationType))
-	m.Get(router.CreateObservationType).Handler(handler(serveCreateObservationType))
-	m.Get(router.ObservationTypes).Handler(handler(serveObservationTypeList))
-	m.Get(router.UpdateObservationType).Handler(handler(serveUpdateObservationType))
-	m.Get(router.DeleteObservationType).Handler(handler(serveDeleteObservationType))
+	m.Get(router.CharacteristicType).Handler(handler(serveCharacteristicType))
+	m.Get(router.CreateCharacteristicType).Handler(handler(serveCreateCharacteristicType))
+	m.Get(router.CharacteristicTypes).Handler(handler(serveCharacteristicTypeList))
+	m.Get(router.UpdateCharacteristicType).Handler(handler(serveUpdateCharacteristicType))
+	m.Get(router.DeleteCharacteristicType).Handler(handler(serveDeleteCharacteristicType))
 
 	m.Get(router.Observation).Handler(handler(serveObservation))
 	m.Get(router.CreateObservation).Handler(handler(serveCreateObservation))

@@ -54,7 +54,7 @@ func TestObservationService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateObservation, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"observationName":"Test Observation","observationTypeId":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"id":1,"observationName":"Test Observation","characteristicTypeId":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -123,7 +123,7 @@ func TestObservationService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateObservation, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"observationName":"Test Obs Updated","observationTypeId":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"id":1,"observationName":"Test Obs Updated","characteristicTypeId":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)
 	})

@@ -19,10 +19,10 @@ func insertObservation(t *testing.T, tx *modl.Transaction) *models.Observation {
 }
 
 func newObservation(t *testing.T, tx *modl.Transaction) *models.Observation {
-	// we want to create and insert an observation type record, too.
-	observation_type := insertObservationType(t, tx)
+	// we want to create and insert an characteristic type record, too.
+	characteristic_type := insertCharacteristicType(t, tx)
 	return &models.Observation{ObservationName: "Test Observation",
-		ObservationTypeId: observation_type.Id}
+		CharacteristicTypeId: characteristic_type.Id}
 }
 
 func TestObservationsStore_Get_db(t *testing.T) {
