@@ -15,7 +15,7 @@ type User struct {
 	UserName  string    `json:"userName"`
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
-	DeletedAt time.Time `db:"deleted_at" json:"deletedAt"`
+	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewUser() *User {

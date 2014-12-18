@@ -37,6 +37,7 @@ func TestUsersStore_Get_db(t *testing.T) {
 	}
 
 	normalizeTime(&want.CreatedAt, &want.UpdatedAt, &want.DeletedAt)
+	normalizeTime(&user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
 	if !reflect.DeepEqual(user, want) {
 		t.Errorf("got user %+v, want %+v", user, want)
 	}
@@ -77,8 +78,9 @@ func TestUsersStore_List_db(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, u := range want {
-		normalizeTime(&u.CreatedAt, &u.UpdatedAt, &u.DeletedAt)
+	for i := range want {
+		normalizeTime(&want[i].CreatedAt, &want[i].UpdatedAt, &want[i].DeletedAt)
+		normalizeTime(&users[i].CreatedAt, &users[i].UpdatedAt, &users[i].DeletedAt)
 	}
 	if !reflect.DeepEqual(users, want) {
 		t.Errorf("got users %+v, want %+v", users, want)

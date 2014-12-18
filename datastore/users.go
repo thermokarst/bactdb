@@ -2,11 +2,9 @@ package datastore
 
 import (
 	"fmt"
-	"math/rand"
 	"strings"
 	"time"
 
-	"github.com/jmoiron/modl"
 	"github.com/thermokarst/bactdb/models"
 )
 
@@ -30,46 +28,16 @@ func (s *usersStore) Get(id int64) (*models.User, error) {
 }
 
 func (s *usersStore) Create(user *models.User) (bool, error) {
-	retries := 3
-	var wantRetry bool
 	currentTime := time.Now()
 	user.CreatedAt = currentTime
 	user.UpdatedAt = currentTime
-
-retry:
-	retries--
-	wantRetry = false
-	if retries == 0 {
-		return false, fmt.Errorf("failed to create user with username %q after retrying", user.UserName)
+	fmt.Println(user)
+	if err := s.dbh.Insert(user); err != nil {
+		if strings.Contains(err.Error(), `violates unique constraint "username_idx"`) {
+			return false, err
+		}
 	}
-
-	var created bool
-	err := transact(s.dbh, func(tx modl.SqlExecutor) error {
-		var existing []*models.User
-		if err := tx.Select(&existing, `SELECT * FROM users WHERE username=$1 LIMIT 1;`, user.UserName); err != nil {
-			return err
-		}
-		if len(existing) > 0 {
-			*user = *existing[0]
-			return nil
-		}
-
-		if err := tx.Insert(user); err != nil {
-			if strings.Contains(err.Error(), `violates unique constraint "username_idx"`) {
-				time.Sleep(time.Duration(rand.Intn(75)) * time.Millisecond)
-				wantRetry = true
-				return err
-			}
-			return err
-		}
-
-		created = true
-		return nil
-	})
-	if wantRetry {
-		goto retry
-	}
-	return created, err
+	return true, nil
 }
 
 func (s *usersStore) List(opt *models.UserListOptions) ([]*models.User, error) {
