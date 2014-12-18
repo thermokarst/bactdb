@@ -10,16 +10,17 @@ import (
 )
 
 // A User is a person that has administrative access to bactdb.
+// Todo: add password
 type User struct {
 	Id        int64     `json:"id,omitempty"`
-	UserName  string    `json:"userName"`
+	Username  string    `db:"username" json:"username"`
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
 func NewUser() *User {
-	return &User{UserName: "Test User"}
+	return &User{Username: "Test User"}
 }
 
 // UsersService interacts with the user-related endpoints in bactdb's API.
@@ -32,6 +33,9 @@ type UsersService interface {
 
 	// Create a new user. The newly created user's ID is written to user.Id
 	Create(user *User) (created bool, err error)
+
+	// Authenticate a user, returns their access level.
+	Authenticate(username string, password string) (accessLevel *string, err error)
 }
 
 var (
@@ -109,10 +113,31 @@ func (s *usersService) List(opt *UserListOptions) ([]*User, error) {
 	return users, nil
 }
 
+func (s *usersService) Authenticate(username string, password string) (*string, error) {
+	url, err := s.client.url(router.GetToken, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest("POST", url.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var auth_level *string
+	_, err = s.client.Do(req, &auth_level)
+	if err != nil {
+		return nil, err
+	}
+
+	return auth_level, nil
+}
+
 type MockUsersService struct {
-	Get_    func(id int64) (*User, error)
-	List_   func(opt *UserListOptions) ([]*User, error)
-	Create_ func(user *User) (bool, error)
+	Get_          func(id int64) (*User, error)
+	List_         func(opt *UserListOptions) ([]*User, error)
+	Create_       func(user *User) (bool, error)
+	Authenticate_ func(username string, password string) (*string, error)
 }
 
 var _ UsersService = &MockUsersService{}
@@ -136,4 +161,11 @@ func (s *MockUsersService) List(opt *UserListOptions) ([]*User, error) {
 		return nil, nil
 	}
 	return s.List_(opt)
+}
+
+func (s *MockUsersService) Authenticate(username string, password string) (*string, error) {
+	if s.Authenticate_ == nil {
+		return nil, nil
+	}
+	return s.Authenticate_(username, password)
 }

@@ -3,7 +3,9 @@ package api
 import (
 	"encoding/json"
 	"strconv"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 
 	"net/http"
@@ -58,4 +60,32 @@ func serveUsers(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, users)
+}
+
+func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) error {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	auth_level, err := store.Users.Authenticate(username, password)
+	if err != nil {
+		return err
+	}
+
+	t := jwt.New(jwt.GetSigningMethod("RS256"))
+	t.Claims["AccessToken"] = auth_level
+	t.Claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
+	tokenString, err := t.SignedString(signKey)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return errWhileSigningToken
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:       tokenName,
+		Value:      tokenString,
+		Path:       "/",
+		RawExpires: "0",
+	})
+
+	return writeJSON(w, auth_level)
 }

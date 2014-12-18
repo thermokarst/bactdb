@@ -20,7 +20,7 @@ func insertUser(t *testing.T, tx *modl.Transaction) *models.User {
 }
 
 func newUser() *models.User {
-	return &models.User{UserName: "Test User"}
+	return &models.User{Username: "Test User"}
 }
 
 func TestUsersStore_Get_db(t *testing.T) {
@@ -84,5 +84,23 @@ func TestUsersStore_List_db(t *testing.T) {
 	}
 	if !reflect.DeepEqual(users, want) {
 		t.Errorf("got users %+v, want %+v", users, want)
+	}
+}
+
+func TestUsersStore_Authenticate_db(t *testing.T) {
+	tx, _ := DB.Begin()
+	defer tx.Rollback()
+
+	user := insertUser(t, tx)
+
+	d := NewDatastore(tx)
+
+	auth_level, err := d.Users.Authenticate(user.Username, "password")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if *auth_level != "read" {
+		t.Errorf("expecting read, got %+v", auth_level)
 	}
 }

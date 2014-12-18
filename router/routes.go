@@ -4,6 +4,7 @@ const (
 	User       = "users:get"
 	CreateUser = "users:create"
 	Users      = "users:list"
+	GetToken   = "token:get"
 
 	Genus       = "genus:get"
 	CreateGenus = "genus:create"
@@ -52,7 +53,4 @@ const (
 	Measurements      = "measurements:list"
 	UpdateMeasurement = "measurements:update"
 	DeleteMeasurement = "measurements:delete"
-
-	GetToken   = "token:get"
-	Restricted = "restricted:get"
 )

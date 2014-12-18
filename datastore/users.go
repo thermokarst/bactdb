@@ -51,3 +51,15 @@ func (s *usersStore) List(opt *models.UserListOptions) ([]*models.User, error) {
 	}
 	return users, nil
 }
+
+func (s *usersStore) Authenticate(username string, password string) (*string, error) {
+	var users []*models.User
+	if err := s.dbh.Select(&users, `SELECT * FROM users WHERE username=$1;`, username); err != nil {
+		return nil, err
+	}
+	if len(users) == 0 {
+		return nil, models.ErrUserNotFound
+	}
+	auth_level := "read"
+	return &auth_level, nil
+}

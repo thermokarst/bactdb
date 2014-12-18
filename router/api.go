@@ -9,6 +9,7 @@ func API() *mux.Router {
 	m.Path("/users").Methods("GET").Name(Users)
 	m.Path("/users").Methods("POST").Name(CreateUser)
 	m.Path("/users/{Id:.+}").Methods("GET").Name(User)
+	m.Path("/authenticate/").Methods("POST").Name(GetToken)
 
 	// Genera
 	m.Path("/genera").Methods("GET").Name(Genera)
@@ -65,10 +66,6 @@ func API() *mux.Router {
 	m.Path("/measurements/{Id:.+}").Methods("GET").Name(Measurement)
 	m.Path("/measurements/{Id:.+}").Methods("PUT").Name(UpdateMeasurement)
 	m.Path("/measurements/{Id:.+}").Methods("DELETE").Name(DeleteMeasurement)
-
-	// Authentication
-	m.Path("/token/").Methods("GET").Name(GetToken)
-	m.Path("/restricted/").Methods("GET").Name(Restricted)
 
 	return m
 }

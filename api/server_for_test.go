@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
 
 	"github.com/thermokarst/bactdb/datastore"
 	"github.com/thermokarst/bactdb/models"
@@ -15,13 +17,20 @@ func init() {
 }
 
 var (
-	serveMux   = http.NewServeMux()
-	httpClient = http.Client{Transport: (*muxTransport)(serveMux)}
-	apiClient  = models.NewClient(&httpClient)
+	serveMux     = http.NewServeMux()
+	cookieJar, _ = cookiejar.New(nil)
+	httpClient   = http.Client{
+		Transport: (*muxTransport)(serveMux),
+		Jar:       cookieJar,
+	}
+	apiClient = models.NewClient(&httpClient)
 )
 
 func setup() {
 	store = datastore.NewMockDatastore()
+	resp, _ := httpClient.PostForm(apiClient.BaseURL.String()+"authenticate/",
+		url.Values{"username": {"test_user"}, "password": {"password"}})
+	defer resp.Body.Close()
 }
 
 type muxTransport http.ServeMux

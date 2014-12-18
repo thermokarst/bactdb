@@ -20,8 +20,9 @@ func Handler() *mux.Router {
 	m.Get(router.User).Handler(handler(serveUser))
 	m.Get(router.CreateUser).Handler(handler(serveCreateUser))
 	m.Get(router.Users).Handler(handler(serveUsers))
+	m.Get(router.GetToken).Handler(handler(serveAuthenticateUser))
 
-	m.Get(router.Genus).Handler(handler(serveGenus))
+	m.Get(router.Genus).Handler(authHandler(serveGenus))
 	m.Get(router.CreateGenus).Handler(handler(serveCreateGenus))
 	m.Get(router.Genera).Handler(handler(serveGenera))
 	m.Get(router.UpdateGenus).Handler(handler(serveUpdateGenus))
@@ -68,9 +69,6 @@ func Handler() *mux.Router {
 	m.Get(router.Measurements).Handler(handler(serveMeasurementList))
 	m.Get(router.UpdateMeasurement).Handler(handler(serveUpdateMeasurement))
 	m.Get(router.DeleteMeasurement).Handler(handler(serveDeleteMeasurement))
-
-	m.Get(router.GetToken).Handler(handler(serveToken))
-	m.Get(router.Restricted).Handler(authHandler(restrictedHandler))
 
 	return m
 }

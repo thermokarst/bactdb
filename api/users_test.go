@@ -94,3 +94,29 @@ func TestUser_List(t *testing.T) {
 		t.Errorf("got users %+v but wanted users %+v", users, wantUsers)
 	}
 }
+
+func TestUser_Authenticate(t *testing.T) {
+	setup()
+
+	test_user := newUser()
+	test_user.Username = "test_user"
+
+	calledAuthenticate := false
+	store.Users.(*models.MockUsersService).Authenticate_ = func(username string, password string) (*string, error) {
+		calledAuthenticate = true
+		auth_level := "read"
+		return &auth_level, nil
+	}
+
+	auth_level, err := apiClient.Users.Authenticate(test_user.Username, "password")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledAuthenticate {
+		t.Error("!calledAuthenticate")
+	}
+	if *auth_level != "read" {
+		t.Errorf("got auth level %+v but wanted read", *auth_level)
+	}
+}

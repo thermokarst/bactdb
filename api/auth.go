@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -48,35 +47,6 @@ func init() {
 			return
 		}
 	}
-}
-
-func serveToken(w http.ResponseWriter, r *http.Request) error {
-	t := jwt.New(jwt.GetSigningMethod("RS256"))
-
-	// Set our claims
-	t.Claims["AccessToken"] = "level1"
-	t.Claims["CustomUserInfo"] = struct {
-		Name string
-		Kind string
-	}{"mrdillon", "human"}
-
-	// Set the expire time
-	// See http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-20#section-4.1.4
-	t.Claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
-	tokenString, err := t.SignedString(signKey)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return errWhileSigningToken
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:       tokenName,
-		Value:      tokenString,
-		Path:       "/",
-		RawExpires: "0",
-	})
-
-	return writeJSON(w, Message{"success"})
 }
 
 type authHandler func(http.ResponseWriter, *http.Request) error
