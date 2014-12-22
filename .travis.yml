@@ -3,7 +3,7 @@ language: go
 addons:
   postgresql: 9.3
 
-go: 1.3
+go: 1.4
 
 before_script:
   - psql -c 'CREATE DATABASE bactdbtest;' -U postgres
