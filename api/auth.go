@@ -2,9 +2,11 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -26,12 +28,14 @@ var (
 
 func init() {
 	var err error
+	dir, _ := filepath.Abs(filepath.Dir(privKeyPath))
+	fmt.Println(dir)
 
 	signKey, err = ioutil.ReadFile(privKeyPath)
 
 	if err != nil {
 		// Before exploding, check up one level...
-		signKey, err = ioutil.ReadFile("../" + privKeyPath)
+		signKey, err = ioutil.ReadFile("../../" + privKeyPath)
 		if err != nil {
 			log.Fatalf("Error reading private key: ", err)
 			return
@@ -41,7 +45,7 @@ func init() {
 	verifyKey, err = ioutil.ReadFile(pubKeyPath)
 	if err != nil {
 		// Before exploding, check up one level...
-		verifyKey, err = ioutil.ReadFile("../" + pubKeyPath)
+		verifyKey, err = ioutil.ReadFile("../../" + pubKeyPath)
 		if err != nil {
 			log.Fatalf("Error reading public key: ", err)
 			return
