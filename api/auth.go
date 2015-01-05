@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,9 +11,7 @@ import (
 )
 
 const (
-	privKeyPath = "keys/app.rsa"     // openssl genrsa -out app.rsa keysize
-	pubKeyPath  = "keys/app.rsa.pub" // openssl rsa -in app.rsa -pubout > app.rsa.pub
-	tokenName   = "AccessToken"
+	tokenName = "AccessToken"
 )
 
 var (
@@ -24,29 +23,28 @@ var (
 	errGenericError       = errors.New("generic error")
 )
 
-func init() {
+func SetupCerts(p string) error {
 	var err error
-
-	signKey, err = ioutil.ReadFile(privKeyPath)
-
 	if err != nil {
-		// Before exploding, check up one level...
-		signKey, err = ioutil.ReadFile("../" + privKeyPath)
-		if err != nil {
-			log.Fatalf("Error reading private key: ", err)
-			return
-		}
+		log.Fatalf("Path error: ", err)
 	}
 
+	// openssl genrsa -out app.rsa keysize
+	privKeyPath := fmt.Sprintf("%vapp.rsa", p)
+	signKey, err = ioutil.ReadFile(privKeyPath)
+	if err != nil {
+		log.Fatalf("Error reading private key: ", err)
+		return err
+	}
+
+	// openssl rsa -in app.rsa -pubout > app.rsa.pub
+	pubKeyPath := fmt.Sprintf("%vapp.rsa.pub", p)
 	verifyKey, err = ioutil.ReadFile(pubKeyPath)
 	if err != nil {
-		// Before exploding, check up one level...
-		verifyKey, err = ioutil.ReadFile("../" + pubKeyPath)
-		if err != nil {
-			log.Fatalf("Error reading public key: ", err)
-			return
-		}
+		log.Fatalf("Error reading public key: ", err)
+		return err
 	}
+	return nil
 }
 
 type authHandler func(http.ResponseWriter, *http.Request) error
