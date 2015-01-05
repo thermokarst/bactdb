@@ -28,6 +28,7 @@ var (
 
 func setup() {
 	store = datastore.NewMockDatastore()
+	SetupCerts("../keys/")
 	resp, _ := httpClient.PostForm(apiClient.BaseURL.String()+"authenticate/",
 		url.Values{"username": {"test_user"}, "password": {"password"}})
 	defer resp.Body.Close()

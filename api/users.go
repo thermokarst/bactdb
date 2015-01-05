@@ -77,7 +77,7 @@ func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) error {
 	tokenString, err := t.SignedString(signKey)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return errWhileSigningToken
+		return err
 	}
 
 	http.SetCookie(w, &http.Cookie{
