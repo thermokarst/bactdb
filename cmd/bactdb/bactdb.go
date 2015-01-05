@@ -24,8 +24,13 @@ func main() {
 			Flags: []cli.Flag{
 				cli.IntFlag{
 					Name:  "port",
-					Value: 8901,
 					Usage: "HTTP service port",
+					Value: 8901,
+				},
+				cli.StringFlag{
+					Name:  "keys",
+					Usage: "path to keys",
+					Value: "keys/",
 				},
 			},
 			Action: cmdServe,
@@ -56,6 +61,7 @@ func cmdServe(c *cli.Context) {
 	httpAddr := fmt.Sprintf(":%v", c.Int("port"))
 
 	datastore.Connect()
+	api.SetupCerts(c.String("keys"))
 
 	m := http.NewServeMux()
 	m.Handle("/api/", http.StripPrefix("/api", api.Handler()))
