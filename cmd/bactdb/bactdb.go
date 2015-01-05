@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -21,13 +22,30 @@ func main() {
 			ShortName: "s",
 			Usage:     "Start web server",
 			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "http",
-					Value: ":8901",
-					Usage: "HTTP service address",
+				cli.IntFlag{
+					Name:  "port",
+					Value: 8901,
+					Usage: "HTTP service port",
 				},
 			},
 			Action: cmdServe,
+		},
+		{
+			Name:      "createdb",
+			ShortName: "c",
+			Usage:     "create the database schema",
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "drop",
+					Usage: "drop DB before creating",
+				},
+				cli.StringFlag{
+					Name:  "migration_path",
+					Usage: "path to migrations",
+					Value: "./datastore/migrations",
+				},
+			},
+			Action: cmdCreateDB,
 		},
 	}
 
@@ -35,7 +53,7 @@ func main() {
 }
 
 func cmdServe(c *cli.Context) {
-	httpAddr := c.String("http")
+	httpAddr := fmt.Sprintf(":%v", c.Int("port"))
 
 	datastore.Connect()
 
@@ -46,4 +64,15 @@ func cmdServe(c *cli.Context) {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+}
+
+func cmdCreateDB(c *cli.Context) {
+	migrationsPath := c.String("migration_path")
+
+	datastore.Connect()
+
+	if c.Bool("drop") {
+		datastore.Drop(migrationsPath)
+	}
+	datastore.Create(migrationsPath)
 }
