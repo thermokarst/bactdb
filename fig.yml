@@ -1,0 +1,34 @@
+data:
+    build: docker/postgres
+    environment:
+        PGUSER: bactdb_user
+        PGPASSWORD: bactdb_pass
+        PGDB: bactdbtest
+    volumes:
+        - /var/lib/postgresql/data
+    command: true
+
+db:
+    image: bactdb_data
+    environment:
+        PGUSER: bactdb_user
+        PGPASSWORD: bactdb_pass
+        PGDB: bactdbtest
+    ports:
+        - "5432:5432"
+    volumes_from:
+        - data
+
+app:
+    build: .
+    environment:
+        PGUSER: bactdb_user
+        PGPASSWORD: bactdb_pass
+        PGDB: bactdbtest
+    ports:
+        - "8901:8901"
+    volumes:
+        - .:/bactdb
+    links:
+        - db
+

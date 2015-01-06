@@ -26,6 +26,7 @@ var connectOnce sync.Once
 func Connect() {
 	connectOnce.Do(func() {
 		var err error
+		setDBCredentialsFromFig()
 		DB.Dbx, err = sqlx.Open("postgres", "timezone=UTC sslmode=disable")
 		if err != nil {
 			log.Fatal("Error connecting to PostgreSQL database (using PG* environment variables): ", err)
@@ -34,8 +35,6 @@ func Connect() {
 		DB.Db = DB.Dbx.DB
 	})
 }
-
-var createSQL []string
 
 // Create the database schema. It calls log.Fatal if it encounters an error.
 func Create(path string) {
@@ -92,4 +91,13 @@ func transact(dbh modl.SqlExecutor, fn func(fbh modl.SqlExecutor) error) error {
 	}
 
 	return nil
+}
+
+func setDBCredentialsFromFig() {
+	if figVal := os.Getenv("BACTDB_DB_1_PORT_5432_TCP_ADDR"); figVal != "" {
+		err := os.Setenv("PGHOST", figVal)
+		if err != nil {
+			log.Print(err)
+		}
+	}
 }
