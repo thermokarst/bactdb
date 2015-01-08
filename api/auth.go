@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -21,6 +22,7 @@ var (
 	errWhileParsingCookie = errors.New("error while parsing cookie")
 	errTokenExpired       = errors.New("token expired")
 	errGenericError       = errors.New("generic error")
+	errAccessDenied       = errors.New("insufficient privileges")
 )
 
 func SetupCerts(p string) error {
@@ -100,6 +102,11 @@ func (h authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default: // Something else went wrong
 		w.WriteHeader(http.StatusInternalServerError)
 		writeJSON(w, Error{errGenericError})
+		return
+	}
+	if mux.Vars(r)["genus"] != token.Claims["genus"] {
+		w.WriteHeader(http.StatusInternalServerError)
+		writeJSON(w, Error{errAccessDenied})
 		return
 	}
 	hErr := h(w, r)

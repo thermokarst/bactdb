@@ -1,11 +1,11 @@
 package datastore
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/thermokarst/bactdb/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func init() {
@@ -31,7 +31,11 @@ func (s *usersStore) Create(user *models.User) (bool, error) {
 	currentTime := time.Now()
 	user.CreatedAt = currentTime
 	user.UpdatedAt = currentTime
-	fmt.Println(user)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
+	if err != nil {
+		panic(err)
+	}
+	user.Password = string(hashedPassword)
 	if err := s.dbh.Insert(user); err != nil {
 		if strings.Contains(err.Error(), `violates unique constraint "username_idx"`) {
 			return false, err
@@ -52,14 +56,20 @@ func (s *usersStore) List(opt *models.UserListOptions) ([]*models.User, error) {
 	return users, nil
 }
 
-func (s *usersStore) Authenticate(username string, password string) (*string, error) {
+func (s *usersStore) Authenticate(username string, password string) (*models.UserSession, error) {
 	var users []*models.User
+	var user_session models.UserSession
+
 	if err := s.dbh.Select(&users, `SELECT * FROM users WHERE username=$1;`, username); err != nil {
 		return nil, err
 	}
 	if len(users) == 0 {
 		return nil, models.ErrUserNotFound
 	}
-	auth_level := "read"
-	return &auth_level, nil
+	if err := bcrypt.CompareHashAndPassword([]byte(users[0].Password), []byte(password)); err != nil {
+		return nil, err
+	}
+	user_session.AccessLevel = "read"
+	user_session.Genus = "hymenobacter"
+	return &user_session, nil
 }

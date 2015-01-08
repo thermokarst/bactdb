@@ -90,3 +90,22 @@ func serveDeleteSpecies(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, &models.Species{})
 }
+
+func serveSubrouterSpeciesList(w http.ResponseWriter, r *http.Request) error {
+	var opt models.SpeciesListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	opt.Genus = mux.Vars(r)["genus"]
+
+	species, err := store.Species.List(&opt)
+	if err != nil {
+		return err
+	}
+	if species == nil {
+		species = []*models.Species{}
+	}
+
+	return writeJSON(w, species)
+}

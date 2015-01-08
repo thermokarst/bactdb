@@ -66,13 +66,14 @@ func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) error {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
-	auth_level, err := store.Users.Authenticate(username, password)
+	user_session, err := store.Users.Authenticate(username, password)
 	if err != nil {
 		return err
 	}
 
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
-	t.Claims["AccessToken"] = auth_level
+	t.Claims["auth_level"] = user_session.AccessLevel
+	t.Claims["genus"] = user_session.Genus
 	t.Claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
 	tokenString, err := t.SignedString(signKey)
 	if err != nil {
@@ -87,5 +88,5 @@ func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) error {
 		RawExpires: "0",
 	})
 
-	return writeJSON(w, auth_level)
+	return writeJSON(w, user_session)
 }

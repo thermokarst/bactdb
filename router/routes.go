@@ -53,4 +53,6 @@ const (
 	Measurements      = "measurements:list"
 	UpdateMeasurement = "measurements:update"
 	DeleteMeasurement = "measurements:delete"
+
+	SubrouterListSpecies = "subrouter_species:list"
 )

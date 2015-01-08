@@ -101,14 +101,18 @@ func TestUser_Authenticate(t *testing.T) {
 	test_user := newUser()
 	test_user.Username = "test_user"
 
+	var user_session_want models.UserSession
+
 	calledAuthenticate := false
-	store.Users.(*models.MockUsersService).Authenticate_ = func(username string, password string) (*string, error) {
+	store.Users.(*models.MockUsersService).Authenticate_ = func(username string, password string) (*models.UserSession, error) {
 		calledAuthenticate = true
-		auth_level := "read"
-		return &auth_level, nil
+		user_session_want.AccessLevel = "read"
+		user_session_want.Genus = "hymenobacter"
+
+		return &user_session_want, nil
 	}
 
-	auth_level, err := apiClient.Users.Authenticate(test_user.Username, "password")
+	user_session, err := apiClient.Users.Authenticate(test_user.Username, "password")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +120,8 @@ func TestUser_Authenticate(t *testing.T) {
 	if !calledAuthenticate {
 		t.Error("!calledAuthenticate")
 	}
-	if *auth_level != "read" {
-		t.Errorf("got auth level %+v but wanted read", *auth_level)
+
+	if !normalizeDeepEqual(user_session, &user_session_want) {
+		t.Errorf("got session %+v but wanted session %+v", user_session, user_session_want)
 	}
 }

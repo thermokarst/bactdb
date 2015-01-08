@@ -93,6 +93,7 @@ func (s *speciesService) Create(species *Species) (bool, error) {
 
 type SpeciesListOptions struct {
 	ListOptions
+	Genus string
 }
 
 func (s *speciesService) List(opt *SpeciesListOptions) ([]*Species, error) {

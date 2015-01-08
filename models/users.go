@@ -14,6 +14,7 @@ import (
 type User struct {
 	Id        int64     `json:"id,omitempty"`
 	Username  string    `db:"username" json:"username"`
+	Password  string    `db:"password" json:"-"`
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
@@ -35,7 +36,12 @@ type UsersService interface {
 	Create(user *User) (created bool, err error)
 
 	// Authenticate a user, returns their access level.
-	Authenticate(username string, password string) (accessLevel *string, err error)
+	Authenticate(username string, password string) (user_session *UserSession, err error)
+}
+
+type UserSession struct {
+	AccessLevel string `json:"access_level"`
+	Genus       string `json:"genus"`
 }
 
 var (
@@ -113,7 +119,7 @@ func (s *usersService) List(opt *UserListOptions) ([]*User, error) {
 	return users, nil
 }
 
-func (s *usersService) Authenticate(username string, password string) (*string, error) {
+func (s *usersService) Authenticate(username string, password string) (*UserSession, error) {
 	url, err := s.client.url(router.GetToken, nil, nil)
 	if err != nil {
 		return nil, err
@@ -124,20 +130,20 @@ func (s *usersService) Authenticate(username string, password string) (*string, 
 		return nil, err
 	}
 
-	var auth_level *string
-	_, err = s.client.Do(req, &auth_level)
+	var user_session *UserSession
+	_, err = s.client.Do(req, &user_session)
 	if err != nil {
 		return nil, err
 	}
 
-	return auth_level, nil
+	return user_session, nil
 }
 
 type MockUsersService struct {
 	Get_          func(id int64) (*User, error)
 	List_         func(opt *UserListOptions) ([]*User, error)
 	Create_       func(user *User) (bool, error)
-	Authenticate_ func(username string, password string) (*string, error)
+	Authenticate_ func(username string, password string) (*UserSession, error)
 }
 
 var _ UsersService = &MockUsersService{}
@@ -163,9 +169,9 @@ func (s *MockUsersService) List(opt *UserListOptions) ([]*User, error) {
 	return s.List_(opt)
 }
 
-func (s *MockUsersService) Authenticate(username string, password string) (*string, error) {
+func (s *MockUsersService) Authenticate(username string, password string) (*UserSession, error) {
 	if s.Authenticate_ == nil {
-		return nil, nil
+		return &UserSession{}, nil
 	}
 	return s.Authenticate_(username, password)
 }

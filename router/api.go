@@ -67,5 +67,9 @@ func API() *mux.Router {
 	m.Path("/measurements/{Id:.+}").Methods("PUT").Name(UpdateMeasurement)
 	m.Path("/measurements/{Id:.+}").Methods("DELETE").Name(DeleteMeasurement)
 
+	// Subrouter for auth/security
+	s := m.PathPrefix("/{genus}").Subrouter()
+	s.Path("/species").Methods("GET").Name(SubrouterListSpecies)
+
 	return m
 }

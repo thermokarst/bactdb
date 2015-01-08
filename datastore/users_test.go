@@ -6,6 +6,7 @@ import (
 
 	"github.com/jmoiron/modl"
 	"github.com/thermokarst/bactdb/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func insertUser(t *testing.T, tx *modl.Transaction) *models.User {
@@ -20,7 +21,11 @@ func insertUser(t *testing.T, tx *modl.Transaction) *models.User {
 }
 
 func newUser() *models.User {
-	return &models.User{Username: "Test User"}
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), 10)
+	return &models.User{
+		Username: "Test User",
+		Password: string(hashedPassword),
+	}
 }
 
 func TestUsersStore_Get_db(t *testing.T) {
@@ -93,14 +98,18 @@ func TestUsersStore_Authenticate_db(t *testing.T) {
 
 	user := insertUser(t, tx)
 
+	want := &models.UserSession{
+		AccessLevel: "read",
+		Genus:       "hymenobacter",
+	}
+
 	d := NewDatastore(tx)
 
-	auth_level, err := d.Users.Authenticate(user.Username, "password")
+	user_session, err := d.Users.Authenticate(user.Username, "password")
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if *auth_level != "read" {
-		t.Errorf("expecting read, got %+v", auth_level)
+	if !reflect.DeepEqual(user_session, want) {
+		t.Errorf("got session %+v, want %+v", user_session, want)
 	}
 }

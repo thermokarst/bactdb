@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/thermokarst/bactdb/models"
@@ -39,8 +41,27 @@ func (s *speciesStore) List(opt *models.SpeciesListOptions) ([]*models.Species, 
 	if opt == nil {
 		opt = &models.SpeciesListOptions{}
 	}
+
+	sql := `SELECT * FROM species`
+
+	var conds []string
+	var vals []interface{}
+
+	if opt.Genus != "" {
+		conds = append(conds, "genus_id = (SELECT id FROM genera WHERE lower(genus_name) = $1)")
+		vals = append(vals, opt.Genus)
+	}
+
+	if len(conds) > 0 {
+		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
+	}
+
+	sql += fmt.Sprintf(" LIMIT $%v OFFSET $%v;", len(conds)+1, len(conds)+2)
+	vals = append(vals, opt.PerPageOrDefault())
+	vals = append(vals, opt.Offset())
+
 	var species []*models.Species
-	err := s.dbh.Select(&species, `SELECT * FROM species LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	err := s.dbh.Select(&species, sql, vals...)
 	if err != nil {
 		return nil, err
 	}
