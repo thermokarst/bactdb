@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/thermokarst/bactdb/models"
@@ -39,8 +41,29 @@ func (s *measurementsStore) List(opt *models.MeasurementListOptions) ([]*models.
 	if opt == nil {
 		opt = &models.MeasurementListOptions{}
 	}
+
+	sql := `SELECT * FROM measurements`
+
+	var conds []string
+	var vals []interface{}
+
+	if opt.Genus != "" {
+		conds = append(conds, `strain_id IN (SELECT st.id FROM strains st
+		INNER JOIN species sp ON sp.id = st.species_id
+		INNER JOIN genera g ON g.id = sp.genus_id
+		WHERE lower(g.genus_name) = $1)`)
+		vals = append(vals, opt.Genus)
+	}
+
+	if len(conds) > 0 {
+		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
+	}
+
+	sql += fmt.Sprintf(" LIMIT $%v OFFSET $%v;", len(conds)+1, len(conds)+2)
+	vals = append(vals, opt.PerPageOrDefault(), opt.Offset())
+
 	var measurements []*models.Measurement
-	err := s.dbh.Select(&measurements, `SELECT * FROM measurements LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	err := s.dbh.Select(&measurements, sql, vals...)
 	if err != nil {
 		return nil, err
 	}

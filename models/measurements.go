@@ -108,6 +108,7 @@ func (s *measurementsService) Create(measurement *Measurement) (bool, error) {
 
 type MeasurementListOptions struct {
 	ListOptions
+	Genus string
 }
 
 func (s *measurementsService) List(opt *MeasurementListOptions) ([]*Measurement, error) {

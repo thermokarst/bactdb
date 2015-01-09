@@ -90,3 +90,22 @@ func serveDeleteMeasurement(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, &models.Measurement{})
 }
+
+func serveSubrouterMeasurementsList(w http.ResponseWriter, r *http.Request) error {
+	var opt models.MeasurementListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	opt.Genus = mux.Vars(r)["genus"]
+
+	measurements, err := store.Measurements.List(&opt)
+	if err != nil {
+		return err
+	}
+	if measurements == nil {
+		measurements = []*models.Measurement{}
+	}
+
+	return writeJSON(w, measurements)
+}

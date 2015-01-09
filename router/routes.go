@@ -54,6 +54,7 @@ const (
 	UpdateMeasurement = "measurements:update"
 	DeleteMeasurement = "measurements:delete"
 
-	SubrouterListSpecies = "subrouter_species:list"
-	SubrouterListStrains = "subrouter_strains:list"
+	SubrouterListSpecies      = "subrouter_species:list"
+	SubrouterListStrains      = "subrouter_strains:list"
+	SubrouterListMeasurements = "subrouter_measurements:list"
 )

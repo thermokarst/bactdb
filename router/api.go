@@ -71,6 +71,7 @@ func API() *mux.Router {
 	s := m.PathPrefix("/{genus}").Subrouter()
 	s.Path("/species").Methods("GET").Name(SubrouterListSpecies)
 	s.Path("/strains").Methods("GET").Name(SubrouterListStrains)
+	s.Path("/measurements").Methods("GET").Name(SubrouterListMeasurements)
 
 	return m
 }
