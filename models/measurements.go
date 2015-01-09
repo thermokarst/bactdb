@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -27,6 +28,10 @@ type Measurement struct {
 	TestMethodId          NullInt64   `db:"test_method_id" json:"testMethodId"`
 	CreatedAt             time.Time   `db:"created_at" json:"createdAt"`
 	UpdatedAt             time.Time   `db:"updated_at" json:"updatedAt"`
+}
+
+func (m *Measurement) String() string {
+	return fmt.Sprintf("%v", *m)
 }
 
 func NewMeasurement() *Measurement {

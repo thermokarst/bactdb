@@ -30,7 +30,7 @@ func (s *NullString) UnmarshalJSON(b []byte) error {
 	var err error
 	json.Unmarshal(b, &x)
 	switch x.(type) {
-	case float64:
+	case string:
 		err = json.Unmarshal(b, &s.String)
 	case map[string]interface{}:
 		err = json.Unmarshal(b, &s.NullString)

@@ -14,6 +14,7 @@ func newMeasurement() *models.Measurement {
 	measurement.CharacteristicId = 3
 	measurement.TextMeasurementTypeId = models.NullInt64{sql.NullInt64{Int64: 4, Valid: false}}
 	measurement.UnitTypeId = models.NullInt64{sql.NullInt64{Int64: 5, Valid: true}}
+	measurement.Notes = models.NullString{sql.NullString{String: "a note", Valid: true}}
 	return measurement
 }
 
