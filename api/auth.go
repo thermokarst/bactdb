@@ -115,7 +115,3 @@ func (h authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, Error{hErr})
 	}
 }
-
-func restrictedHandler(w http.ResponseWriter, r *http.Request) error {
-	return writeJSON(w, Message{"great success"})
-}

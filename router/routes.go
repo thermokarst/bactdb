@@ -57,4 +57,6 @@ const (
 	SubrouterListSpecies      = "subrouter_species:list"
 	SubrouterListStrains      = "subrouter_strains:list"
 	SubrouterListMeasurements = "subrouter_measurements:list"
+
+	Health = "health:get"
 )

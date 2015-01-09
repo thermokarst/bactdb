@@ -73,5 +73,8 @@ func API() *mux.Router {
 	s.Path("/strains").Methods("GET").Name(SubrouterListStrains)
 	s.Path("/measurements").Methods("GET").Name(SubrouterListMeasurements)
 
+	// Misc
+	m.Path("/health").Methods("GET").Name(Health)
+
 	return m
 }

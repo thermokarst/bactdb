@@ -74,6 +74,8 @@ func Handler() *mux.Router {
 	m.Get(router.SubrouterListStrains).Handler(authHandler(serveSubrouterStrainsList))
 	m.Get(router.SubrouterListMeasurements).Handler(authHandler(serveSubrouterMeasurementsList))
 
+	m.Get(router.Health).Handler(handler(healthHandler))
+
 	return m
 }
 
@@ -85,4 +87,8 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeJSON(w, Error{err})
 	}
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) error {
+	return writeJSON(w, Message{"great success"})
 }
