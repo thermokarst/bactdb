@@ -124,7 +124,7 @@ func TestStrainService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateStrain, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"speciesId":1,"strainName":"Test Strain Updated","strainType":"Test Type Updated","etymology":"Test Etymology Updated","accessionBanks":"Test Accession Updated","genbankEmblDdb":"Test Genbank Updated","isolatedFrom":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"id":1,"speciesId":1,"strainName":"Test Strain Updated","strainType":"Test Type Updated","etymology":"Test Etymology","accessionBanks":"Test Accession Updated","genbankEmblDdb":"Test Genbank Updated","isolatedFrom":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)
 	})
@@ -132,9 +132,8 @@ func TestStrainService_Update(t *testing.T) {
 	strain := newStrain()
 	strain.StrainName = "Test Strain Updated"
 	strain.StrainType = "Test Type Updated"
-	strain.Etymology = "Test Etymology Updated"
 	strain.AccessionBanks = "Test Accession Updated"
-	strain.GenbankEmblDdb = "Test Genbank Updated"
+	strain.GenbankEmblDdb.String = "Test Genbank Updated"
 	updated, err := client.Strains.Update(strain.Id, strain)
 	if err != nil {
 		t.Errorf("Strains.Update returned error: %v", err)

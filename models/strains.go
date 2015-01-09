@@ -1,7 +1,9 @@
 package models
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -15,22 +17,43 @@ type Strain struct {
 	SpeciesId      int64      `db:"species_id" json:"speciesId"`
 	StrainName     string     `db:"strain_name" json:"strainName"`
 	StrainType     string     `db:"strain_type" json:"strainType"`
-	Etymology      string     `db:"etymology" json:"etymology"`
+	Etymology      NullString `db:"etymology" json:"etymology"`
 	AccessionBanks string     `db:"accession_banks" json:"accessionBanks"`
-	GenbankEmblDdb string     `db:"genbank_embl_ddb" json:"genbankEmblDdb"`
+	GenbankEmblDdb NullString `db:"genbank_embl_ddb" json:"genbankEmblDdb"`
 	IsolatedFrom   NullString `db:"isolated_from" json:"isolatedFrom"`
 	CreatedAt      time.Time  `db:"created_at" json:"createdAt"`
 	UpdatedAt      time.Time  `db:"updated_at" json:"updatedAt"`
 	DeletedAt      NullTime   `db:"deleted_at" json:"deletedAt"`
 }
 
+func (s *Strain) String() string {
+	return fmt.Sprintf("%v", *s)
+}
+
 func NewStrain() *Strain {
 	return &Strain{
-		StrainName:     "Test Strain",
-		StrainType:     "Test Type",
-		Etymology:      "Test Etymology",
+		StrainName: "Test Strain",
+		StrainType: "Test Type",
+		Etymology: NullString{
+			sql.NullString{
+				String: "Test Etymology",
+				Valid:  true,
+			},
+		},
 		AccessionBanks: "Test Accession",
-		GenbankEmblDdb: "Test Genbank"}
+		GenbankEmblDdb: NullString{
+			sql.NullString{
+				String: "Test Genbank",
+				Valid:  true,
+			},
+		},
+		IsolatedFrom: NullString{
+			sql.NullString{
+				String: "",
+				Valid:  false,
+			},
+		},
+	}
 }
 
 // StrainService interacts with the strain-related endpoints in bactdb's API
@@ -102,6 +125,7 @@ func (s *strainsService) Create(strain *Strain) (bool, error) {
 
 type StrainListOptions struct {
 	ListOptions
+	Genus string
 }
 
 func (s *strainsService) List(opt *StrainListOptions) ([]*Strain, error) {

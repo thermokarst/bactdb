@@ -55,4 +55,5 @@ const (
 	DeleteMeasurement = "measurements:delete"
 
 	SubrouterListSpecies = "subrouter_species:list"
+	SubrouterListStrains = "subrouter_strains:list"
 )

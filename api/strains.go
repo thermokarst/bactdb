@@ -90,3 +90,22 @@ func serveDeleteStrain(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, &models.Strain{})
 }
+
+func serveSubrouterStrainsList(w http.ResponseWriter, r *http.Request) error {
+	var opt models.StrainListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	opt.Genus = mux.Vars(r)["genus"]
+
+	strains, err := store.Strains.List(&opt)
+	if err != nil {
+		return err
+	}
+	if strains == nil {
+		strains = []*models.Strain{}
+	}
+
+	return writeJSON(w, strains)
+}

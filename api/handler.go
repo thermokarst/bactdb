@@ -71,6 +71,7 @@ func Handler() *mux.Router {
 	m.Get(router.DeleteMeasurement).Handler(handler(serveDeleteMeasurement))
 
 	m.Get(router.SubrouterListSpecies).Handler(authHandler(serveSubrouterSpeciesList))
+	m.Get(router.SubrouterListStrains).Handler(authHandler(serveSubrouterStrainsList))
 
 	return m
 }

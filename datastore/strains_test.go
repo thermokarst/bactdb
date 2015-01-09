@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"database/sql"
 	"reflect"
 	"testing"
 
@@ -21,9 +22,24 @@ func insertStrain(t *testing.T, tx *modl.Transaction) *models.Strain {
 func newStrain(t *testing.T, tx *modl.Transaction) *models.Strain {
 	// we want to create and insert a species (and genus) record too
 	species := insertSpecies(t, tx)
-	return &models.Strain{SpeciesId: species.Id, StrainName: "Test Strain",
-		StrainType: "Test Type", Etymology: "Test Etymology",
-		AccessionBanks: "Test Bank", GenbankEmblDdb: "Test Genbank"}
+	return &models.Strain{
+		SpeciesId:  species.Id,
+		StrainName: "Test Strain",
+		StrainType: "Test Type",
+		Etymology: models.NullString{
+			sql.NullString{
+				String: "Test Etymology",
+				Valid:  true,
+			},
+		},
+		AccessionBanks: "Test Bank",
+		GenbankEmblDdb: models.NullString{
+			sql.NullString{
+				String: "Test Genbank",
+				Valid:  true,
+			},
+		},
+	}
 }
 
 func TestStrainsStore_Get_db(t *testing.T) {

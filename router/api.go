@@ -70,6 +70,7 @@ func API() *mux.Router {
 	// Subrouter for auth/security
 	s := m.PathPrefix("/{genus}").Subrouter()
 	s.Path("/species").Methods("GET").Name(SubrouterListSpecies)
+	s.Path("/strains").Methods("GET").Name(SubrouterListStrains)
 
 	return m
 }
