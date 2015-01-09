@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,6 +18,10 @@ type UnitType struct {
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
+}
+
+func (m *UnitType) String() string {
+	return fmt.Sprintf("%v", *m)
 }
 
 func NewUnitType() *UnitType {

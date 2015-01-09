@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,6 +19,10 @@ type User struct {
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
+}
+
+func (m *User) String() string {
+	return fmt.Sprintf("%v", *m)
 }
 
 func NewUser() *User {
