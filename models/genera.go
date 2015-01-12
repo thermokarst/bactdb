@@ -19,6 +19,14 @@ type Genus struct {
 	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
+type GenusJSON struct {
+	Genus *Genus `json:"genus"`
+}
+
+type GeneraJSON struct {
+	Genera []*Genus `json:"genera"`
+}
+
 func (m *Genus) String() string {
 	return fmt.Sprintf("%v", *m)
 }
@@ -68,13 +76,13 @@ func (s *generaService) Get(id int64) (*Genus, error) {
 		return nil, err
 	}
 
-	var genus *Genus
+	var genus *GenusJSON
 	_, err = s.client.Do(req, &genus)
 	if err != nil {
 		return nil, err
 	}
 
-	return genus, nil
+	return genus.Genus, nil
 }
 
 func (s *generaService) Create(genus *Genus) (bool, error) {
@@ -83,7 +91,7 @@ func (s *generaService) Create(genus *Genus) (bool, error) {
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("POST", url.String(), genus)
+	req, err := s.client.NewRequest("POST", url.String(), GenusJSON{Genus: genus})
 	if err != nil {
 		return false, err
 	}
@@ -111,13 +119,13 @@ func (s *generaService) List(opt *GenusListOptions) ([]*Genus, error) {
 		return nil, err
 	}
 
-	var genera []*Genus
+	var genera *GeneraJSON
 	_, err = s.client.Do(req, &genera)
 	if err != nil {
 		return nil, err
 	}
 
-	return genera, nil
+	return genera.Genera, nil
 }
 
 func (s *generaService) Update(id int64, genus *Genus) (bool, error) {
@@ -128,7 +136,7 @@ func (s *generaService) Update(id int64, genus *Genus) (bool, error) {
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("PUT", url.String(), genus)
+	req, err := s.client.NewRequest("PUT", url.String(), GenusJSON{Genus: genus})
 	if err != nil {
 		return false, err
 	}

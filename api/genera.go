@@ -22,17 +22,17 @@ func serveGenus(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, genus)
+	return writeJSON(w, models.GenusJSON{Genus: genus})
 }
 
 func serveCreateGenus(w http.ResponseWriter, r *http.Request) error {
-	var genus models.Genus
+	var genus models.GenusJSON
 	err := json.NewDecoder(r.Body).Decode(&genus)
 	if err != nil {
 		return err
 	}
 
-	created, err := store.Genera.Create(&genus)
+	created, err := store.Genera.Create(genus.Genus)
 	if err != nil {
 		return err
 	}
@@ -57,18 +57,18 @@ func serveGenera(w http.ResponseWriter, r *http.Request) error {
 		genera = []*models.Genus{}
 	}
 
-	return writeJSON(w, genera)
+	return writeJSON(w, models.GeneraJSON{Genera: genera})
 }
 
 func serveUpdateGenus(w http.ResponseWriter, r *http.Request) error {
 	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
-	var genus models.Genus
+	var genus models.GenusJSON
 	err := json.NewDecoder(r.Body).Decode(&genus)
 	if err != nil {
 		return err
 	}
 
-	updated, err := store.Genera.Update(id, &genus)
+	updated, err := store.Genera.Update(id, genus.Genus)
 	if err != nil {
 		return err
 	}
