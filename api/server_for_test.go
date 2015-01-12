@@ -10,6 +10,7 @@ import (
 
 	"github.com/thermokarst/bactdb/datastore"
 	"github.com/thermokarst/bactdb/models"
+	"github.com/thermokarst/bactdb/router"
 )
 
 func init() {
@@ -29,7 +30,8 @@ var (
 func setup() {
 	store = datastore.NewMockDatastore()
 	SetupCerts("../keys/")
-	resp, _ := httpClient.PostForm(apiClient.BaseURL.String()+"authenticate/",
+	u, _ := apiClient.URL(router.GetToken, nil, nil)
+	resp, _ := httpClient.PostForm(u.String(),
 		url.Values{"username": {"test_user"}, "password": {"password"}})
 	defer resp.Body.Close()
 }

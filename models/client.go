@@ -127,6 +127,12 @@ func (c *Client) url(apiRouteName string, routeVars map[string]string, opt inter
 	return url, nil
 }
 
+func (c *Client) URL(apiRouteName string, routeVars map[string]string, opt interface{}) (*url.URL, error) {
+	u, err := c.url(apiRouteName, routeVars, opt)
+	absURL := c.BaseURL.ResolveReference(u)
+	return absURL, err
+}
+
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
 // in which case it is resolved relative to the BaseURL of the Client. Relative
 // URLs should always be specified without a preceding slash. If specified, the

@@ -9,7 +9,7 @@ func API() *mux.Router {
 	m.Path("/users").Methods("GET").Name(Users)
 	m.Path("/users").Methods("POST").Name(CreateUser)
 	m.Path("/users/{Id:.+}").Methods("GET").Name(User)
-	m.Path("/authenticate/").Methods("POST").Name(GetToken)
+	m.Path("/authenticate").Methods("POST").Name(GetToken)
 
 	// Genera
 	m.Path("/genera").Methods("GET").Name(Genera)
@@ -47,22 +47,22 @@ func API() *mux.Router {
 	m.Path("/characteristics/{Id:.+}").Methods("DELETE").Name(DeleteCharacteristic)
 
 	// TextMeasurementTypes
-	m.Path("/text_measurement_types/").Methods("GET").Name(TextMeasurementTypes)
-	m.Path("/text_measurement_types/").Methods("POST").Name(CreateTextMeasurementType)
+	m.Path("/text_measurement_types").Methods("GET").Name(TextMeasurementTypes)
+	m.Path("/text_measurement_types").Methods("POST").Name(CreateTextMeasurementType)
 	m.Path("/text_measurement_types/{Id:.+}").Methods("GET").Name(TextMeasurementType)
 	m.Path("/text_measurement_types/{Id:.+}").Methods("PUT").Name(UpdateTextMeasurementType)
 	m.Path("/text_measurement_types/{Id:.+}").Methods("DELETE").Name(DeleteTextMeasurementType)
 
 	// UnitTypes
-	m.Path("/unit_types/").Methods("GET").Name(UnitTypes)
-	m.Path("/unit_types/").Methods("POST").Name(CreateUnitType)
+	m.Path("/unit_types").Methods("GET").Name(UnitTypes)
+	m.Path("/unit_types").Methods("POST").Name(CreateUnitType)
 	m.Path("/unit_types/{Id:.+}").Methods("GET").Name(UnitType)
 	m.Path("/unit_types/{Id:.+}").Methods("PUT").Name(UpdateUnitType)
 	m.Path("/unit_types/{Id:.+}").Methods("DELETE").Name(DeleteUnitType)
 
 	// Measurements
-	m.Path("/measurements/").Methods("GET").Name(Measurements)
-	m.Path("/measurements/").Methods("POST").Name(CreateMeasurement)
+	m.Path("/measurements").Methods("GET").Name(Measurements)
+	m.Path("/measurements").Methods("POST").Name(CreateMeasurement)
 	m.Path("/measurements/{Id:.+}").Methods("GET").Name(Measurement)
 	m.Path("/measurements/{Id:.+}").Methods("PUT").Name(UpdateMeasurement)
 	m.Path("/measurements/{Id:.+}").Methods("DELETE").Name(DeleteMeasurement)
