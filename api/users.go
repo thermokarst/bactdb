@@ -24,17 +24,17 @@ func serveUser(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, user)
+	return writeJSON(w, models.UserJSON{user})
 }
 
 func serveCreateUser(w http.ResponseWriter, r *http.Request) error {
-	var user models.User
+	var user models.UserJSON
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		return err
 	}
 
-	created, err := store.Users.Create(&user)
+	created, err := store.Users.Create(user.User)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func serveUsers(w http.ResponseWriter, r *http.Request) error {
 		users = []*models.User{}
 	}
 
-	return writeJSON(w, users)
+	return writeJSON(w, models.UsersJSON{Users: users})
 }
 
 func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) error {

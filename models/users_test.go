@@ -25,7 +25,7 @@ func TestUsersService_Get(t *testing.T) {
 		called = true
 		testMethod(t, r, "GET")
 
-		writeJSON(w, want)
+		writeJSON(w, UserJSON{User: want})
 	})
 
 	user, err := client.Users.Get(1)
@@ -54,7 +54,7 @@ func TestUsersService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateUser, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"username":"Test User","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"user":{"id":1,"username":"Test User","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -92,7 +92,7 @@ func TestUsersService_List(t *testing.T) {
 		testMethod(t, r, "GET")
 		testFormValues(t, r, values{})
 
-		writeJSON(w, want)
+		writeJSON(w, UsersJSON{Users: want})
 	})
 
 	users, err := client.Users.List(nil)

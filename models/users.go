@@ -21,6 +21,14 @@ type User struct {
 	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
+type UserJSON struct {
+	User *User `json:"user"`
+}
+
+type UsersJSON struct {
+	Users []*User `json:"users"`
+}
+
 func (m *User) String() string {
 	return fmt.Sprintf("%v", *m)
 }
@@ -72,13 +80,13 @@ func (s *usersService) Get(id int64) (*User, error) {
 		return nil, err
 	}
 
-	var user *User
+	var user *UserJSON
 	_, err = s.client.Do(req, &user)
 	if err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	return user.User, nil
 }
 
 func (s *usersService) Create(user *User) (bool, error) {
@@ -87,7 +95,7 @@ func (s *usersService) Create(user *User) (bool, error) {
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("POST", url.String(), user)
+	req, err := s.client.NewRequest("POST", url.String(), UserJSON{User: user})
 	if err != nil {
 		return false, err
 	}
@@ -115,13 +123,13 @@ func (s *usersService) List(opt *UserListOptions) ([]*User, error) {
 		return nil, err
 	}
 
-	var users []*User
+	var users *UsersJSON
 	_, err = s.client.Do(req, &users)
 	if err != nil {
 		return nil, err
 	}
 
-	return users, nil
+	return users.Users, nil
 }
 
 func (s *usersService) Authenticate(username string, password string) (*UserSession, error) {
