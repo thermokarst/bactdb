@@ -104,7 +104,9 @@ func (h authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, Error{errGenericError})
 		return
 	}
-	if mux.Vars(r)["genus"] != token.Claims["genus"] {
+	genus := mux.Vars(r)["genus"]
+	// We don't care about this if we aren't accessing one of the subrouter routes.
+	if genus != "" && genus != token.Claims["genus"] {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeJSON(w, Error{errAccessDenied})
 		return
