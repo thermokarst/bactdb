@@ -53,6 +53,7 @@ type UsersService interface {
 }
 
 type UserSession struct {
+	Token       string `json:"token"`
 	AccessLevel string `json:"access_level"`
 	Genus       string `json:"genus"`
 }

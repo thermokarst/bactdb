@@ -68,6 +68,7 @@ func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) error {
 
 	user_session, err := store.Users.Authenticate(username, password)
 	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		return err
 	}
 
@@ -77,16 +78,10 @@ func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) error {
 	t.Claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
 	tokenString, err := t.SignedString(signKey)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusUnauthorized)
 		return err
 	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:       tokenName,
-		Value:      tokenString,
-		Path:       "/",
-		RawExpires: "0",
-	})
+	user_session.Token = tokenString
 
 	return writeJSON(w, user_session)
 }

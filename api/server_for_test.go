@@ -2,9 +2,10 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 
@@ -18,13 +19,12 @@ func init() {
 }
 
 var (
-	serveMux     = http.NewServeMux()
-	cookieJar, _ = cookiejar.New(nil)
-	httpClient   = http.Client{
+	serveMux   = http.NewServeMux()
+	httpClient = http.Client{
 		Transport: (*muxTransport)(serveMux),
-		Jar:       cookieJar,
 	}
 	apiClient = models.NewClient(&httpClient)
+	testToken models.UserSession
 )
 
 func setup() {
@@ -34,6 +34,10 @@ func setup() {
 	resp, _ := httpClient.PostForm(u.String(),
 		url.Values{"username": {"test_user"}, "password": {"password"}})
 	defer resp.Body.Close()
+
+	if err := json.NewDecoder(resp.Body).Decode(&testToken); err != nil {
+		panic(err)
+	}
 }
 
 type muxTransport http.ServeMux
@@ -43,6 +47,7 @@ type muxTransport http.ServeMux
 func (t *muxTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	rw := httptest.NewRecorder()
 	rw.Body = new(bytes.Buffer)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", testToken.Token))
 	(*http.ServeMux)(t).ServeHTTP(rw, req)
 	return &http.Response{
 		StatusCode:    rw.Code,

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
@@ -56,26 +57,17 @@ func (h authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Even though writeJSON sets the content type, we need to set it here because
 	// calls to WriteHeader write out the entire header.
 	w.Header().Set("content-type", "application/json; charset=utf-8")
-	tokenCookie, err := r.Cookie(tokenName)
-	switch {
-	case err == http.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
-		writeJSON(w, Error{errPleaseLogIn})
-		return
-	case err != nil:
-		w.WriteHeader(http.StatusInternalServerError)
-		writeJSON(w, Error{errWhileParsingCookie})
-		return
-	}
 
-	if tokenCookie.Value == "" {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		writeJSON(w, Error{errPleaseLogIn})
 		return
 	}
+	s := strings.Split(authHeader, " ")
 
 	// Validate the token
-	token, err := jwt.Parse(tokenCookie.Value, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(s[1], func(token *jwt.Token) (interface{}, error) {
 		return verifyKey, nil
 	})
 
