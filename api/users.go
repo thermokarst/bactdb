@@ -75,7 +75,7 @@ func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) error {
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
 	t.Claims["auth_level"] = user_session.AccessLevel
 	t.Claims["genus"] = user_session.Genus
-	t.Claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
+	t.Claims["exp"] = time.Now().Add(time.Minute * 60 * 24).Unix()
 	tokenString, err := t.SignedString(signKey)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
