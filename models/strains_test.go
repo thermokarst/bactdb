@@ -26,7 +26,7 @@ func TestStrainService_Get(t *testing.T) {
 		called = true
 		testMethod(t, r, "GET")
 
-		writeJSON(w, want)
+		writeJSON(w, StrainJSON{Strain: want})
 	})
 
 	strain, err := client.Strains.Get(want.Id)
@@ -55,7 +55,7 @@ func TestStrainService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateStrain, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"speciesId":1,"strainName":"Test Strain","strainType":"Test Type","etymology":"Test Etymology","accessionBanks":"Test Accession","genbankEmblDdb":"Test Genbank","isolatedFrom":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"strain":{"id":1,"speciesId":1,"strainName":"Test Strain","strainType":"Test Type","etymology":"Test Etymology","accessionBanks":"Test Accession","genbankEmblDdb":"Test Genbank","isolatedFrom":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -93,7 +93,7 @@ func TestStrainService_List(t *testing.T) {
 		testMethod(t, r, "GET")
 		testFormValues(t, r, values{})
 
-		writeJSON(w, want)
+		writeJSON(w, StrainsJSON{Strains: want})
 	})
 
 	strains, err := client.Strains.List(nil)
@@ -124,7 +124,7 @@ func TestStrainService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateStrain, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"speciesId":1,"strainName":"Test Strain Updated","strainType":"Test Type Updated","etymology":"Test Etymology","accessionBanks":"Test Accession Updated","genbankEmblDdb":"Test Genbank Updated","isolatedFrom":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"strain":{"id":1,"speciesId":1,"strainName":"Test Strain Updated","strainType":"Test Type Updated","etymology":"Test Etymology","accessionBanks":"Test Accession Updated","genbankEmblDdb":"Test Genbank Updated","isolatedFrom":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}}`+"\n")
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)
 	})
@@ -158,6 +158,7 @@ func TestStrainService_Delete(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.DeleteStrain, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "DELETE")
+		testBody(t, r, "")
 
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)

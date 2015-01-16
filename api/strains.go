@@ -20,17 +20,17 @@ func serveStrain(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, strain)
+	return writeJSON(w, models.StrainJSON{Strain: strain})
 }
 
 func serveCreateStrain(w http.ResponseWriter, r *http.Request) error {
-	var strain models.Strain
+	var strain models.StrainJSON
 	err := json.NewDecoder(r.Body).Decode(&strain)
 	if err != nil {
 		return err
 	}
 
-	created, err := store.Strains.Create(&strain)
+	created, err := store.Strains.Create(strain.Strain)
 	if err != nil {
 		return err
 	}
@@ -55,18 +55,18 @@ func serveStrainList(w http.ResponseWriter, r *http.Request) error {
 		strains = []*models.Strain{}
 	}
 
-	return writeJSON(w, strains)
+	return writeJSON(w, models.StrainsJSON{Strains: strains})
 }
 
 func serveUpdateStrain(w http.ResponseWriter, r *http.Request) error {
 	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
-	var strain models.Strain
+	var strain models.StrainJSON
 	err := json.NewDecoder(r.Body).Decode(&strain)
 	if err != nil {
 		return err
 	}
 
-	updated, err := store.Strains.Update(id, &strain)
+	updated, err := store.Strains.Update(id, strain.Strain)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func serveDeleteStrain(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	return writeJSON(w, &models.Strain{})
+	return writeJSON(w, nil)
 }
 
 func serveSubrouterStrainsList(w http.ResponseWriter, r *http.Request) error {
@@ -107,5 +107,5 @@ func serveSubrouterStrainsList(w http.ResponseWriter, r *http.Request) error {
 		strains = []*models.Strain{}
 	}
 
-	return writeJSON(w, strains)
+	return writeJSON(w, models.StrainsJSON{Strains: strains})
 }

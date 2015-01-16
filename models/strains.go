@@ -26,6 +26,14 @@ type Strain struct {
 	DeletedAt      NullTime   `db:"deleted_at" json:"deletedAt"`
 }
 
+type StrainJSON struct {
+	Strain *Strain `json:"strain"`
+}
+
+type StrainsJSON struct {
+	Strains []*Strain `json:"strains"`
+}
+
 func (s *Strain) String() string {
 	return fmt.Sprintf("%v", *s)
 }
@@ -95,13 +103,13 @@ func (s *strainsService) Get(id int64) (*Strain, error) {
 		return nil, err
 	}
 
-	var strain *Strain
+	var strain *StrainJSON
 	_, err = s.client.Do(req, &strain)
 	if err != nil {
 		return nil, err
 	}
 
-	return strain, nil
+	return strain.Strain, nil
 }
 
 func (s *strainsService) Create(strain *Strain) (bool, error) {
@@ -110,7 +118,7 @@ func (s *strainsService) Create(strain *Strain) (bool, error) {
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("POST", url.String(), strain)
+	req, err := s.client.NewRequest("POST", url.String(), StrainJSON{Strain: strain})
 	if err != nil {
 		return false, err
 	}
@@ -139,13 +147,13 @@ func (s *strainsService) List(opt *StrainListOptions) ([]*Strain, error) {
 		return nil, err
 	}
 
-	var strains []*Strain
+	var strains *StrainsJSON
 	_, err = s.client.Do(req, &strains)
 	if err != nil {
 		return nil, err
 	}
 
-	return strains, nil
+	return strains.Strains, nil
 }
 
 func (s *strainsService) Update(id int64, strain *Strain) (bool, error) {
@@ -156,7 +164,7 @@ func (s *strainsService) Update(id int64, strain *Strain) (bool, error) {
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("PUT", url.String(), strain)
+	req, err := s.client.NewRequest("PUT", url.String(), StrainJSON{Strain: strain})
 	if err != nil {
 		return false, err
 	}
