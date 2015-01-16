@@ -26,7 +26,7 @@ func TestSpeciesService_Get(t *testing.T) {
 		called = true
 		testMethod(t, r, "GET")
 
-		writeJSON(w, want)
+		writeJSON(w, SpeciesJSON{Species: want})
 	})
 
 	species, err := client.Species.Get(want.Id)
@@ -55,7 +55,7 @@ func TestSpeciesService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateSpecies, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"genusId":1,"speciesName":"Test Species","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"species":{"id":1,"genusId":1,"speciesName":"Test Species","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -93,7 +93,7 @@ func TestSpeciesService_List(t *testing.T) {
 		testMethod(t, r, "GET")
 		testFormValues(t, r, values{})
 
-		writeJSON(w, want)
+		writeJSON(w, SpeciesListJSON{Species: want})
 	})
 
 	species, err := client.Species.List(nil)
@@ -124,7 +124,7 @@ func TestSpeciesService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateSpecies, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"genusId":1,"speciesName":"Test Species Updated","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"species":{"id":1,"genusId":1,"speciesName":"Test Species Updated","createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}}`+"\n")
 
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)

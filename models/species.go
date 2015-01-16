@@ -20,6 +20,14 @@ type Species struct {
 	DeletedAt   NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
+type SpeciesJSON struct {
+	Species *Species `json:"species"`
+}
+
+type SpeciesListJSON struct {
+	Species []*Species `json:"species"`
+}
+
 func (m *Species) String() string {
 	return fmt.Sprintf("%v", *m)
 }
@@ -68,13 +76,13 @@ func (s *speciesService) Get(id int64) (*Species, error) {
 		return nil, err
 	}
 
-	var species *Species
+	var species *SpeciesJSON
 	_, err = s.client.Do(req, &species)
 	if err != nil {
 		return nil, err
 	}
 
-	return species, nil
+	return species.Species, nil
 }
 
 func (s *speciesService) Create(species *Species) (bool, error) {
@@ -83,7 +91,7 @@ func (s *speciesService) Create(species *Species) (bool, error) {
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("POST", url.String(), species)
+	req, err := s.client.NewRequest("POST", url.String(), SpeciesJSON{Species: species})
 	if err != nil {
 		return false, err
 	}
@@ -112,13 +120,13 @@ func (s *speciesService) List(opt *SpeciesListOptions) ([]*Species, error) {
 		return nil, err
 	}
 
-	var species []*Species
+	var species *SpeciesListJSON
 	_, err = s.client.Do(req, &species)
 	if err != nil {
 		return nil, err
 	}
 
-	return species, nil
+	return species.Species, nil
 }
 
 func (s *speciesService) Update(id int64, species *Species) (bool, error) {
@@ -129,7 +137,7 @@ func (s *speciesService) Update(id int64, species *Species) (bool, error) {
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("PUT", url.String(), species)
+	req, err := s.client.NewRequest("PUT", url.String(), SpeciesJSON{Species: species})
 	if err != nil {
 		return false, err
 	}

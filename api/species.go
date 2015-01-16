@@ -20,17 +20,17 @@ func serveSpecies(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, species)
+	return writeJSON(w, models.SpeciesJSON{species})
 }
 
 func serveCreateSpecies(w http.ResponseWriter, r *http.Request) error {
-	var species models.Species
+	var species models.SpeciesJSON
 	err := json.NewDecoder(r.Body).Decode(&species)
 	if err != nil {
 		return err
 	}
 
-	created, err := store.Species.Create(&species)
+	created, err := store.Species.Create(species.Species)
 	if err != nil {
 		return err
 	}
@@ -55,18 +55,18 @@ func serveSpeciesList(w http.ResponseWriter, r *http.Request) error {
 		species = []*models.Species{}
 	}
 
-	return writeJSON(w, species)
+	return writeJSON(w, models.SpeciesListJSON{Species: species})
 }
 
 func serveUpdateSpecies(w http.ResponseWriter, r *http.Request) error {
 	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
-	var species models.Species
+	var species models.SpeciesJSON
 	err := json.NewDecoder(r.Body).Decode(&species)
 	if err != nil {
 		return err
 	}
 
-	updated, err := store.Species.Update(id, &species)
+	updated, err := store.Species.Update(id, species.Species)
 	if err != nil {
 		return err
 	}
@@ -107,5 +107,5 @@ func serveSubrouterSpeciesList(w http.ResponseWriter, r *http.Request) error {
 		species = []*models.Species{}
 	}
 
-	return writeJSON(w, species)
+	return writeJSON(w, models.SpeciesListJSON{Species: species})
 }
