@@ -30,7 +30,7 @@ func TestMeasurementService_Get(t *testing.T) {
 		called = true
 		testMethod(t, r, "GET")
 
-		writeJSON(w, want)
+		writeJSON(w, MeasurementJSON{Measurement: want})
 	})
 
 	measurement, err := client.Measurements.Get(want.Id)
@@ -59,7 +59,7 @@ func TestMeasurementService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateMeasurement, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"strainId":1,"characteristicId":1,"textMeasurementTypeId":null,"txtValue":null,"numValue":1.23,"confidenceInterval":null,"unitTypeId":1,"notes":"a note","testMethodId":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z"}`+"\n")
+		testBody(t, r, `{"measurement":{"id":1,"strainId":1,"characteristicId":1,"textMeasurementTypeId":null,"txtValue":null,"numValue":1.23,"confidenceInterval":null,"unitTypeId":1,"notes":"a note","testMethodId":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z"}}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -97,7 +97,7 @@ func TestMeasurementService_List(t *testing.T) {
 		testMethod(t, r, "GET")
 		testFormValues(t, r, values{})
 
-		writeJSON(w, want)
+		writeJSON(w, MeasurementsJSON{Measurements: want})
 	})
 
 	measurements, err := client.Measurements.List(nil)
@@ -128,7 +128,7 @@ func TestMeasurementService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateMeasurement, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"strainId":1,"characteristicId":1,"textMeasurementTypeId":null,"txtValue":null,"numValue":4.56,"confidenceInterval":null,"unitTypeId":1,"notes":"a note","testMethodId":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z"}`+"\n")
+		testBody(t, r, `{"measurement":{"id":1,"strainId":1,"characteristicId":1,"textMeasurementTypeId":null,"txtValue":null,"numValue":4.56,"confidenceInterval":null,"unitTypeId":1,"notes":"a note","testMethodId":null,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z"}}`+"\n")
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)
 	})
@@ -159,6 +159,7 @@ func TestMeasurementService_Delete(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.DeleteMeasurement, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "DELETE")
+		testBody(t, r, "")
 
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)

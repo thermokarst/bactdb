@@ -30,6 +30,14 @@ type Measurement struct {
 	UpdatedAt             time.Time   `db:"updated_at" json:"updatedAt"`
 }
 
+type MeasurementJSON struct {
+	Measurement *Measurement `json:"measurement"`
+}
+
+type MeasurementsJSON struct {
+	Measurements []*Measurement `json:"measurements"`
+}
+
 func (m *Measurement) String() string {
 	return fmt.Sprintf("%v", *m)
 }
@@ -78,13 +86,13 @@ func (s *measurementsService) Get(id int64) (*Measurement, error) {
 		return nil, err
 	}
 
-	var measurement *Measurement
+	var measurement *MeasurementJSON
 	_, err = s.client.Do(req, &measurement)
 	if err != nil {
 		return nil, err
 	}
 
-	return measurement, nil
+	return measurement.Measurement, nil
 }
 
 func (s *measurementsService) Create(measurement *Measurement) (bool, error) {
@@ -93,7 +101,7 @@ func (s *measurementsService) Create(measurement *Measurement) (bool, error) {
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("POST", url.String(), measurement)
+	req, err := s.client.NewRequest("POST", url.String(), MeasurementJSON{Measurement: measurement})
 	if err != nil {
 		return false, err
 	}
@@ -122,13 +130,13 @@ func (s *measurementsService) List(opt *MeasurementListOptions) ([]*Measurement,
 		return nil, err
 	}
 
-	var measurements []*Measurement
+	var measurements *MeasurementsJSON
 	_, err = s.client.Do(req, &measurements)
 	if err != nil {
 		return nil, err
 	}
 
-	return measurements, nil
+	return measurements.Measurements, nil
 }
 
 func (s *measurementsService) Update(id int64, measurement *Measurement) (bool, error) {
@@ -139,7 +147,7 @@ func (s *measurementsService) Update(id int64, measurement *Measurement) (bool, 
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("PUT", url.String(), measurement)
+	req, err := s.client.NewRequest("PUT", url.String(), MeasurementJSON{Measurement: measurement})
 	if err != nil {
 		return false, err
 	}

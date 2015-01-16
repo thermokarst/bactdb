@@ -20,17 +20,17 @@ func serveMeasurement(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, measurement)
+	return writeJSON(w, models.MeasurementJSON{Measurement: measurement})
 }
 
 func serveCreateMeasurement(w http.ResponseWriter, r *http.Request) error {
-	var measurement models.Measurement
+	var measurement models.MeasurementJSON
 	err := json.NewDecoder(r.Body).Decode(&measurement)
 	if err != nil {
 		return err
 	}
 
-	created, err := store.Measurements.Create(&measurement)
+	created, err := store.Measurements.Create(measurement.Measurement)
 	if err != nil {
 		return err
 	}
@@ -55,18 +55,18 @@ func serveMeasurementList(w http.ResponseWriter, r *http.Request) error {
 		measurements = []*models.Measurement{}
 	}
 
-	return writeJSON(w, measurements)
+	return writeJSON(w, models.MeasurementsJSON{Measurements: measurements})
 }
 
 func serveUpdateMeasurement(w http.ResponseWriter, r *http.Request) error {
 	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
-	var measurement models.Measurement
+	var measurement models.MeasurementJSON
 	err := json.NewDecoder(r.Body).Decode(&measurement)
 	if err != nil {
 		return err
 	}
 
-	updated, err := store.Measurements.Update(id, &measurement)
+	updated, err := store.Measurements.Update(id, measurement.Measurement)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func serveDeleteMeasurement(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	return writeJSON(w, &models.Measurement{})
+	return writeJSON(w, nil)
 }
 
 func serveSubrouterMeasurementsList(w http.ResponseWriter, r *http.Request) error {
@@ -107,5 +107,5 @@ func serveSubrouterMeasurementsList(w http.ResponseWriter, r *http.Request) erro
 		measurements = []*models.Measurement{}
 	}
 
-	return writeJSON(w, measurements)
+	return writeJSON(w, models.MeasurementsJSON{Measurements: measurements})
 }
