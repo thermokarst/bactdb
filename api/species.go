@@ -88,7 +88,7 @@ func serveDeleteSpecies(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	return writeJSON(w, &models.Species{})
+	return writeJSON(w, nil)
 }
 
 func serveSubrouterSpeciesList(w http.ResponseWriter, r *http.Request) error {

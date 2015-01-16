@@ -156,6 +156,7 @@ func TestSpeciesService_Delete(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.DeleteSpecies, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "DELETE")
+		testBody(t, r, "")
 
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)

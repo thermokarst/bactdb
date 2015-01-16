@@ -90,5 +90,5 @@ func serveDeleteGenus(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	return writeJSON(w, &models.Genus{})
+	return writeJSON(w, nil)
 }
