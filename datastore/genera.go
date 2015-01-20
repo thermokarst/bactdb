@@ -16,14 +16,14 @@ type generaStore struct {
 }
 
 func (s *generaStore) Get(id int64) (*models.Genus, error) {
-	var genus []*models.Genus
-	if err := s.dbh.Select(&genus, `SELECT * FROM genera WHERE id=$1;`, id); err != nil {
+	var genus models.Genus
+	if err := s.dbh.SelectOne(&genus, `SELECT * FROM genera WHERE id=$1;`, id); err != nil {
 		return nil, err
 	}
-	if len(genus) == 0 {
+	if &genus == nil {
 		return nil, models.ErrGenusNotFound
 	}
-	return genus[0], nil
+	return &genus, nil
 }
 
 func (s *generaStore) Create(genus *models.Genus) (bool, error) {
