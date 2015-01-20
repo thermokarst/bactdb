@@ -11,12 +11,17 @@ import (
 )
 
 // A Genus is a high-level classifier in bactdb.
-type Genus struct {
+type GenusBase struct {
 	Id        int64     `json:"id,omitempty"`
 	GenusName string    `db:"genus_name" json:"genusName"`
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
+}
+
+type Genus struct {
+	*GenusBase
+	Species NullSliceInt64 `db:"species" json:"species"`
 }
 
 type GenusJSON struct {
@@ -31,8 +36,12 @@ func (m *Genus) String() string {
 	return fmt.Sprintf("%v", *m)
 }
 
+func (m *GenusBase) String() string {
+	return fmt.Sprintf("%v", *m)
+}
+
 func NewGenus() *Genus {
-	return &Genus{GenusName: "Test Genus"}
+	return &Genus{&GenusBase{GenusName: "Test Genus"}, make([]int64, 0)}
 }
 
 // GeneraService interacts with the genus-related endpoints in bactdb's API.

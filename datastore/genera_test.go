@@ -12,15 +12,15 @@ func insertGenus(t *testing.T, tx *modl.Transaction) *models.Genus {
 	// Test on a clean database
 	tx.Exec(`DELETE FROM genera;`)
 
-	genus := newGenus()
-	if err := tx.Insert(genus); err != nil {
+	g := newGenus()
+	if err := tx.Insert(g); err != nil {
 		t.Fatal(err)
 	}
-	return genus
+	return &models.Genus{g, []int64(nil)}
 }
 
-func newGenus() *models.Genus {
-	return &models.Genus{GenusName: "Test Genus"}
+func newGenus() *models.GenusBase {
+	return &models.GenusBase{GenusName: "Test Genus"}
 }
 
 func TestGeneraStore_Get_db(t *testing.T) {
@@ -46,10 +46,11 @@ func TestGeneraStore_Create_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	genus := newGenus()
+	base_genus := newGenus()
+	genus := models.Genus{base_genus, []int64(nil)}
 
 	d := NewDatastore(tx)
-	created, err := d.Genera.Create(genus)
+	created, err := d.Genera.Create(&genus)
 	if err != nil {
 		t.Fatal(err)
 	}

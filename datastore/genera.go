@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	DB.AddTableWithName(models.Genus{}, "genera").SetKeys(true, "Id")
+	DB.AddTableWithName(models.GenusBase{}, "genera").SetKeys(true, "Id")
 }
 
 type generaStore struct {
@@ -17,7 +17,8 @@ type generaStore struct {
 
 func (s *generaStore) Get(id int64) (*models.Genus, error) {
 	var genus models.Genus
-	if err := s.dbh.SelectOne(&genus, `SELECT * FROM genera WHERE id=$1;`, id); err != nil {
+	err := s.dbh.SelectOne(&genus, `SELECT g.*, array_agg(s.id) AS species FROM genera g LEFT OUTER JOIN species s ON s.genus_id=g.id WHERE g.id=$1 GROUP BY g.id;`, id)
+	if err != nil {
 		return nil, err
 	}
 	if &genus == nil {
@@ -30,11 +31,14 @@ func (s *generaStore) Create(genus *models.Genus) (bool, error) {
 	currentTime := time.Now()
 	genus.CreatedAt = currentTime
 	genus.UpdatedAt = currentTime
-	if err := s.dbh.Insert(genus); err != nil {
+	// Ugly --- extract embedded struct
+	base := genus.GenusBase
+	if err := s.dbh.Insert(base); err != nil {
 		if strings.Contains(err.Error(), `violates unique constraint "genus_idx"`) {
 			return false, err
 		}
 	}
+	genus.Id = base.Id
 	return true, nil
 }
 
@@ -43,7 +47,7 @@ func (s *generaStore) List(opt *models.GenusListOptions) ([]*models.Genus, error
 		opt = &models.GenusListOptions{}
 	}
 	var genera []*models.Genus
-	err := s.dbh.Select(&genera, `SELECT * FROM genera LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	err := s.dbh.Select(&genera, `SELECT g.*, array_agg(s.id) AS species FROM genera g LEFT OUTER JOIN species s ON s.genus_id=g.id GROUP BY g.id LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +65,8 @@ func (s *generaStore) Update(id int64, genus *models.Genus) (bool, error) {
 	}
 
 	genus.UpdatedAt = time.Now()
-	changed, err := s.dbh.Update(genus)
+
+	changed, err := s.dbh.Update(genus.GenusBase)
 	if err != nil {
 		return false, err
 	}
@@ -79,7 +84,7 @@ func (s *generaStore) Delete(id int64) (bool, error) {
 		return false, err
 	}
 
-	deleted, err := s.dbh.Delete(genus)
+	deleted, err := s.dbh.Delete(genus.GenusBase)
 	if err != nil {
 		return false, err
 	}
