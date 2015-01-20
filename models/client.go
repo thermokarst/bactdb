@@ -67,7 +67,7 @@ func NewClient(httpClient *http.Client) *Client {
 // ListOptions specifies general pagination options for fetching a list of results
 type ListOptions struct {
 	PerPage int `url:",omitempty" json:",omitempty"`
-	Page    int `url:",moitempty" json:",omitempty"`
+	Page    int `url:",omitempty" json:",omitempty"`
 }
 
 func (o ListOptions) PageOrDefault() int {
