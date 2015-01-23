@@ -17,14 +17,14 @@ type usersStore struct {
 }
 
 func (s *usersStore) Get(id int64) (*models.User, error) {
-	var users []*models.User
-	if err := s.dbh.Select(&users, `SELECT * FROM users WHERE id=$1;`, id); err != nil {
+	var user models.User
+	if err := s.dbh.SelectOne(&user, `SELECT * FROM users WHERE id=$1;`, id); err != nil {
 		return nil, err
 	}
-	if len(users) == 0 {
+	if &user == nil {
 		return nil, models.ErrUserNotFound
 	}
-	return users[0], nil
+	return &user, nil
 }
 
 func (s *usersStore) Create(user *models.User) (bool, error) {

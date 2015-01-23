@@ -15,14 +15,14 @@ type unitTypesStore struct {
 }
 
 func (s *unitTypesStore) Get(id int64) (*models.UnitType, error) {
-	var unit_type []*models.UnitType
-	if err := s.dbh.Select(&unit_type, `SELECT * FROM unit_types WHERE id=$1;`, id); err != nil {
+	var unit_type models.UnitType
+	if err := s.dbh.SelectOne(&unit_type, `SELECT * FROM unit_types WHERE id=$1;`, id); err != nil {
 		return nil, err
 	}
-	if len(unit_type) == 0 {
+	if &unit_type == nil {
 		return nil, models.ErrUnitTypeNotFound
 	}
-	return unit_type[0], nil
+	return &unit_type, nil
 }
 
 func (s *unitTypesStore) Create(unit_type *models.UnitType) (bool, error) {

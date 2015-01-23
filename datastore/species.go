@@ -16,14 +16,14 @@ type speciesStore struct {
 }
 
 func (s *speciesStore) Get(id int64) (*models.Species, error) {
-	var species []*models.Species
-	if err := s.dbh.Select(&species, `SELECT * FROM species WHERE id=$1;`, id); err != nil {
+	var species models.Species
+	if err := s.dbh.SelectOne(&species, `SELECT * FROM species WHERE id=$1;`, id); err != nil {
 		return nil, err
 	}
-	if len(species) == 0 {
+	if &species == nil {
 		return nil, models.ErrSpeciesNotFound
 	}
-	return species[0], nil
+	return &species, nil
 }
 
 func (s *speciesStore) Create(species *models.Species) (bool, error) {

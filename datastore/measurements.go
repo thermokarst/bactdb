@@ -17,14 +17,14 @@ type measurementsStore struct {
 }
 
 func (s *measurementsStore) Get(id int64) (*models.Measurement, error) {
-	var measurement []*models.Measurement
-	if err := s.dbh.Select(&measurement, `SELECT * FROM measurements WHERE id=$1;`, id); err != nil {
+	var measurement models.Measurement
+	if err := s.dbh.SelectOne(&measurement, `SELECT * FROM measurements WHERE id=$1;`, id); err != nil {
 		return nil, err
 	}
-	if len(measurement) == 0 {
+	if &measurement == nil {
 		return nil, models.ErrMeasurementNotFound
 	}
-	return measurement[0], nil
+	return &measurement, nil
 }
 
 func (s *measurementsStore) Create(measurement *models.Measurement) (bool, error) {

@@ -15,14 +15,14 @@ type textMeasurementTypesStore struct {
 }
 
 func (s *textMeasurementTypesStore) Get(id int64) (*models.TextMeasurementType, error) {
-	var text_measurement_type []*models.TextMeasurementType
-	if err := s.dbh.Select(&text_measurement_type, `SELECT * FROM text_measurement_types WHERE id=$1;`, id); err != nil {
+	var text_measurement_type models.TextMeasurementType
+	if err := s.dbh.SelectOne(&text_measurement_type, `SELECT * FROM text_measurement_types WHERE id=$1;`, id); err != nil {
 		return nil, err
 	}
-	if len(text_measurement_type) == 0 {
+	if &text_measurement_type == nil {
 		return nil, models.ErrTextMeasurementTypeNotFound
 	}
-	return text_measurement_type[0], nil
+	return &text_measurement_type, nil
 }
 
 func (s *textMeasurementTypesStore) Create(text_measurement_type *models.TextMeasurementType) (bool, error) {

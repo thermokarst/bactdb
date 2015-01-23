@@ -17,14 +17,14 @@ type strainsStore struct {
 }
 
 func (s *strainsStore) Get(id int64) (*models.Strain, error) {
-	var strain []*models.Strain
-	if err := s.dbh.Select(&strain, `SELECT * FROM strains WHERE id=$1;`, id); err != nil {
+	var strain models.Strain
+	if err := s.dbh.SelectOne(&strain, `SELECT * FROM strains WHERE id=$1;`, id); err != nil {
 		return nil, err
 	}
-	if len(strain) == 0 {
+	if &strain == nil {
 		return nil, models.ErrStrainNotFound
 	}
-	return strain[0], nil
+	return &strain, nil
 }
 
 func (s *strainsStore) Create(strain *models.Strain) (bool, error) {

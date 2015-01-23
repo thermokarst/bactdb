@@ -15,14 +15,14 @@ type characteristicsStore struct {
 }
 
 func (s *characteristicsStore) Get(id int64) (*models.Characteristic, error) {
-	var characteristic []*models.Characteristic
-	if err := s.dbh.Select(&characteristic, `SELECT * FROM characteristics WHERE id=$1;`, id); err != nil {
+	var characteristic models.Characteristic
+	if err := s.dbh.SelectOne(&characteristic, `SELECT * FROM characteristics WHERE id=$1;`, id); err != nil {
 		return nil, err
 	}
-	if len(characteristic) == 0 {
+	if &characteristic == nil {
 		return nil, models.ErrCharacteristicNotFound
 	}
-	return characteristic[0], nil
+	return &characteristic, nil
 }
 
 func (s *characteristicsStore) Create(characteristic *models.Characteristic) (bool, error) {
