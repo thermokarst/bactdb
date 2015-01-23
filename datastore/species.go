@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -56,9 +55,7 @@ func (s *speciesStore) List(opt *models.SpeciesListOptions) ([]*models.Species, 
 		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
 	}
 
-	sql += fmt.Sprintf(" LIMIT $%v OFFSET $%v;", len(conds)+1, len(conds)+2)
-	vals = append(vals, opt.PerPageOrDefault())
-	vals = append(vals, opt.Offset())
+	sql += ";"
 
 	var species []*models.Species
 	err := s.dbh.Select(&species, sql, vals...)
