@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	DB.AddTableWithName(models.Species{}, "species").SetKeys(true, "Id")
+	DB.AddTableWithName(models.SpeciesBase{}, "species").SetKeys(true, "Id")
 }
 
 type speciesStore struct {
@@ -17,7 +17,8 @@ type speciesStore struct {
 
 func (s *speciesStore) Get(id int64) (*models.Species, error) {
 	var species models.Species
-	if err := s.dbh.SelectOne(&species, `SELECT * FROM species WHERE id=$1;`, id); err != nil {
+	err := s.dbh.SelectOne(&species, `SELECT sp.*, array_agg(st.id) AS strains FROM species sp LEFT OUTER JOIN strains st ON st.species_id=sp.id WHERE sp.id=$1 GROUP BY sp.id;`, id)
+	if err != nil {
 		return nil, err
 	}
 	if &species == nil {
@@ -30,9 +31,11 @@ func (s *speciesStore) Create(species *models.Species) (bool, error) {
 	currentTime := time.Now()
 	species.CreatedAt = currentTime
 	species.UpdatedAt = currentTime
-	if err := s.dbh.Insert(species); err != nil {
+	base := species.SpeciesBase
+	if err := s.dbh.Insert(base); err != nil {
 		return false, err
 	}
+	species.Id = base.Id
 	return true, nil
 }
 
@@ -41,13 +44,13 @@ func (s *speciesStore) List(opt *models.SpeciesListOptions) ([]*models.Species, 
 		opt = &models.SpeciesListOptions{}
 	}
 
-	sql := `SELECT * FROM species`
+	sql := `SELECT sp.*, array_agg(st.id) AS strains FROM species sp LEFT OUTER JOIN strains st ON st.species_id=sp.id`
 
 	var conds []string
 	var vals []interface{}
 
 	if opt.Genus != "" {
-		conds = append(conds, "genus_id = (SELECT id FROM genera WHERE lower(genus_name) = $1)")
+		conds = append(conds, "sp.genus_id = (SELECT id FROM genera WHERE lower(genus_name) = $1)")
 		vals = append(vals, opt.Genus)
 	}
 
@@ -55,7 +58,7 @@ func (s *speciesStore) List(opt *models.SpeciesListOptions) ([]*models.Species, 
 		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
 	}
 
-	sql += ";"
+	sql += " GROUP BY sp.id;"
 
 	var species []*models.Species
 	err := s.dbh.Select(&species, sql, vals...)
@@ -76,7 +79,8 @@ func (s *speciesStore) Update(id int64, species *models.Species) (bool, error) {
 	}
 
 	species.UpdatedAt = time.Now()
-	changed, err := s.dbh.Update(species)
+
+	changed, err := s.dbh.Update(species.SpeciesBase)
 	if err != nil {
 		return false, err
 	}
@@ -94,7 +98,7 @@ func (s *speciesStore) Delete(id int64) (bool, error) {
 		return false, err
 	}
 
-	deleted, err := s.dbh.Delete(species)
+	deleted, err := s.dbh.Delete(species.SpeciesBase)
 	if err != nil {
 		return false, err
 	}

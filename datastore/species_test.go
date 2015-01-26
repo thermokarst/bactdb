@@ -11,17 +11,17 @@ import (
 func insertSpecies(t *testing.T, tx *modl.Transaction) *models.Species {
 	// clean up our target table
 	tx.Exec(`DELETE FROM species;`)
-	species := newSpecies(t, tx)
-	if err := tx.Insert(species); err != nil {
+	s := newSpecies(t, tx)
+	if err := tx.Insert(s); err != nil {
 		t.Fatal(err)
 	}
-	return species
+	return &models.Species{s, []int64(nil)}
 }
 
-func newSpecies(t *testing.T, tx *modl.Transaction) *models.Species {
+func newSpecies(t *testing.T, tx *modl.Transaction) *models.SpeciesBase {
 	// we want to create and insert a genus record, too
 	genus := insertGenus(t, tx)
-	return &models.Species{GenusId: genus.Id, SpeciesName: "Test Species"}
+	return &models.SpeciesBase{GenusId: genus.Id, SpeciesName: "Test Species"}
 }
 
 func TestSpeciesStore_Get_db(t *testing.T) {
@@ -48,11 +48,11 @@ func TestSpeciesStore_Create_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	species := newSpecies(t, tx)
+	base_species := newSpecies(t, tx)
+	species := models.Species{base_species, []int64(nil)}
 
 	d := NewDatastore(tx)
-
-	created, err := d.Species.Create(species)
+	created, err := d.Species.Create(&species)
 	if err != nil {
 		t.Fatal(err)
 	}

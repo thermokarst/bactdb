@@ -11,13 +11,18 @@ import (
 )
 
 // A Species is a high-level classifier in bactdb.
-type Species struct {
+type SpeciesBase struct {
 	Id          int64     `json:"id,omitempty"`
 	GenusId     int64     `db:"genus_id" json:"genus"`
 	SpeciesName string    `db:"species_name" json:"speciesName"`
 	CreatedAt   time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt   time.Time `db:"updated_at" json:"updatedAt"`
 	DeletedAt   NullTime  `db:"deleted_at" json:"deletedAt"`
+}
+
+type Species struct {
+	*SpeciesBase
+	Strain NullSliceInt64 `db:"strains" json:"strains"`
 }
 
 type SpeciesJSON struct {
@@ -33,7 +38,7 @@ func (m *Species) String() string {
 }
 
 func NewSpecies() *Species {
-	return &Species{SpeciesName: "Test Species"}
+	return &Species{&SpeciesBase{SpeciesName: "Test Species"}, make([]int64, 0)}
 }
 
 // SpeciesService interacts with the species-related endpoints in bactdb's API.

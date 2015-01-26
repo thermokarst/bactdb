@@ -14,7 +14,7 @@ import (
 // A Strain is a subclass of species
 type Strain struct {
 	Id             int64      `json:"id,omitempty"`
-	SpeciesId      int64      `db:"species_id" json:"speciesId"`
+	SpeciesId      int64      `db:"species_id" json:"species"`
 	StrainName     string     `db:"strain_name" json:"strainName"`
 	StrainType     string     `db:"strain_type" json:"strainType"`
 	Etymology      NullString `db:"etymology" json:"etymology"`
