@@ -12,17 +12,17 @@ import (
 func insertStrain(t *testing.T, tx *modl.Transaction) *models.Strain {
 	// clean up our target table
 	tx.Exec(`DELETE FROM strains;`)
-	strain := newStrain(t, tx)
-	if err := tx.Insert(strain); err != nil {
+	s := newStrain(t, tx)
+	if err := tx.Insert(s); err != nil {
 		t.Fatal(err)
 	}
-	return strain
+	return &models.Strain{s, []int64(nil)}
 }
 
-func newStrain(t *testing.T, tx *modl.Transaction) *models.Strain {
+func newStrain(t *testing.T, tx *modl.Transaction) *models.StrainBase {
 	// we want to create and insert a species (and genus) record too
 	species := insertSpecies(t, tx)
-	return &models.Strain{
+	return &models.StrainBase{
 		SpeciesId:  species.Id,
 		StrainName: "Test Strain",
 		StrainType: "Test Type",
@@ -67,11 +67,12 @@ func TestStrainsStore_Create_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	strain := newStrain(t, tx)
+	base_strain := newStrain(t, tx)
+	strain := models.Strain{base_strain, []int64(nil)}
 
 	d := NewDatastore(tx)
 
-	created, err := d.Strains.Create(strain)
+	created, err := d.Strains.Create(&strain)
 	if err != nil {
 		t.Fatal(err)
 	}

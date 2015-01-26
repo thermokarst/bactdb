@@ -12,7 +12,7 @@ import (
 )
 
 // A Strain is a subclass of species
-type Strain struct {
+type StrainBase struct {
 	Id             int64      `json:"id,omitempty"`
 	SpeciesId      int64      `db:"species_id" json:"species"`
 	StrainName     string     `db:"strain_name" json:"strainName"`
@@ -24,6 +24,11 @@ type Strain struct {
 	CreatedAt      time.Time  `db:"created_at" json:"createdAt"`
 	UpdatedAt      time.Time  `db:"updated_at" json:"updatedAt"`
 	DeletedAt      NullTime   `db:"deleted_at" json:"deletedAt"`
+}
+
+type Strain struct {
+	*StrainBase
+	Measurements NullSliceInt64 `db:"measurements" json:"measurements"`
 }
 
 type StrainJSON struct {
@@ -40,27 +45,30 @@ func (s *Strain) String() string {
 
 func NewStrain() *Strain {
 	return &Strain{
-		StrainName: "Test Strain",
-		StrainType: "Test Type",
-		Etymology: NullString{
-			sql.NullString{
-				String: "Test Etymology",
-				Valid:  true,
+		&StrainBase{
+			StrainName: "Test Strain",
+			StrainType: "Test Type",
+			Etymology: NullString{
+				sql.NullString{
+					String: "Test Etymology",
+					Valid:  true,
+				},
+			},
+			AccessionBanks: "Test Accession",
+			GenbankEmblDdb: NullString{
+				sql.NullString{
+					String: "Test Genbank",
+					Valid:  true,
+				},
+			},
+			IsolatedFrom: NullString{
+				sql.NullString{
+					String: "",
+					Valid:  false,
+				},
 			},
 		},
-		AccessionBanks: "Test Accession",
-		GenbankEmblDdb: NullString{
-			sql.NullString{
-				String: "Test Genbank",
-				Valid:  true,
-			},
-		},
-		IsolatedFrom: NullString{
-			sql.NullString{
-				String: "",
-				Valid:  false,
-			},
-		},
+		make([]int64, 0),
 	}
 }
 

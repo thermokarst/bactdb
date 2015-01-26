@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -9,7 +8,7 @@ import (
 )
 
 func init() {
-	DB.AddTableWithName(models.Strain{}, "strains").SetKeys(true, "Id")
+	DB.AddTableWithName(models.StrainBase{}, "strains").SetKeys(true, "Id")
 }
 
 type strainsStore struct {
@@ -18,7 +17,8 @@ type strainsStore struct {
 
 func (s *strainsStore) Get(id int64) (*models.Strain, error) {
 	var strain models.Strain
-	if err := s.dbh.SelectOne(&strain, `SELECT * FROM strains WHERE id=$1;`, id); err != nil {
+	err := s.dbh.SelectOne(&strain, `SELECT s.*, array_agg(m.id) AS measurements FROM strains s LEFT OUTER JOIN measurements m ON m.strain_id=s.id WHERE s.id=$1 GROUP BY s.id;`, id)
+	if err != nil {
 		return nil, err
 	}
 	if &strain == nil {
@@ -31,9 +31,11 @@ func (s *strainsStore) Create(strain *models.Strain) (bool, error) {
 	currentTime := time.Now()
 	strain.CreatedAt = currentTime
 	strain.UpdatedAt = currentTime
-	if err := s.dbh.Insert(strain); err != nil {
+	base := strain.StrainBase
+	if err := s.dbh.Insert(base); err != nil {
 		return false, err
 	}
+	strain.Id = base.Id
 	return true, nil
 }
 
@@ -42,13 +44,13 @@ func (s *strainsStore) List(opt *models.StrainListOptions) ([]*models.Strain, er
 		opt = &models.StrainListOptions{}
 	}
 
-	sql := `SELECT * FROM strains`
+	sql := `SELECT s.*, array_agg(m.id) AS measurements FROM strains s LEFT OUTER JOIN measurements m ON m.strain_id=s.id`
 
 	var conds []string
 	var vals []interface{}
 
 	if opt.Genus != "" {
-		conds = append(conds, `species_id IN (SELECT s.id FROM species s
+		conds = append(conds, `s.species_id IN (SELECT s.id FROM species s
 		INNER JOIN genera g ON g.id = s.genus_id WHERE lower(g.genus_name) = $1)`)
 		vals = append(vals, opt.Genus)
 	}
@@ -57,8 +59,7 @@ func (s *strainsStore) List(opt *models.StrainListOptions) ([]*models.Strain, er
 		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
 	}
 
-	sql += fmt.Sprintf(" LIMIT $%v OFFSET $%v;", len(conds)+1, len(conds)+2)
-	vals = append(vals, opt.PerPageOrDefault(), opt.Offset())
+	sql += " GROUP BY s.id;"
 
 	var strains []*models.Strain
 	err := s.dbh.Select(&strains, sql, vals...)
@@ -79,7 +80,8 @@ func (s *strainsStore) Update(id int64, strain *models.Strain) (bool, error) {
 	}
 
 	strain.UpdatedAt = time.Now()
-	changed, err := s.dbh.Update(strain)
+
+	changed, err := s.dbh.Update(strain.StrainBase)
 	if err != nil {
 		return false, err
 	}
@@ -97,7 +99,7 @@ func (s *strainsStore) Delete(id int64) (bool, error) {
 		return false, err
 	}
 
-	deleted, err := s.dbh.Delete(strain)
+	deleted, err := s.dbh.Delete(strain.StrainBase)
 	if err != nil {
 		return false, err
 	}

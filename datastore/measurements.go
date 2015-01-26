@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -59,8 +58,7 @@ func (s *measurementsStore) List(opt *models.MeasurementListOptions) ([]*models.
 		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
 	}
 
-	sql += fmt.Sprintf(" LIMIT $%v OFFSET $%v;", len(conds)+1, len(conds)+2)
-	vals = append(vals, opt.PerPageOrDefault(), opt.Offset())
+	sql += ";"
 
 	var measurements []*models.Measurement
 	err := s.dbh.Select(&measurements, sql, vals...)

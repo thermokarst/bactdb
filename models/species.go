@@ -22,7 +22,7 @@ type SpeciesBase struct {
 
 type Species struct {
 	*SpeciesBase
-	Strain NullSliceInt64 `db:"strains" json:"strains"`
+	Strains NullSliceInt64 `db:"strains" json:"strains"`
 }
 
 type SpeciesJSON struct {
