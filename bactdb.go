@@ -27,11 +27,6 @@ func main() {
 					Usage: "HTTP service port",
 					Value: 8901,
 				},
-				cli.StringFlag{
-					Name:  "keys",
-					Usage: "path to keys",
-					Value: "keys/",
-				},
 			},
 			Action: cmdServe,
 		},
@@ -58,15 +53,19 @@ func main() {
 }
 
 func cmdServe(c *cli.Context) {
+	var err error
 	httpAddr := fmt.Sprintf(":%v", c.Int("port"))
 
 	datastore.Connect()
-	api.SetupCerts(c.String("keys"))
+	err = api.SetupCerts()
+	if err != nil {
+		log.Fatal("SetupCerts: ", err)
+	}
 
 	m := http.NewServeMux()
 	m.Handle("/api/", http.StripPrefix("/api", api.Handler()))
 	log.Print("Listening on ", httpAddr)
-	err := http.ListenAndServe(httpAddr, m)
+	err = http.ListenAndServe(httpAddr, m)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

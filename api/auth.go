@@ -2,10 +2,8 @@ package api
 
 import (
 	"errors"
-	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -26,27 +24,19 @@ var (
 	errAccessDenied       = errors.New("insufficient privileges")
 )
 
-func SetupCerts(p string) error {
-	var err error
-	if err != nil {
-		log.Fatalf("Path error: ", err)
+func SetupCerts() error {
+	signkey := os.Getenv("PRIVATE_KEY")
+	if signkey == "" {
+		return errors.New("please set PRIVATE_KEY")
 	}
+	signKey = []byte(signkey)
 
-	// openssl genrsa -out app.rsa keysize
-	privKeyPath := fmt.Sprintf("%vapp.rsa", p)
-	signKey, err = ioutil.ReadFile(privKeyPath)
-	if err != nil {
-		log.Fatalf("Error reading private key: ", err)
-		return err
+	verifykey := os.Getenv("PUBLIC_KEY")
+	if verifykey == "" {
+		return errors.New("please set PUBLIC_KEY")
 	}
+	verifyKey = []byte(verifykey)
 
-	// openssl rsa -in app.rsa -pubout > app.rsa.pub
-	pubKeyPath := fmt.Sprintf("%vapp.rsa.pub", p)
-	verifyKey, err = ioutil.ReadFile(pubKeyPath)
-	if err != nil {
-		log.Fatalf("Error reading public key: ", err)
-		return err
-	}
 	return nil
 }
 
@@ -68,7 +58,7 @@ func (h authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Validate the token
 	token, err := jwt.Parse(s[1], func(token *jwt.Token) (interface{}, error) {
-		return verifyKey, nil
+		return []byte(verifyKey), nil
 	})
 
 	// Branch out into the possible error from signing
