@@ -21,14 +21,7 @@ func main() {
 			Name:      "serve",
 			ShortName: "s",
 			Usage:     "Start web server",
-			Flags: []cli.Flag{
-				cli.IntFlag{
-					Name:  "port",
-					Usage: "HTTP service port",
-					Value: 8901,
-				},
-			},
-			Action: cmdServe,
+			Action:    cmdServe,
 		},
 		{
 			Name:      "createdb",
@@ -54,7 +47,12 @@ func main() {
 
 func cmdServe(c *cli.Context) {
 	var err error
-	httpAddr := fmt.Sprintf(":%v", c.Int("port"))
+
+	addr := os.Getenv("PORT")
+	if addr == "" {
+		addr = "8901"
+	}
+	httpAddr := fmt.Sprintf(":%v", addr)
 
 	datastore.Connect()
 	err = api.SetupCerts()
