@@ -5,15 +5,17 @@ addons:
 
 go: 1.4
 
+env:
+  - CI_REPORT=shippable/testresults/junit.xml
+
 before_install:
   - export GOPATH=$SHIPPABLE_GOPATH
   - source $HOME/.gvm/scripts/gvm
   - gvm install go$SHIPPABLE_GO_VERSION
   - gvm use go$SHIPPABLE_GO_VERSION
   - go get github.com/t-yuki/gocover-cobertura
-  - go get github.com/onsi/gomega
-  - go get github.com/onsi/ginkgo
   - go get golang.org/x/tools/cmd/cover
+  - go get -u github.com/jstemmer/go-junit-report
 
 before_script:
   - psql -c 'CREATE DATABASE bactdbtest;' -U postgres
@@ -21,6 +23,6 @@ before_script:
   - mkdir -p shippable/codecoverage
 
 script:
-  - ./test.sh
+  - ./test.sh | $GOPATH/bin/go-junit-report > shippable/testresults/junit.xml
   - $GOPATH/bin/gocover-cobertura < coverage.txt > shippable/codecoverage/coverage.xml
 
