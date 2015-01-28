@@ -13,7 +13,7 @@ before_install:
   - go get github.com/t-yuki/gocover-cobertura
   - go get github.com/onsi/gomega
   - go get github.com/onsi/ginkgo
-  - go get code.google.com/p/go.tools/cmd/cover
+  - go get golang.org/x/tools/cmd/cover
 
 before_script:
   - psql -c 'CREATE DATABASE bactdbtest;' -U postgres
