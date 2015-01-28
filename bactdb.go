@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/thermokarst/bactdb/api"
@@ -61,7 +62,7 @@ func cmdServe(c *cli.Context) {
 	}
 
 	m := http.NewServeMux()
-	m.Handle("/api/", http.StripPrefix("/api", api.Handler()))
+	m.Handle("/api/", http.StripPrefix("/api", corsHandler(api.Handler())))
 	log.Print("Listening on ", httpAddr)
 	err = http.ListenAndServe(httpAddr, m)
 	if err != nil {
@@ -78,4 +79,23 @@ func cmdCreateDB(c *cli.Context) {
 		datastore.Drop(migrationsPath)
 	}
 	datastore.Create(migrationsPath)
+}
+
+func corsHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		domains := os.Getenv("DOMAINS")
+		allowedDomains := strings.Split(domains, ",")
+		if origin := r.Header.Get("Origin"); origin != "" {
+			for _, s := range allowedDomains {
+				if s == origin {
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+					w.Header().Set("Access-Control-Allow-Headers", r.Header.Get("Access-Control-Request-Headers"))
+					w.Header().Set("Access-Control-Allow-Methods", r.Header.Get("Access-Control-Request-Method"))
+				}
+			}
+		}
+		if r.Method != "OPTIONS" {
+			h.ServeHTTP(w, r)
+		}
+	}
 }
