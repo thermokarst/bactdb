@@ -7,6 +7,7 @@ go: 1.4
 
 env:
   - CI_REPORT=shippable/testresults/junit.xml
+  - secure: TzuB7Rwi0KQH2MNim2iMKkvKttWPzcnxy9sItlpdQSAaqUmg3H0emChA3WOX/E6YvnaowUdexTOyuBoYKeFreAWD1rnNye+B67BpsAjrdizkqZ4q9NtoQQ4ZAzXv/k6ly0tTpQBMvDoMeyFsEpUDkX6rJHhuAIOdVdhk+zHPHLPuXkR3RrQsthkPWjN3lnLJXECaHSSrfL/ibJybJLtzBGrpK+AlDDRTI7p26VdtITxgRrybTSF19BnltqaompubiwZUCQoy1Zgk9yp2S7SyPZtHZwnoYHN5uWS0XVKndXF/n+B4rphUzBPXWBfaW+9KeDQvY8UEA/EkLtxmNNKPrw==
 
 before_install:
   - export GOPATH=$SHIPPABLE_GOPATH
@@ -16,6 +17,7 @@ before_install:
   - go get github.com/t-yuki/gocover-cobertura
   - go get golang.org/x/tools/cmd/cover
   - go get -u github.com/jstemmer/go-junit-report
+  - which heroku || wget -qO- https://toolbelt.heroku.com/install-ubuntu.sh | sh
 
 before_script:
   - psql -c 'CREATE DATABASE bactdbtest;' -U postgres
@@ -27,4 +29,7 @@ script:
   - $GOPATH/bin/gocover-cobertura < coverage.txt > shippable/codecoverage/coverage.xml
 
 after_success:
-  - git push git@heroku.com:bactdb.git master
+  - test -f ~/.ssh/id_rsa.heroku || ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.heroku && heroku keys:add ~/.ssh/id_rsa.heroku
+  - git remote -v | grep ^heroku || heroku git:remote --ssh-git --app bactdb
+  - git push -f heroku $BRANCH:master
+  - heroku run bactdb migrate
