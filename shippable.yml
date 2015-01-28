@@ -1,0 +1,26 @@
+language: go
+
+addons:
+  postgresql: 9.3
+
+go: 1.4
+
+before_install:
+  - export GOPATH=$SHIPPABLE_GOPATH
+  - source $HOME/.gvm/scripts/gvm
+  - gvm install go$SHIPPABLE_GO_VERSION
+  - gvm use go$SHIPPABLE_GO_VERSION
+  - go get github.com/t-yuki/gocover-cobertura
+  - go get github.com/onsi/gomega
+  - go get github.com/onsi/ginkgo
+  - go get code.google.com/p/go.tools/cmd/cover
+
+before_script:
+  - psql -c 'CREATE DATABASE bactdbtest;' -U postgres
+  - mkdir -p shippable/testresults
+  - mkdir -p shippable/codecoverage
+
+script:
+  - go test -coverprofile=coverage.txt -covermode count ./
+  - $GOPATH/bin/gocover-cobertura < coverage.txt > shippable/codecoverage/coverage.xml
+

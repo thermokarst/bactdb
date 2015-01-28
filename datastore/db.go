@@ -100,6 +100,8 @@ func setDBCredentials() string {
 		conn, _ := pq.ParseURL(url)
 		connection += conn
 		connection += " sslmode=require"
+	} else {
+		connection += " sslmode=disable"
 	}
 	return connection
 }
