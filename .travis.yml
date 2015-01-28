@@ -7,6 +7,4 @@ go: 1.4
 
 before_script:
   - psql -c 'CREATE DATABASE bactdbtest;' -U postgres
-  - openssl genrsa -out keys/app.rsa 2048
-  - openssl rsa -in keys/app.rsa -pubout > keys/app.rsa.pub
 
