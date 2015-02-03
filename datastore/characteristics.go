@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	DB.AddTableWithName(models.Characteristic{}, "characteristics").SetKeys(true, "Id")
+	DB.AddTableWithName(models.CharacteristicBase{}, "characteristics").SetKeys(true, "Id")
 }
 
 type characteristicsStore struct {
@@ -16,7 +16,8 @@ type characteristicsStore struct {
 
 func (s *characteristicsStore) Get(id int64) (*models.Characteristic, error) {
 	var characteristic models.Characteristic
-	if err := s.dbh.SelectOne(&characteristic, `SELECT * FROM characteristics WHERE id=$1;`, id); err != nil {
+	err := s.dbh.SelectOne(&characteristic, `SELECT c.*, array_agg(m.id) AS measurements FROM characteristics c LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id WHERE c.id=$1 GROUP BY c.id;`, id)
+	if err != nil {
 		return nil, err
 	}
 	if &characteristic == nil {
@@ -29,9 +30,11 @@ func (s *characteristicsStore) Create(characteristic *models.Characteristic) (bo
 	currentTime := time.Now()
 	characteristic.CreatedAt = currentTime
 	characteristic.UpdatedAt = currentTime
-	if err := s.dbh.Insert(characteristic); err != nil {
+	base := characteristic.CharacteristicBase
+	if err := s.dbh.Insert(base); err != nil {
 		return false, err
 	}
+	characteristic.Id = base.Id
 	return true, nil
 }
 
@@ -40,7 +43,7 @@ func (s *characteristicsStore) List(opt *models.CharacteristicListOptions) ([]*m
 		opt = &models.CharacteristicListOptions{}
 	}
 	var characteristics []*models.Characteristic
-	err := s.dbh.Select(&characteristics, `SELECT * FROM characteristics LIMIT $1 OFFSET $2;`, opt.PerPageOrDefault(), opt.Offset())
+	err := s.dbh.Select(&characteristics, `SELECT c.*, array_agg(m.id) AS measurements FROM characteristics c LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id GROUP BY c.id;`)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +61,7 @@ func (s *characteristicsStore) Update(id int64, characteristic *models.Character
 	}
 
 	characteristic.UpdatedAt = time.Now()
-	changed, err := s.dbh.Update(characteristic)
+	changed, err := s.dbh.Update(characteristic.CharacteristicBase)
 	if err != nil {
 		return false, err
 	}
@@ -76,7 +79,7 @@ func (s *characteristicsStore) Delete(id int64) (bool, error) {
 		return false, err
 	}
 
-	deleted, err := s.dbh.Delete(characteristic)
+	deleted, err := s.dbh.Delete(characteristic.CharacteristicBase)
 	if err != nil {
 		return false, err
 	}

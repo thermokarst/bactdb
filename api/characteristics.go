@@ -20,17 +20,17 @@ func serveCharacteristic(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, characteristic)
+	return writeJSON(w, models.CharacteristicJSON{Characteristic: characteristic})
 }
 
 func serveCreateCharacteristic(w http.ResponseWriter, r *http.Request) error {
-	var characteristic models.Characteristic
+	var characteristic models.CharacteristicJSON
 	err := json.NewDecoder(r.Body).Decode(&characteristic)
 	if err != nil {
 		return err
 	}
 
-	created, err := store.Characteristics.Create(&characteristic)
+	created, err := store.Characteristics.Create(characteristic.Characteristic)
 	if err != nil {
 		return err
 	}
@@ -55,18 +55,18 @@ func serveCharacteristicList(w http.ResponseWriter, r *http.Request) error {
 		characteristics = []*models.Characteristic{}
 	}
 
-	return writeJSON(w, characteristics)
+	return writeJSON(w, models.CharacteristicsJSON{Characteristics: characteristics})
 }
 
 func serveUpdateCharacteristic(w http.ResponseWriter, r *http.Request) error {
 	id, _ := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
-	var characteristic models.Characteristic
+	var characteristic models.CharacteristicJSON
 	err := json.NewDecoder(r.Body).Decode(&characteristic)
 	if err != nil {
 		return err
 	}
 
-	updated, err := store.Characteristics.Update(id, &characteristic)
+	updated, err := store.Characteristics.Update(id, characteristic.Characteristic)
 	if err != nil {
 		return err
 	}
@@ -88,5 +88,5 @@ func serveDeleteCharacteristic(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	return writeJSON(w, &models.Characteristic{})
+	return writeJSON(w, nil)
 }

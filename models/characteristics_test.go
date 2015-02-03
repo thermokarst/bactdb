@@ -25,7 +25,7 @@ func TestCharacteristicService_Get(t *testing.T) {
 		called = true
 		testMethod(t, r, "GET")
 
-		writeJSON(w, want)
+		writeJSON(w, CharacteristicJSON{Characteristic: want})
 	})
 
 	characteristic, err := client.Characteristics.Get(want.Id)
@@ -54,7 +54,7 @@ func TestCharacteristicService_Create(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.CreateCharacteristic, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "POST")
-		testBody(t, r, `{"id":1,"characteristicName":"Test Characteristic","characteristicTypeId":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"characteristic":{"id":1,"characteristicName":"Test Characteristic","characteristicTypeId":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null,"measurements":[]}}`+"\n")
 
 		w.WriteHeader(http.StatusCreated)
 		writeJSON(w, want)
@@ -92,7 +92,7 @@ func TestCharacteristicService_List(t *testing.T) {
 		testMethod(t, r, "GET")
 		testFormValues(t, r, values{})
 
-		writeJSON(w, want)
+		writeJSON(w, CharacteristicsJSON{Characteristics: want})
 	})
 
 	characteristics, err := client.Characteristics.List(nil)
@@ -123,7 +123,7 @@ func TestCharacteristicService_Update(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.UpdateCharacteristic, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "PUT")
-		testBody(t, r, `{"id":1,"characteristicName":"Test Char Updated","characteristicTypeId":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null}`+"\n")
+		testBody(t, r, `{"characteristic":{"id":1,"characteristicName":"Test Char Updated","characteristicTypeId":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","deletedAt":null,"measurements":[]}}`+"\n")
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)
 	})
@@ -154,6 +154,7 @@ func TestCharacteristicService_Delete(t *testing.T) {
 	mux.HandleFunc(urlPath(t, router.DeleteCharacteristic, map[string]string{"Id": "1"}), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "DELETE")
+		testBody(t, r, "")
 
 		w.WriteHeader(http.StatusOK)
 		writeJSON(w, want)

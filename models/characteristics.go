@@ -11,7 +11,7 @@ import (
 )
 
 // A Characteristic is a lookup type
-type Characteristic struct {
+type CharacteristicBase struct {
 	Id                   int64     `json:"id,omitempty"`
 	CharacteristicName   string    `db:"characteristic_name" json:"characteristicName"`
 	CharacteristicTypeId int64     `db:"characteristic_type_id" json:"characteristicTypeId"`
@@ -20,13 +20,29 @@ type Characteristic struct {
 	DeletedAt            NullTime  `db:"deleted_at" json:"deletedAt"`
 }
 
+type Characteristic struct {
+	*CharacteristicBase
+	Measurements NullSliceInt64 `db:"measurements" json:"measurements"`
+}
+
+type CharacteristicJSON struct {
+	Characteristic *Characteristic `json:"characteristic"`
+}
+
+type CharacteristicsJSON struct {
+	Characteristics []*Characteristic `json:"characteristics"`
+}
+
 func (m *Characteristic) String() string {
 	return fmt.Sprintf("%v", *m)
 }
 
 func NewCharacteristic() *Characteristic {
 	return &Characteristic{
-		CharacteristicName: "Test Characteristic",
+		&CharacteristicBase{
+			CharacteristicName: "Test Characteristic",
+		},
+		make([]int64, 0),
 	}
 }
 
@@ -68,13 +84,13 @@ func (s *characteristicsService) Get(id int64) (*Characteristic, error) {
 		return nil, err
 	}
 
-	var characteristic *Characteristic
+	var characteristic *CharacteristicJSON
 	_, err = s.client.Do(req, &characteristic)
 	if err != nil {
 		return nil, err
 	}
 
-	return characteristic, nil
+	return characteristic.Characteristic, nil
 }
 
 func (s *characteristicsService) Create(characteristic *Characteristic) (bool, error) {
@@ -83,7 +99,7 @@ func (s *characteristicsService) Create(characteristic *Characteristic) (bool, e
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("POST", url.String(), characteristic)
+	req, err := s.client.NewRequest("POST", url.String(), CharacteristicJSON{Characteristic: characteristic})
 	if err != nil {
 		return false, err
 	}
@@ -111,13 +127,13 @@ func (s *characteristicsService) List(opt *CharacteristicListOptions) ([]*Charac
 		return nil, err
 	}
 
-	var characteristics []*Characteristic
+	var characteristics *CharacteristicsJSON
 	_, err = s.client.Do(req, &characteristics)
 	if err != nil {
 		return nil, err
 	}
 
-	return characteristics, nil
+	return characteristics.Characteristics, nil
 }
 
 func (s *characteristicsService) Update(id int64, characteristic *Characteristic) (bool, error) {
@@ -128,7 +144,7 @@ func (s *characteristicsService) Update(id int64, characteristic *Characteristic
 		return false, err
 	}
 
-	req, err := s.client.NewRequest("PUT", url.String(), characteristic)
+	req, err := s.client.NewRequest("PUT", url.String(), CharacteristicJSON{Characteristic: characteristic})
 	if err != nil {
 		return false, err
 	}

@@ -18,7 +18,7 @@ import (
 type Measurement struct {
 	Id                    int64       `json:"id,omitempty"`
 	StrainId              int64       `db:"strain_id" json:"strain"`
-	CharacteristicId      int64       `db:"characteristic_id" json:"characteristicId"`
+	CharacteristicId      int64       `db:"characteristic_id" json:"characteristic"`
 	TextMeasurementTypeId NullInt64   `db:"text_measurement_type_id" json:"textMeasurementTypeId"`
 	TxtValue              NullString  `db:"txt_value" json:"txtValue"`
 	NumValue              NullFloat64 `db:"num_value" json:"numValue"`

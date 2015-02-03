@@ -11,17 +11,17 @@ import (
 func insertCharacteristic(t *testing.T, tx *modl.Transaction) *models.Characteristic {
 	// clean up our target table
 	tx.Exec(`DELETE FROM characteristics;`)
-	characteristic := newCharacteristic(t, tx)
-	if err := tx.Insert(characteristic); err != nil {
+	c := newCharacteristic(t, tx)
+	if err := tx.Insert(c); err != nil {
 		t.Fatal(err)
 	}
-	return characteristic
+	return &models.Characteristic{c, []int64(nil)}
 }
 
-func newCharacteristic(t *testing.T, tx *modl.Transaction) *models.Characteristic {
+func newCharacteristic(t *testing.T, tx *modl.Transaction) *models.CharacteristicBase {
 	// we want to create and insert an characteristic type record, too.
 	characteristic_type := insertCharacteristicType(t, tx)
-	return &models.Characteristic{CharacteristicName: "Test Characteristic",
+	return &models.CharacteristicBase{CharacteristicName: "Test Characteristic",
 		CharacteristicTypeId: characteristic_type.Id}
 }
 
@@ -50,11 +50,12 @@ func TestCharacteristicsStore_Create_db(t *testing.T) {
 	tx, _ := DB.Begin()
 	defer tx.Rollback()
 
-	characteristic := newCharacteristic(t, tx)
+	base_characteristic := newCharacteristic(t, tx)
+	characteristic := models.Characteristic{base_characteristic, []int64(nil)}
 
 	d := NewDatastore(tx)
 
-	created, err := d.Characteristics.Create(characteristic)
+	created, err := d.Characteristics.Create(&characteristic)
 	if err != nil {
 		t.Fatal(err)
 	}
