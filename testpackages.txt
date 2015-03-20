@@ -1,3 +1,0 @@
-github.com/thermokarst/bactdb/models
-github.com/thermokarst/bactdb/datastore
-github.com/thermokarst/bactdb/api

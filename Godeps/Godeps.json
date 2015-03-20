@@ -1,24 +1,20 @@
 {
 	"ImportPath": "github.com/thermokarst/bactdb",
-	"GoVersion": "go1.4.1",
+	"GoVersion": "go1.4.2",
 	"Deps": [
 		{
 			"ImportPath": "github.com/DavidHuie/gomigrate",
-			"Rev": "7883dd76040debc099811feadd58425b1495103d"
+			"Rev": "cfb6d067cc41d95acfa2e5f496dd236346a8175e"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-62-gbf4a526",
-			"Rev": "bf4a526f48af7badd25d2cb02d587e1b01be3b50"
+			"Comment": "1.2.0-93-g2bcd11f",
+			"Rev": "2bcd11f863d540a1b190dc03b6c4f634c6ae91d4"
 		},
 		{
 			"ImportPath": "github.com/dgrijalva/jwt-go",
-			"Comment": "v2.2.0-11-g7c18dce",
-			"Rev": "7c18dce7b8ff32db34d4b7054d488db656d75cc3"
-		},
-		{
-			"ImportPath": "github.com/google/go-querystring/query",
-			"Rev": "d8840cbb2baa915f4836edda4750050a2c0b7aea"
+			"Comment": "v2.2.0-15-g61124b6",
+			"Rev": "61124b62ad244d655f87d944aefaa2ae5a0d2f16"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
@@ -26,11 +22,11 @@
 		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
-			"Rev": "e444e69cbd2e2e3e0749a2f3c717cec491552bbf"
+			"Rev": "8a875a034c69b940914d83ea03d3f1299b4d094b"
 		},
 		{
 			"ImportPath": "github.com/gorilla/schema",
-			"Rev": "ad8849d14e5cdf1f4423b1f0fc53827ebbdd7477"
+			"Rev": "c8422571edf3131506bab7df27e18980fe2598d5"
 		},
 		{
 			"ImportPath": "github.com/jmoiron/modl",
@@ -43,16 +39,16 @@
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
-			"Comment": "go1.0-cutoff-13-g19eeca3",
-			"Rev": "19eeca3e30d2577b1761db471ec130810e67f532"
+			"Comment": "go1.0-cutoff-29-g30ed220",
+			"Rev": "30ed2200d7ec99cf17272292f1d4b7b0bd7165db"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/bcrypt",
-			"Rev": "632d287f9f3f54b09809eebbd3cacbcb00b9f2fc"
+			"Rev": "1351f936d976c60a0a48d728281922cf63eafb8d"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/blowfish",
-			"Rev": "632d287f9f3f54b09809eebbd3cacbcb00b9f2fc"
+			"Rev": "1351f936d976c60a0a48d728281922cf63eafb8d"
 		}
 	]
 }

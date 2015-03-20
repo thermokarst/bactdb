@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	upMigrationFile   = regexp.MustCompile(`(\d+)_(\w+)_up\.sql`)
-	downMigrationFile = regexp.MustCompile(`(\d+)_(\w+)_down\.sql`)
+	upMigrationFile   = regexp.MustCompile(`(\d+)_([\w-]+)_up\.sql`)
+	downMigrationFile = regexp.MustCompile(`(\d+)_([\w-]+)_down\.sql`)
 	subMigrationSplit = regexp.MustCompile(`;\s*`)
 	allWhitespace     = regexp.MustCompile(`^\s*$`)
 )
@@ -38,11 +38,6 @@ func parseMatches(matches [][][]byte, mType migrationType) (uint64, migrationTyp
 		return 0, "", "", err
 	}
 	return parsedNum, mType, string(name), nil
-}
-
-// Splits migration sql into different strings separated by a semi-colon.
-func splitMigrationString(sql string) []string {
-	return subMigrationSplit.Split(sql, -1)
 }
 
 // This type is used to sort migration ids.
