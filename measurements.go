@@ -76,7 +76,7 @@ func serveMeasurementsList(w http.ResponseWriter, r *http.Request) {
 	if measurements == nil {
 		measurements = []*Measurement{}
 	}
-	data, err := json.Marshal(measurements)
+	data, err := json.Marshal(MeasurementsJSON{Measurements: measurements})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -97,7 +97,7 @@ func serveMeasurement(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data, err := json.Marshal(measurement)
+	data, err := json.Marshal(MeasurementJSON{Measurement: measurement})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
