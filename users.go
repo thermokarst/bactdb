@@ -49,10 +49,15 @@ type UserSession struct {
 }
 
 func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-
-	user_session, err := dbAuthenticate(username, password)
+	var a struct {
+		Username string
+		Password string
+	}
+	if err := json.NewDecoder(r.Body).Decode(&a); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	user_session, err := dbAuthenticate(a.Username, a.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
