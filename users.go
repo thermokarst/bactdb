@@ -43,9 +43,9 @@ func (m *User) String() string {
 }
 
 type UserSession struct {
-	Token       string `json:"token"`
-	AccessLevel string `json:"access_level"`
-	Genus       string `json:"genus"`
+	*User
+	Role  string `json:"access_level"`
+	Genus string `json:"genus"`
 }
 
 func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) {
@@ -59,21 +59,31 @@ func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user_session, err := dbAuthenticate(a.Username, a.Password)
 	if err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"error":"Invalid username or password"}`))
 		return
 	}
 
-	t := jwt.New(jwt.GetSigningMethod("RS256"))
-	t.Claims["auth_level"] = user_session.AccessLevel
-	t.Claims["genus"] = user_session.Genus
-	t.Claims["exp"] = time.Now().Add(time.Minute * 60 * 24).Unix()
+	currentTime := time.Now()
+
+	t := jwt.New(jwt.GetSigningMethod("HS256"))
+	t.Claims["name"] = user_session.Username
+	t.Claims["iss"] = "bactdb"
+	t.Claims["sub"] = "user@example.com" // TODO: fix this
+	t.Claims["role"] = user_session.Role
+	t.Claims["iat"] = currentTime.Unix()
+	t.Claims["exp"] = currentTime.Add(time.Minute * 60 * 24).Unix()
 	tokenString, err := t.SignedString(signKey)
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	user_session.Token = tokenString
-	data, err := json.Marshal(user_session)
+	var token struct {
+		Token string `json:"token"`
+	}
+	token.Token = tokenString
+	data, err := json.Marshal(token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -95,7 +105,8 @@ func dbAuthenticate(username string, password string) (*UserSession, error) {
 	if err := bcrypt.CompareHashAndPassword([]byte(users[0].Password), []byte(password)); err != nil {
 		return nil, err
 	}
-	user_session.AccessLevel = "read"
+	user_session.User = &users[0]
+	user_session.Role = "admin"
 	user_session.Genus = "hymenobacter"
 	return &user_session, nil
 }
