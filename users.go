@@ -67,11 +67,12 @@ func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) {
 
 	currentTime := time.Now()
 
-	t := jwt.New(jwt.GetSigningMethod("HS256"))
+	t := jwt.New(jwt.SigningMethodRS256)
 	t.Claims["name"] = user_session.Username
 	t.Claims["iss"] = "bactdb"
 	t.Claims["sub"] = "user@example.com" // TODO: fix this
 	t.Claims["role"] = user_session.Role
+	t.Claims["genus"] = user_session.Genus
 	t.Claims["iat"] = currentTime.Unix()
 	t.Claims["exp"] = currentTime.Add(time.Minute * 60 * 24).Unix()
 	tokenString, err := t.SignedString(signKey)
