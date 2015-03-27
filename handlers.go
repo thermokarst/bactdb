@@ -28,6 +28,7 @@ func Handler() http.Handler {
 
 	// Characteristics
 	s.Handle("/characteristics", authHandler(serveCharacteristicsList)).Methods("GET")
+	s.Handle("/characteristics/{Id:.+}", authHandler(serveCharacteristic)).Methods("GET")
 
 	return corsHandler(m)
 }
