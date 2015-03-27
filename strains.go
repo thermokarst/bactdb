@@ -86,7 +86,7 @@ func serveStrain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	strain, err := dbGetStrain(id)
+	strain, err := dbGetStrain(id, mux.Vars(r)["genus"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -137,16 +137,17 @@ func dbGetStrains(opt *StrainListOptions) ([]*Strain, error) {
 	return strains, nil
 }
 
-func dbGetStrain(id int64) (*Strain, error) {
+func dbGetStrain(id int64, genus string) (*Strain, error) {
 	var strain Strain
 	sql := `SELECT st.*, sp.species_name, array_agg(m.id) AS measurements,
 		COUNT(m) AS total_measurements
 		FROM strains st
 		INNER JOIN species sp ON sp.id=st.species_id
+		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
 		LEFT OUTER JOIN measurements m ON m.strain_id=st.id
-		WHERE st.id=$1
+		WHERE st.id=$2
 		GROUP BY st.id, sp.species_name;`
-	err := DBH.SelectOne(&strain, sql, id)
+	err := DBH.SelectOne(&strain, sql, genus, id)
 	if err != nil {
 		return nil, err
 	}

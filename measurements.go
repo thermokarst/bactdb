@@ -92,7 +92,7 @@ func serveMeasurement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	measurement, err := dbGetMeasurement(id)
+	measurement, err := dbGetMeasurement(id, mux.Vars(r)["genus"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -148,18 +148,21 @@ func dbGetMeasurements(opt *MeasurementListOptions) ([]*Measurement, error) {
 	return measurements, nil
 }
 
-func dbGetMeasurement(id int64) (*Measurement, error) {
+func dbGetMeasurement(id int64, genus string) (*Measurement, error) {
 	var measurement Measurement
 	sql := `SELECT m.*, c.characteristic_name,
 		t.text_measurement_name AS text_measurement_type_name,
 		u.symbol AS unit_type_name, te.name AS test_method_name
 		FROM measurements m
+		INNER JOIN strains st ON st.id=m.strain_id
+		INNER JOIN species sp ON sp.id=st.species_id
+		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
 		LEFT OUTER JOIN characteristics c ON c.id=m.characteristic_id
 		LEFT OUTER JOIN text_measurement_types t ON t.id=m.text_measurement_type_id
 		LEFT OUTER JOIN unit_types u ON u.id=m.unit_type_id
 		LEFT OUTER JOIN test_methods te ON te.id=m.test_method_id
-		WHERE m.id=$1;`
-	if err := DBH.SelectOne(&measurement, sql, id); err != nil {
+		WHERE m.id=$2;`
+	if err := DBH.SelectOne(&measurement, sql, genus, id); err != nil {
 		return nil, err
 	}
 	if &measurement == nil {

@@ -79,7 +79,7 @@ func serveCharacteristic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	characteristic, err := dbGetCharacteristic(id, mux.Vars(r)["genus"])
+	characteristic, err := dbGetCharacteristic(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -103,17 +103,14 @@ func dbGetCharacteristics(opt *CharacteristicListOptions) ([]*Characteristic, er
 			FROM characteristics c
 			INNER JOIN characteristic_types ct ON ct.id=characteristic_type_id
 			LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id
-			LEFT OUTER JOIN strains st ON st.id=m.strain_id
-			INNER JOIN species sp ON sp.id=st.species_id
-			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1`
-	vals = append(vals, opt.Genus)
+			LEFT OUTER JOIN strains st ON st.id=m.strain_id`
 
 	if len(opt.Ids) != 0 {
 		var conds []string
 
 		c := "c.id IN ("
 		for i, id := range opt.Ids {
-			c = c + fmt.Sprintf("$%v,", i+2) // start param index at 2
+			c = c + fmt.Sprintf("$%v,", i+1) // start param index at 1
 			vals = append(vals, id)
 		}
 		c = c[:len(c)-1] + ")"
@@ -131,7 +128,7 @@ func dbGetCharacteristics(opt *CharacteristicListOptions) ([]*Characteristic, er
 	return characteristics, nil
 }
 
-func dbGetCharacteristic(id int64, genus string) (*Characteristic, error) {
+func dbGetCharacteristic(id int64) (*Characteristic, error) {
 	var characteristic Characteristic
 	sql := `SELECT c.*, ct.characteristic_type_name,
 			array_agg(m.id) AS measurements, array_agg(st.id) AS strains
@@ -139,11 +136,9 @@ func dbGetCharacteristic(id int64, genus string) (*Characteristic, error) {
 			INNER JOIN characteristic_types ct ON ct.id=characteristic_type_id
 			LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id
 			LEFT OUTER JOIN strains st ON st.id=m.strain_id
-			INNER JOIN species sp ON sp.id=st.species_id
-			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
-			WHERE c.id=$2
+			WHERE c.id=$1
 			GROUP BY c.id, ct.characteristic_type_name;`
-	if err := DBH.SelectOne(&characteristic, sql, genus, id); err != nil {
+	if err := DBH.SelectOne(&characteristic, sql, id); err != nil {
 		return nil, err
 	}
 	return &characteristic, nil
