@@ -20,12 +20,14 @@ var (
 )
 
 func setupCerts() error {
+	// openssl genrsa -out app.rsa 1024
 	signkey := os.Getenv("PRIVATE_KEY")
 	if signkey == "" {
 		return errors.New("please set PRIVATE_KEY")
 	}
 	signKey = []byte(signkey)
 
+	// openssl rsa -in app.rsa -pubout > app.rsa.pub
 	verifykey := os.Getenv("PUBLIC_KEY")
 	if verifykey == "" {
 		return errors.New("please set PUBLIC_KEY")
