@@ -26,6 +26,9 @@ func Handler() http.Handler {
 	s.Handle("/measurements", authHandler(serveMeasurementsList)).Methods("GET")
 	s.Handle("/measurements/{Id:.+}", authHandler(serveMeasurement)).Methods("GET")
 
+	// Characteristics
+	s.Handle("/characteristics", authHandler(serveCharacteristicsList)).Methods("GET")
+
 	return corsHandler(m)
 }
 
