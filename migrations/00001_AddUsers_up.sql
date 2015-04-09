@@ -1,10 +1,17 @@
 -- bactdb
 -- Matthew R Dillon
 
+CREATE TYPE e_roles AS ENUM('R', 'W', 'A');
+-- 'R': read-only, default
+-- 'W': read-write
+-- 'A': administrator
+
 CREATE TABLE users (
     id BIGSERIAL NOT NULL,
-    username CHARACTER VARYING(100) NOT NULL,
+    email CHARACTER VARYING(254) NOT NULL UNIQUE,
     password CHARACTER VARYING(100) NOT NULL,
+    name CHARACTER VARYING(100) NOT NULL,
+    role e_roles DEFAULT 'R' NOT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -12,9 +19,4 @@ CREATE TABLE users (
 
     CONSTRAINT users_pkey PRIMARY KEY (id)
 );
-
-CREATE UNIQUE INDEX username_idx
-    ON users
-    USING btree
-    (username COLLATE pg_catalog."default");
 
