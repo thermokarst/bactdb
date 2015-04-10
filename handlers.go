@@ -15,6 +15,10 @@ func Handler() http.Handler {
 	// Non-auth routes
 	m.HandleFunc("/authenticate", serveAuthenticateUser).Methods("POST")
 
+	// Auth routes
+	m.Handle("/users", authHandler(serveUsersList)).Methods("GET")
+	m.Handle("/users/{Id:.+}", authHandler(serveUser)).Methods("GET")
+
 	// Path-based pattern matching subrouter
 	s := m.PathPrefix("/{genus}").Subrouter()
 

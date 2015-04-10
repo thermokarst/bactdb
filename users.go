@@ -1,12 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,7 +22,6 @@ func init() {
 }
 
 // A User is a person that has administrative access to bactdb.
-// Todo: add password
 type User struct {
 	Id        int64     `json:"id,omitempty"`
 	Email     string    `db:"email" json:"email"`
@@ -37,6 +39,52 @@ type UserJSON struct {
 
 type UsersJSON struct {
 	Users []*User `json:"users"`
+}
+
+func serveUsersList(w http.ResponseWriter, r *http.Request) {
+	var opt ListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	users, err := dbGetUsers(&opt)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if users == nil {
+		users = []*User{}
+	}
+	data, err := json.Marshal(UsersJSON{Users: users})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Write(data)
+}
+
+func serveUser(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user, err := dbGetUser(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.Marshal(UserJSON{User: user})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Write(data)
 }
 
 func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) {
@@ -95,4 +143,25 @@ func dbAuthenticate(email string, password string) (*User, error) {
 		return nil, err
 	}
 	return &users[0], nil
+}
+
+func dbGetUsers(opt *ListOptions) ([]*User, error) {
+	var users []*User
+	sql := `SELECT * FROM users;`
+	if err := DBH.Select(&users, sql); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func dbGetUser(id int64) (*User, error) {
+	var user User
+	q := `SELECT * FROM users WHERE id=$1;`
+	if err := DBH.SelectOne(&user, q, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return &user, nil
 }
