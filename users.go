@@ -118,10 +118,13 @@ func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	var token struct {
-		Token string `json:"token"`
+	token := struct {
+		Token  string `json:"token"`
+		UserID int64  `json:"user_id"`
+	}{
+		Token:  tokenString,
+		UserID: user_session.Id,
 	}
-	token.Token = tokenString
 	data, err := json.Marshal(token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
