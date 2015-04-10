@@ -94,12 +94,6 @@ func authHandler(f func(http.ResponseWriter, *http.Request)) http.Handler {
 			http.Error(w, errGenericError.Error(), http.StatusInternalServerError)
 			return
 		}
-		genus := mux.Vars(r)["genus"]
-		// We don't care about this if we aren't accessing one of the subrouter routes.
-		if genus != "" && genus != token.Claims["genus"] {
-			http.Error(w, errAccessDenied.Error(), http.StatusUnauthorized)
-			return
-		}
 		h.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(auth)
