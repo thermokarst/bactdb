@@ -3,3 +3,4 @@
 
 DROP TABLE users;
 
+DROP TYPE e_roles;
