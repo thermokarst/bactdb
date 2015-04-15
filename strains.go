@@ -23,7 +23,7 @@ type StrainBase struct {
 	Id             int64      `json:"id,omitempty"`
 	SpeciesId      int64      `db:"species_id" json:"-"`
 	StrainName     string     `db:"strain_name" json:"strainName"`
-	StrainType     string     `db:"strain_type" json:"strainType"`
+	TypeStrain     bool       `db:"type_strain" json:"typeStrain"`
 	Etymology      NullString `db:"etymology" json:"etymology"`
 	AccessionBanks string     `db:"accession_banks" json:"accessionBanks"`
 	GenbankEmblDdb NullString `db:"genbank_embl_ddb" json:"genbankEmblDdb"`
