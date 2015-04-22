@@ -1,40 +1,107 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
+	"github.com/thermokarst/jwt"
 )
 
 func Handler() http.Handler {
+	claimsFunc := func(email string) (map[string]interface{}, error) {
+		currentTime := time.Now()
+		user, err := dbGetUserByEmail(email)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{
+			"name": user.Name,
+			"iss":  "bactdb",
+			"sub":  user.Id,
+			"role": user.Role,
+			"iat":  currentTime.Unix(),
+			"exp":  currentTime.Add(time.Minute * 60 * 24).Unix(),
+		}, nil
+	}
+
+	verifyClaims := func(claims []byte) error {
+		currentTime := time.Now()
+		var c struct {
+			Name string
+			Iss  string
+			Sub  int64
+			Role string
+			Iat  int64
+			Exp  int64
+		}
+		err := json.Unmarshal(claims, &c)
+		if err != nil {
+			return err
+		}
+		if currentTime.After(time.Unix(c.Exp, 0)) {
+			return errors.New("this token has expired")
+		}
+		return nil
+	}
+
+	config := &jwt.Config{
+		Secret: os.Getenv("SECRET"),
+		Auth:   dbAuthenticate,
+		Claims: claimsFunc,
+	}
+
+	j, err := jwt.New(config)
+	if err != nil {
+		panic(err)
+	}
+
 	m := mux.NewRouter()
 
 	// Non-auth routes
-	m.HandleFunc("/authenticate", serveAuthenticateUser).Methods("POST")
+	m.Handle("/authenticate", tokenHandler(j.GenerateToken())).Methods("POST")
 
 	// Auth routes
-	m.Handle("/users", authHandler(serveUsersList)).Methods("GET")
-	m.Handle("/users/{Id:.+}", authHandler(serveUser)).Methods("GET")
+	m.Handle("/users", j.Secure(http.HandlerFunc(serveUsersList), verifyClaims)).Methods("GET")
+	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(serveUser), verifyClaims)).Methods("GET")
 
 	// Path-based pattern matching subrouter
 	s := m.PathPrefix("/{genus}").Subrouter()
 
-	// Strains
-	s.Handle("/strains", authHandler(serveStrainsList)).Methods("GET")
-	s.Handle("/strains/{Id:.+}", authHandler(serveStrain)).Methods("GET")
+	type r struct {
+		f http.HandlerFunc
+		m string
+	}
 
-	// Measurements
-	s.Handle("/measurements", authHandler(serveMeasurementsList)).Methods("GET")
-	s.Handle("/measurements/{Id:.+}", authHandler(serveMeasurement)).Methods("GET")
+	routes := map[string]r{
+		"/strains":                 r{serveStrainsList, "GET"},
+		"/strains/{Id:.+}":         r{serveStrain, "GET"},
+		"/measurements":            r{serveMeasurementsList, "GET"},
+		"/measurements/{Id:.+}":    r{serveMeasurement, "GET"},
+		"/characteristics":         r{serveCharacteristicsList, "GET"},
+		"/characteristics/{Id:.+}": r{serveCharacteristic, "GET"},
+	}
 
-	// Characteristics
-	s.Handle("/characteristics", authHandler(serveCharacteristicsList)).Methods("GET")
-	s.Handle("/characteristics/{Id:.+}", authHandler(serveCharacteristic)).Methods("GET")
+	for path, route := range routes {
+		s.Handle(path, j.Secure(http.HandlerFunc(route.f), verifyClaims)).Methods(route.m)
+	}
 
 	return corsHandler(m)
+}
+
+func tokenHandler(h http.Handler) http.Handler {
+	token := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		// Hackish, but we want the token in a JSON object
+		w.Write([]byte(`{"token":"`))
+		h.ServeHTTP(w, r)
+		w.Write([]byte(`"}`))
+	}
+	return http.HandlerFunc(token)
 }
 
 func corsHandler(h http.Handler) http.Handler {
@@ -55,46 +122,4 @@ func corsHandler(h http.Handler) http.Handler {
 		}
 	}
 	return http.HandlerFunc(cors)
-}
-
-// Only accessible with a valid token
-func authHandler(f func(http.ResponseWriter, *http.Request)) http.Handler {
-	h := http.HandlerFunc(f)
-	auth := func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, errPleaseLogIn.Error(), http.StatusUnauthorized)
-			return
-		}
-		s := strings.Split(authHeader, " ")
-
-		// Validate the token
-		token, err := jwt.Parse(s[1], func(token *jwt.Token) (interface{}, error) {
-			return []byte(verifyKey), nil
-		})
-
-		// Branch out into the possible error from signing
-		switch err.(type) {
-		case nil: // No error
-			if !token.Valid { // But may still be invalid
-				http.Error(w, errPleaseLogIn.Error(), http.StatusUnauthorized)
-				return
-			}
-		case *jwt.ValidationError: // Something was wrong during the validation
-			vErr := err.(*jwt.ValidationError)
-			switch vErr.Errors {
-			case jwt.ValidationErrorExpired:
-				http.Error(w, errTokenExpired.Error(), http.StatusUnauthorized)
-				return
-			default:
-				http.Error(w, errGenericError.Error(), http.StatusInternalServerError)
-				return
-			}
-		default: // Something else went wrong
-			http.Error(w, errGenericError.Error(), http.StatusInternalServerError)
-			return
-		}
-		h.ServeHTTP(w, r)
-	}
-	return http.HandlerFunc(auth)
 }

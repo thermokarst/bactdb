@@ -90,11 +90,6 @@ func cmdServe(c *cli.Context) {
 	}
 	httpAddr := fmt.Sprintf(":%v", addr)
 
-	err = setupCerts()
-	if err != nil {
-		log.Fatal("SetupCerts: ", err)
-	}
-
 	m := http.NewServeMux()
 	m.Handle("/api/", http.StripPrefix("/api", Handler()))
 

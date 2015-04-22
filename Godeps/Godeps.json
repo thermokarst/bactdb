@@ -12,11 +12,6 @@
 			"Rev": "2bcd11f863d540a1b190dc03b6c4f634c6ae91d4"
 		},
 		{
-			"ImportPath": "github.com/dgrijalva/jwt-go",
-			"Comment": "v2.2.0-15-g61124b6",
-			"Rev": "61124b62ad244d655f87d944aefaa2ae5a0d2f16"
-		},
-		{
 			"ImportPath": "github.com/gorilla/context",
 			"Rev": "215affda49addc4c8ef7e2534915df2c8c35c6cd"
 		},
@@ -41,6 +36,10 @@
 			"ImportPath": "github.com/lib/pq",
 			"Comment": "go1.0-cutoff-29-g30ed220",
 			"Rev": "30ed2200d7ec99cf17272292f1d4b7b0bd7165db"
+		},
+		{
+			"ImportPath": "github.com/thermokarst/jwt",
+			"Rev": "774185ba9ebde2a02689173b736b760a13a6b777"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/bcrypt",

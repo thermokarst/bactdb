@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var (
-	ErrUserNotFound = errors.New("user not found")
+	ErrUserNotFound           = errors.New("user not found")
+	ErrInvalidEmailOrPassword = errors.New("Invalid email or password")
 )
 
 func init() {
@@ -87,65 +87,16 @@ func serveUser(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func serveAuthenticateUser(w http.ResponseWriter, r *http.Request) {
-	var a struct {
-		Email    string
-		Password string
+func dbAuthenticate(email string, password string) error {
+	var user User
+	q := `SELECT * FROM users WHERE lower(email)=lower($1);`
+	if err := DBH.SelectOne(&user, q, email); err != nil {
+		return ErrInvalidEmailOrPassword
 	}
-	if err := json.NewDecoder(r.Body).Decode(&a); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return ErrInvalidEmailOrPassword
 	}
-	user_session, err := dbAuthenticate(a.Email, a.Password)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"error":"Invalid email or password"}`))
-		return
-	}
-
-	currentTime := time.Now()
-
-	t := jwt.New(jwt.SigningMethodRS256)
-	t.Claims["name"] = user_session.Name
-	t.Claims["iss"] = "bactdb"
-	t.Claims["sub"] = user_session.Email
-	t.Claims["role"] = user_session.Role
-	t.Claims["iat"] = currentTime.Unix()
-	t.Claims["exp"] = currentTime.Add(time.Minute * 60 * 24).Unix()
-	tokenString, err := t.SignedString(signKey)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	token := struct {
-		Token  string `json:"token"`
-		UserID int64  `json:"user_id"`
-	}{
-		Token:  tokenString,
-		UserID: user_session.Id,
-	}
-	data, err := json.Marshal(token)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Write(data)
-}
-
-func dbAuthenticate(email string, password string) (*User, error) {
-	var users []User
-	if err := DBH.Select(&users, `SELECT * FROM users WHERE lower(email)=lower($1);`, email); err != nil {
-		return nil, err
-	}
-	if len(users) == 0 {
-		return nil, ErrUserNotFound
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(users[0].Password), []byte(password)); err != nil {
-		return nil, err
-	}
-	return &users[0], nil
+	return nil
 }
 
 func dbGetUsers(opt *ListOptions) ([]*User, error) {
@@ -161,6 +112,18 @@ func dbGetUser(id int64) (*User, error) {
 	var user User
 	q := `SELECT * FROM users WHERE id=$1;`
 	if err := DBH.SelectOne(&user, q, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+func dbGetUserByEmail(email string) (*User, error) {
+	var user User
+	q := `SELECT * FROM users WHERE lower(email)=lower($1);`
+	if err := DBH.SelectOne(&user, q, email); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrUserNotFound
 		}
