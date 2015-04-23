@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,6 +29,7 @@ type StrainBase struct {
 	AccessionBanks string     `db:"accession_banks" json:"accessionBanks"`
 	GenbankEmblDdb NullString `db:"genbank_embl_ddb" json:"genbankEmblDdb"`
 	IsolatedFrom   NullString `db:"isolated_from" json:"isolatedFrom"`
+	AuthorId       int64      `db:"author_id" json:"author"`
 	CreatedAt      time.Time  `db:"created_at" json:"createdAt"`
 	UpdatedAt      time.Time  `db:"updated_at" json:"updatedAt"`
 	DeletedAt      NullTime   `db:"deleted_at" json:"deletedAt"`
@@ -139,7 +141,7 @@ func dbGetStrains(opt *StrainListOptions) ([]*Strain, error) {
 
 func dbGetStrain(id int64, genus string) (*Strain, error) {
 	var strain Strain
-	sql := `SELECT st.*, sp.species_name, array_agg(m.id) AS measurements,
+	q := `SELECT st.*, sp.species_name, array_agg(m.id) AS measurements,
 		COUNT(m) AS total_measurements
 		FROM strains st
 		INNER JOIN species sp ON sp.id=st.species_id
@@ -147,12 +149,11 @@ func dbGetStrain(id int64, genus string) (*Strain, error) {
 		LEFT OUTER JOIN measurements m ON m.strain_id=st.id
 		WHERE st.id=$2
 		GROUP BY st.id, sp.species_name;`
-	err := DBH.SelectOne(&strain, sql, genus, id)
-	if err != nil {
+	if err := DBH.SelectOne(&strain, q, genus, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrStrainNotFound
+		}
 		return nil, err
-	}
-	if &strain == nil {
-		return nil, ErrStrainNotFound
 	}
 	return &strain, nil
 }

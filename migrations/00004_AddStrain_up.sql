@@ -10,13 +10,15 @@ CREATE TABLE strains (
     accession_banks CHARACTER VARYING(100) NULL,
     genbank_embl_ddb CHARACTER VARYING(100) NULL,
     isolated_from CHARACTER VARYING(100) NULL,
+    author_id BIGINT NOT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
     deleted_at TIMESTAMP WITH TIME ZONE NULL,
 
     CONSTRAINT strain_pkey PRIMARY KEY (id),
-    FOREIGN KEY (species_id) REFERENCES species(id)
+    FOREIGN KEY (species_id) REFERENCES species(id),
+    FOREIGN KEY (author_id) REFERENCES users(id)
 );
 
 CREATE INDEX species_id_idx ON strains (species_id);
