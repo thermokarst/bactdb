@@ -7,6 +7,7 @@ CREATE TABLE species (
     species_name TEXT NOT NULL,
     type_species BOOLEAN NULL,
     subspecies_species_id BIGINT NULL,
+    etymology TEXT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,

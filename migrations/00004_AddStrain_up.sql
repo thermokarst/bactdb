@@ -6,7 +6,6 @@ CREATE TABLE strains (
     species_id BIGINT NOT NULL,
     strain_name TEXT NOT NULL,
     type_strain BOOLEAN NOT NULL,
-    etymology TEXT NULL,
     accession_banks TEXT NULL,
     genbank_embl_ddb TEXT NULL,
     isolated_from TEXT NULL,

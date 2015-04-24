@@ -25,7 +25,6 @@ type StrainBase struct {
 	SpeciesId      int64      `db:"species_id" json:"-"`
 	StrainName     string     `db:"strain_name" json:"strainName"`
 	TypeStrain     bool       `db:"type_strain" json:"typeStrain"`
-	Etymology      NullString `db:"etymology" json:"etymology"`
 	AccessionBanks string     `db:"accession_banks" json:"accessionBanks"`
 	GenbankEmblDdb NullString `db:"genbank_embl_ddb" json:"genbankEmblDdb"`
 	IsolatedFrom   NullString `db:"isolated_from" json:"isolatedFrom"`
