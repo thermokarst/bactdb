@@ -21,18 +21,18 @@ func init() {
 
 // StrainBase is what the DB expects to see for inserts/updates
 type StrainBase struct {
-	Id             int64      `json:"id,omitempty"`
-	SpeciesId      int64      `db:"species_id" json:"-"`
-	StrainName     string     `db:"strain_name" json:"strainName"`
-	TypeStrain     bool       `db:"type_strain" json:"typeStrain"`
-	AccessionBanks string     `db:"accession_banks" json:"accessionBanks"`
-	GenbankEmblDdb NullString `db:"genbank_embl_ddb" json:"genbankEmblDdb"`
-	IsolatedFrom   NullString `db:"isolated_from" json:"isolatedFrom"`
-	Notes          NullString `db:"notes" json:"notes"`
-	AuthorId       int64      `db:"author_id" json:"author"`
-	CreatedAt      time.Time  `db:"created_at" json:"createdAt"`
-	UpdatedAt      time.Time  `db:"updated_at" json:"updatedAt"`
-	DeletedAt      NullTime   `db:"deleted_at" json:"deletedAt"`
+	Id               int64      `json:"id,omitempty"`
+	SpeciesId        int64      `db:"species_id" json:"-"`
+	StrainName       string     `db:"strain_name" json:"strainName"`
+	TypeStrain       bool       `db:"type_strain" json:"typeStrain"`
+	AccessionNumbers string     `db:"accession_numbers" json:"accessionNumbers"`
+	Genbank          NullString `db:"genbank" json:"genbank"`
+	IsolatedFrom     NullString `db:"isolated_from" json:"isolatedFrom"`
+	Notes            NullString `db:"notes" json:"notes"`
+	AuthorId         int64      `db:"author_id" json:"author"`
+	CreatedAt        time.Time  `db:"created_at" json:"createdAt"`
+	UpdatedAt        time.Time  `db:"updated_at" json:"updatedAt"`
+	DeletedAt        NullTime   `db:"deleted_at" json:"deletedAt"`
 }
 
 // Strain & StrainJSON(s) are what ember expects to see
