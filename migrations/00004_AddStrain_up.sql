@@ -10,6 +10,7 @@ CREATE TABLE strains (
     accession_banks CHARACTER VARYING(100) NULL,
     genbank_embl_ddb CHARACTER VARYING(100) NULL,
     isolated_from CHARACTER VARYING(100) NULL,
+    notes TEXT NULL,
     author_id BIGINT NOT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,

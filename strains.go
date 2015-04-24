@@ -29,6 +29,7 @@ type StrainBase struct {
 	AccessionBanks string     `db:"accession_banks" json:"accessionBanks"`
 	GenbankEmblDdb NullString `db:"genbank_embl_ddb" json:"genbankEmblDdb"`
 	IsolatedFrom   NullString `db:"isolated_from" json:"isolatedFrom"`
+	Notes          NullString `db:"notes" json:"notes"`
 	AuthorId       int64      `db:"author_id" json:"author"`
 	CreatedAt      time.Time  `db:"created_at" json:"createdAt"`
 	UpdatedAt      time.Time  `db:"updated_at" json:"updatedAt"`
