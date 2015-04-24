@@ -3,7 +3,7 @@
 
 CREATE TABLE characteristics (
     id BIGSERIAL NOT NULL,
-    characteristic_name CHARACTER VARYING(100) NOT NULL,
+    characteristic_name TEXT NOT NULL,
     characteristic_type_id BIGINT NOT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,

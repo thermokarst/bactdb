@@ -3,7 +3,7 @@
 
 CREATE TABLE genera (
     id BIGSERIAL NOT NULL,
-    genus_name CHARACTER VARYING(100) NOT NULL,
+    genus_name TEXT NOT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,

@@ -6,11 +6,11 @@ CREATE TABLE measurements (
     strain_id BIGINT NOT NULL,
     characteristic_id BIGINT NOT NULL,
     text_measurement_type_id BIGINT NULL,
-    txt_value CHARACTER VARYING(255) NULL,
+    txt_value TEXT NULL,
     num_value NUMERIC(8, 3) NULL,
     confidence_interval NUMERIC(8, 3) NULL,
     unit_type_id BIGINT NULL,
-    notes CHARACTER VARYING(255) NULL,
+    notes TEXT NULL,
     test_method_id BIGINT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,

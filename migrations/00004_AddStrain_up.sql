@@ -4,12 +4,12 @@
 CREATE TABLE strains (
     id BIGSERIAL NOT NULL,
     species_id BIGINT NOT NULL,
-    strain_name CHARACTER VARYING(100) NOT NULL,
+    strain_name TEXT NOT NULL,
     type_strain BOOLEAN NOT NULL,
-    etymology CHARACTER VARYING(500) NULL,
-    accession_banks CHARACTER VARYING(100) NULL,
-    genbank_embl_ddb CHARACTER VARYING(100) NULL,
-    isolated_from CHARACTER VARYING(100) NULL,
+    etymology TEXT NULL,
+    accession_banks TEXT NULL,
+    genbank_embl_ddb TEXT NULL,
+    isolated_from TEXT NULL,
     notes TEXT NULL,
     author_id BIGINT NOT NULL,
 

@@ -4,7 +4,7 @@
 CREATE TABLE species (
     id BIGSERIAL NOT NULL,
     genus_id BIGINT NOT NULL,
-    species_name CHARACTER VARYING(100) NOT NULL,
+    species_name TEXT NOT NULL,
     type_species BOOLEAN NULL,
     subspecies_species_id BIGINT NULL,
 
