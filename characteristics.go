@@ -24,6 +24,9 @@ type CharacteristicBase struct {
 	CreatedAt            time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt            time.Time `db:"updated_at" json:"updatedAt"`
 	DeletedAt            NullTime  `db:"deleted_at" json:"deletedAt"`
+	CreatedBy            int64     `db:"created_by" json:"createdBy"`
+	UpdatedBy            int64     `db:"updated_by" json:"updatedBy"`
+	DeletedBy            NullInt64 `db:"deleted_by" json:"deletedBy"`
 }
 
 type Characteristic struct {

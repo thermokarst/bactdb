@@ -35,6 +35,8 @@ type MeasurementBase struct {
 	TestMethodId          NullInt64   `db:"test_method_id" json:"-"`
 	CreatedAt             time.Time   `db:"created_at" json:"createdAt"`
 	UpdatedAt             time.Time   `db:"updated_at" json:"updatedAt"`
+	CreatedBy             int64       `db:"created_by" json:"createdBy"`
+	UpdatedBy             int64       `db:"updated_by" json:"updatedBy"`
 }
 
 // Measurement & MeasurementJSON(s) are what ember expects to see

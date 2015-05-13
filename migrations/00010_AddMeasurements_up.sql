@@ -16,6 +16,9 @@ CREATE TABLE measurements (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
+    created_by BIGINT NOT NULL,
+    updated_by BIGINT NOT NULL,
+
     CONSTRAINT strainscharmeasurements_pkey PRIMARY KEY (id),
     FOREIGN KEY (strain_id) REFERENCES strains(id),
     FOREIGN KEY (characteristic_id) REFERENCES characteristics(id),
@@ -37,7 +40,9 @@ CREATE TABLE measurements (
             AND txt_value IS NOT NULL
             AND num_value IS NULL
             AND confidence_interval IS NULL
-            AND unit_type_id IS NULL))
+            AND unit_type_id IS NULL)),
+    FOREIGN KEY (created_by) REFERENCES users(id),
+    FOREIGN KEY (updated_by) REFERENCES users(id)
 );
 
 CREATE INDEX strain_id_idx ON measurements (strain_id);

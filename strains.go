@@ -29,10 +29,12 @@ type StrainBase struct {
 	Genbank          NullString `db:"genbank" json:"genbank"`
 	IsolatedFrom     NullString `db:"isolated_from" json:"isolatedFrom"`
 	Notes            NullString `db:"notes" json:"notes"`
-	AuthorId         int64      `db:"author_id" json:"author"`
 	CreatedAt        time.Time  `db:"created_at" json:"createdAt"`
 	UpdatedAt        time.Time  `db:"updated_at" json:"updatedAt"`
 	DeletedAt        NullTime   `db:"deleted_at" json:"deletedAt"`
+	CreatedBy        int64      `db:"created_by" json:"createdBy"`
+	UpdatedBy        int64      `db:"updated_by" json:"updatedBy"`
+	DeletedBy        NullInt64  `db:"deleted_by" json:"deletedBy"`
 }
 
 // Strain & StrainJSON(s) are what ember expects to see
