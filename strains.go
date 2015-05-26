@@ -10,10 +10,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 )
 
-var ErrStrainNotFound = errors.New("strain not found")
+var (
+	ErrStrainNotFound   = errors.New("strain not found")
+	ErrStrainNotUpdated = errors.New("strain not updated")
+)
 
 func init() {
 	DB.AddTableWithName(StrainBase{}, "strains").SetKeys(true, "Id")
@@ -21,7 +25,7 @@ func init() {
 
 // StrainBase is what the DB expects to see for inserts/updates
 type StrainBase struct {
-	Id               int64      `json:"id,omitempty"`
+	Id               int64      `db:"id" json:"id"`
 	SpeciesId        int64      `db:"species_id" json:"-"`
 	StrainName       string     `db:"strain_name" json:"strainName"`
 	TypeStrain       bool       `db:"type_strain" json:"typeStrain"`
@@ -105,6 +109,48 @@ func serveStrain(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+func serveUpdateStrain(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var strainjson StrainJSON
+	err = json.NewDecoder(r.Body).Decode(&strainjson)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	c := context.Get(r, "claims")
+	var claims Claims = c.(Claims)
+	strainjson.Strain.UpdatedBy = claims.Sub
+	strainjson.Strain.UpdatedAt = time.Now()
+	strainjson.Strain.Id = id
+
+	err = dbUpdateStrain(strainjson.Strain)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var strain *Strain
+	strain, err = dbGetStrain(id, mux.Vars(r)["genus"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.Marshal(StrainJSON{Strain: strain})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Write(data)
+}
+
 func dbGetStrains(opt *StrainListOptions) ([]*Strain, error) {
 	if opt == nil {
 		return nil, errors.New("must provide options")
@@ -158,4 +204,21 @@ func dbGetStrain(id int64, genus string) (*Strain, error) {
 		return nil, err
 	}
 	return &strain, nil
+}
+
+func dbUpdateStrain(strain *Strain) error {
+	var species_id struct{ Id int64 }
+	q := `SELECT id FROM species WHERE species_name = $1;`
+	if err := DBH.SelectOne(&species_id, q, strain.SpeciesName); err != nil {
+		return err
+	}
+	strain.StrainBase.SpeciesId = species_id.Id
+	count, err := DBH.Update(strain.StrainBase)
+	if err != nil {
+		return err
+	}
+	if count != 1 {
+		return ErrStrainNotUpdated
+	}
+	return nil
 }

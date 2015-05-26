@@ -8,9 +8,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/thermokarst/jwt"
 )
+
+type Claims struct {
+	Name string
+	Iss  string
+	Sub  int64
+	Role string
+	Iat  int64
+	Exp  int64
+}
 
 func Handler() http.Handler {
 	claimsFunc := func(email string) (map[string]interface{}, error) {
@@ -29,16 +39,9 @@ func Handler() http.Handler {
 		}, nil
 	}
 
-	verifyClaims := func(claims []byte) error {
+	verifyClaims := func(claims []byte, r *http.Request) error {
 		currentTime := time.Now()
-		var c struct {
-			Name string
-			Iss  string
-			Sub  int64
-			Role string
-			Iat  int64
-			Exp  int64
-		}
+		var c Claims
 		err := json.Unmarshal(claims, &c)
 		if err != nil {
 			return err
@@ -46,6 +49,7 @@ func Handler() http.Handler {
 		if currentTime.After(time.Unix(c.Exp, 0)) {
 			return errors.New("this token has expired")
 		}
+		context.Set(r, "claims", c)
 		return nil
 	}
 
@@ -75,19 +79,21 @@ func Handler() http.Handler {
 	type r struct {
 		f http.HandlerFunc
 		m string
+		p string
 	}
 
-	routes := map[string]r{
-		"/strains":                 r{serveStrainsList, "GET"},
-		"/strains/{Id:.+}":         r{serveStrain, "GET"},
-		"/measurements":            r{serveMeasurementsList, "GET"},
-		"/measurements/{Id:.+}":    r{serveMeasurement, "GET"},
-		"/characteristics":         r{serveCharacteristicsList, "GET"},
-		"/characteristics/{Id:.+}": r{serveCharacteristic, "GET"},
+	routes := []r{
+		r{serveStrainsList, "GET", "/strains"},
+		r{serveStrain, "GET", "/strains/{Id:.+}"},
+		r{serveUpdateStrain, "PUT", "/strains/{Id:.+}"},
+		r{serveMeasurementsList, "GET", "/measurements"},
+		r{serveMeasurement, "GET", "/measurements/{Id:.+}"},
+		r{serveCharacteristicsList, "GET", "/characteristics"},
+		r{serveCharacteristic, "GET", "/characteristics/{Id:.+}"},
 	}
 
-	for path, route := range routes {
-		s.Handle(path, j.Secure(http.HandlerFunc(route.f), verifyClaims)).Methods(route.m)
+	for _, route := range routes {
+		s.Handle(route.p, j.Secure(http.HandlerFunc(route.f), verifyClaims)).Methods(route.m)
 	}
 
 	return corsHandler(m)
