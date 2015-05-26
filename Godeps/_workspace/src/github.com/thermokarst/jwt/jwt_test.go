@@ -32,7 +32,7 @@ var claimsFunc = func(id string) (map[string]interface{}, error) {
 	}, nil
 }
 
-var verifyClaimsFunc = func(claims []byte) error {
+var verifyClaimsFunc = func(claims []byte, r *http.Request) error {
 	currentTime := time.Now()
 	var c struct {
 		Exp int64
@@ -99,6 +99,12 @@ func TestNewJWTMiddleware(t *testing.T) {
 	}
 	if _, ok := claimsVal["iat"]; !ok {
 		t.Errorf("wanted a claims set, got %v", claimsVal)
+	}
+	if middleware.identityField != "email" {
+		t.Errorf("wanted email, got %v", middleware.identityField)
+	}
+	if middleware.verifyField != "password" {
+		t.Errorf("wanted password, got %v", middleware.verifyField)
 	}
 }
 
@@ -213,5 +219,16 @@ func TestSecureHandlerGoodToken(t *testing.T) {
 	body := strings.TrimSpace(resp.Body.String())
 	if body != "test" {
 		t.Errorf("wanted %s, got %s", "test", body)
+	}
+}
+
+func TestGenerateTokenHandlerNotPOST(t *testing.T) {
+	middleware := newMiddlewareOrFatal(t)
+	resp := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "http://example.com", nil)
+	middleware.GenerateToken().ServeHTTP(resp, req)
+	body := strings.TrimSpace(resp.Body.String())
+	if body != ErrInvalidMethod.Error() {
+		t.Errorf("wanted %q, got %q", ErrInvalidMethod.Error(), body)
 	}
 }

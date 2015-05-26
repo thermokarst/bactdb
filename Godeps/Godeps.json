@@ -17,7 +17,7 @@
 		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
-			"Rev": "8a875a034c69b940914d83ea03d3f1299b4d094b"
+			"Rev": "94903de8c98a68d8b4483c529b26a5d146e386a2"
 		},
 		{
 			"ImportPath": "github.com/gorilla/schema",
@@ -39,7 +39,7 @@
 		},
 		{
 			"ImportPath": "github.com/thermokarst/jwt",
-			"Rev": "774185ba9ebde2a02689173b736b760a13a6b777"
+			"Rev": "66ca404d841ed908aa6cc9361107b0c363c94cd8"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/bcrypt",

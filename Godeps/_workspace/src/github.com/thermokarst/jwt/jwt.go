@@ -31,14 +31,8 @@ var (
 	ErrMalformedToken     = errors.New("please provide a valid token")
 	ErrInvalidSignature   = errors.New("signature could not be verified")
 	ErrParsingCredentials = errors.New("error parsing credentials")
+	ErrInvalidMethod      = errors.New("invalid request method")
 )
-
-// Config is a container for setting up the JWT middleware.
-type Config struct {
-	Secret string
-	Auth   AuthFunc
-	Claims ClaimsFunc
-}
 
 // AuthFunc is a type for delegating user authentication to the client-code.
 type AuthFunc func(string, string) error
@@ -47,15 +41,26 @@ type AuthFunc func(string, string) error
 type ClaimsFunc func(string) (map[string]interface{}, error)
 
 // VerifyClaimsFunc is a type for processing and validating JWT claims on one
-// or more route's in the client-code.
-type VerifyClaimsFunc func([]byte) error
+// or more routes in the client-code.
+type VerifyClaimsFunc func([]byte, *http.Request) error
+
+// Config is a container for setting up the JWT middleware.
+type Config struct {
+	Secret        string
+	Auth          AuthFunc
+	Claims        ClaimsFunc
+	IdentityField string
+	VerifyField   string
+}
 
 // Middleware is where we store all the specifics related to the client's
 // JWT needs.
 type Middleware struct {
-	secret string
-	auth   AuthFunc
-	claims ClaimsFunc
+	secret        string
+	auth          AuthFunc
+	claims        ClaimsFunc
+	identityField string
+	verifyField   string
 }
 
 // New creates a new Middleware from a user-specified configuration.
@@ -72,10 +77,18 @@ func New(c *Config) (*Middleware, error) {
 	if c.Claims == nil {
 		return nil, ErrMissingClaimsFunc
 	}
+	if c.IdentityField == "" {
+		c.IdentityField = "email"
+	}
+	if c.VerifyField == "" {
+		c.VerifyField = "password"
+	}
 	m := &Middleware{
-		secret: c.Secret,
-		auth:   c.Auth,
-		claims: c.Claims,
+		secret:        c.Secret,
+		auth:          c.Auth,
+		claims:        c.Claims,
+		identityField: c.IdentityField,
+		verifyField:   c.VerifyField,
 	}
 	return m, nil
 }
@@ -142,7 +155,7 @@ func (m *Middleware) Secure(h http.Handler, v VerifyClaimsFunc) http.Handler {
 				message: "decoding claims",
 			}
 		}
-		err = v(claimSet)
+		err = v(claimSet, r)
 		if err != nil {
 			return &jwtError{
 				status:  http.StatusUnauthorized,
@@ -163,6 +176,13 @@ func (m *Middleware) Secure(h http.Handler, v VerifyClaimsFunc) http.Handler {
 // the requester.
 func (m *Middleware) GenerateToken() http.Handler {
 	generateHandler := func(w http.ResponseWriter, r *http.Request) *jwtError {
+		if r.Method != "POST" {
+			return &jwtError{
+				status:  http.StatusBadRequest,
+				err:     ErrInvalidMethod,
+				message: "receiving request",
+			}
+		}
 		var b map[string]string
 		err := json.NewDecoder(r.Body).Decode(&b)
 		if err != nil {
@@ -172,7 +192,22 @@ func (m *Middleware) GenerateToken() http.Handler {
 				message: "parsing authorization",
 			}
 		}
-		err = m.auth(b["email"], b["password"])
+		// Check if required fields are in the body
+		if _, ok := b[m.identityField]; !ok {
+			return &jwtError{
+				status:  http.StatusBadRequest,
+				err:     ErrParsingCredentials,
+				message: "parsing credentials, missing identity field",
+			}
+		}
+		if _, ok := b[m.verifyField]; !ok {
+			return &jwtError{
+				status:  http.StatusBadRequest,
+				err:     ErrParsingCredentials,
+				message: "parsing credentials, missing verify field",
+			}
+		}
+		err = m.auth(b[m.identityField], b[m.verifyField])
 		if err != nil {
 			return &jwtError{
 				status:  http.StatusInternalServerError,
@@ -192,7 +227,7 @@ func (m *Middleware) GenerateToken() http.Handler {
 		}
 
 		// Generate claims for user
-		claims, err := m.claims(b["email"])
+		claims, err := m.claims(b[m.identityField])
 		if err != nil {
 			return &jwtError{
 				status:  http.StatusInternalServerError,
