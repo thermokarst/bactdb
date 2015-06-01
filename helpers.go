@@ -1,5 +1,11 @@
 package main
 
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
+
 // ListOptions specifies general pagination options for fetching a list of results
 type ListOptions struct {
 	PerPage int   `url:",omitempty" json:",omitempty"`
@@ -27,3 +33,12 @@ func (o ListOptions) PerPageOrDefault() int {
 
 // DefaultPerPage is the default number of items to return in a paginated result set
 const DefaultPerPage = 10
+
+func currentTime() NullTime {
+	return NullTime{
+		pq.NullTime{
+			Time:  time.Now(),
+			Valid: true,
+		},
+	}
+}

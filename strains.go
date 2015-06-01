@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -33,8 +32,8 @@ type StrainBase struct {
 	Genbank          NullString `db:"genbank" json:"genbank"`
 	IsolatedFrom     NullString `db:"isolated_from" json:"isolatedFrom"`
 	Notes            NullString `db:"notes" json:"notes"`
-	CreatedAt        time.Time  `db:"created_at" json:"createdAt"`
-	UpdatedAt        time.Time  `db:"updated_at" json:"updatedAt"`
+	CreatedAt        NullTime   `db:"created_at" json:"createdAt"`
+	UpdatedAt        NullTime   `db:"updated_at" json:"updatedAt"`
 	DeletedAt        NullTime   `db:"deleted_at" json:"deletedAt"`
 	CreatedBy        int64      `db:"created_by" json:"createdBy"`
 	UpdatedBy        int64      `db:"updated_by" json:"updatedBy"`
@@ -126,7 +125,7 @@ func serveUpdateStrain(w http.ResponseWriter, r *http.Request) {
 	c := context.Get(r, "claims")
 	var claims Claims = c.(Claims)
 	strainjson.Strain.UpdatedBy = claims.Sub
-	strainjson.Strain.UpdatedAt = time.Now()
+	strainjson.Strain.UpdatedAt = currentTime()
 	strainjson.Strain.Id = id
 
 	err = dbUpdateStrain(strainjson.Strain)
@@ -135,14 +134,7 @@ func serveUpdateStrain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var strain *Strain
-	strain, err = dbGetStrain(id, mux.Vars(r)["genus"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	data, err := json.Marshal(StrainJSON{Strain: strain})
+	data, err := json.Marshal(StrainJSON{Strain: strainjson.Strain})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
