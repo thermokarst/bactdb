@@ -11,6 +11,7 @@ type ListOptions struct {
 	PerPage int   `url:",omitempty" json:",omitempty"`
 	Page    int   `url:",omitempty" json:",omitempty"`
 	Ids     []int `url:",omitempty" json:",omitempty" schema:"ids[]"`
+	Genus   string
 }
 
 func (o ListOptions) PageOrDefault() int {

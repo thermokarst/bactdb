@@ -5,12 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"strconv"
 	"strings"
-
-	"github.com/gorilla/context"
-	"github.com/gorilla/mux"
 )
 
 var (
@@ -21,6 +16,8 @@ var (
 func init() {
 	DB.AddTableWithName(StrainBase{}, "strains").SetKeys(true, "Id")
 }
+
+type StrainService struct{}
 
 // StrainBase is what the DB expects to see for inserts/updates
 type StrainBase struct {
@@ -45,105 +42,34 @@ type Strain struct {
 	*StrainBase
 	SpeciesName       string         `db:"species_name" json:"speciesName"`
 	Measurements      NullSliceInt64 `db:"measurements" json:"measurements"`
-	TotalMeasurements int            `db:"total_measurements" json:"totalMeasurements"`
+	TotalMeasurements int64          `db:"total_measurements" json:"totalMeasurements"`
 }
+
+type Strains []*Strain
 
 type StrainJSON struct {
 	Strain *Strain `json:"strain"`
 }
 
 type StrainsJSON struct {
-	Strains []*Strain `json:"strains"`
+	Strains *Strains `json:"strains"`
 }
 
-type StrainListOptions struct {
-	ListOptions
-	Genus string
+func (s *Strain) marshal() ([]byte, error) {
+	return json.Marshal(&StrainJSON{Strain: s})
 }
 
-func serveStrainsList(w http.ResponseWriter, r *http.Request) {
-	var opt StrainListOptions
-	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	opt.Genus = mux.Vars(r)["genus"]
-
-	strains, err := dbGetStrains(&opt)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if strains == nil {
-		strains = []*Strain{}
-	}
-	data, err := json.Marshal(StrainsJSON{Strains: strains})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Write(data)
+func (s *Strains) marshal() ([]byte, error) {
+	return json.Marshal(&StrainsJSON{Strains: s})
 }
 
-func serveStrain(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	strain, err := dbGetStrain(id, mux.Vars(r)["genus"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	data, err := json.Marshal(StrainJSON{Strain: strain})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Write(data)
+func (s StrainService) unmarshal(b []byte) (entity, error) {
+	var sj StrainJSON
+	err := json.Unmarshal(b, &sj)
+	return sj.Strain, err
 }
 
-func serveUpdateStrain(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var strainjson StrainJSON
-	err = json.NewDecoder(r.Body).Decode(&strainjson)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	c := context.Get(r, "claims")
-	var claims Claims = c.(Claims)
-	strainjson.Strain.UpdatedBy = claims.Sub
-	strainjson.Strain.UpdatedAt = currentTime()
-	strainjson.Strain.Id = id
-
-	err = dbUpdateStrain(strainjson.Strain)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	data, err := json.Marshal(StrainJSON{Strain: strainjson.Strain})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Write(data)
-}
-
-func dbGetStrains(opt *StrainListOptions) ([]*Strain, error) {
+func (s StrainService) list(opt *ListOptions) (entity, error) {
 	if opt == nil {
 		return nil, errors.New("must provide options")
 	}
@@ -171,15 +97,15 @@ func dbGetStrains(opt *StrainListOptions) ([]*Strain, error) {
 
 	sql += " GROUP BY st.id, sp.species_name;"
 
-	var strains []*Strain
+	var strains Strains
 	err := DBH.Select(&strains, sql, vals...)
 	if err != nil {
 		return nil, err
 	}
-	return strains, nil
+	return &strains, nil
 }
 
-func dbGetStrain(id int64, genus string) (*Strain, error) {
+func (s StrainService) get(id int64, genus string) (entity, error) {
 	var strain Strain
 	q := `SELECT st.*, sp.species_name, array_agg(m.id) AS measurements,
 		COUNT(m) AS total_measurements
@@ -198,13 +124,19 @@ func dbGetStrain(id int64, genus string) (*Strain, error) {
 	return &strain, nil
 }
 
-func dbUpdateStrain(strain *Strain) error {
+func (s StrainService) update(id int64, e *entity, claims Claims) error {
+	strain := (*e).(*Strain)
+	strain.UpdatedBy = claims.Sub
+	strain.UpdatedAt = currentTime()
+	strain.Id = id
+
 	var species_id struct{ Id int64 }
 	q := `SELECT id FROM species WHERE species_name = $1;`
 	if err := DBH.SelectOne(&species_id, q, strain.SpeciesName); err != nil {
 		return err
 	}
 	strain.StrainBase.SpeciesId = species_id.Id
+
 	count, err := DBH.Update(strain.StrainBase)
 	if err != nil {
 		return err

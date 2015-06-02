@@ -4,17 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"strconv"
 	"strings"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
 func init() {
 	DB.AddTableWithName(CharacteristicBase{}, "characteristics").SetKeys(true, "Id")
 }
+
+type CharacteristicService struct{}
 
 // A Characteristic is a lookup type
 type CharacteristicBase struct {
@@ -36,67 +34,25 @@ type Characteristic struct {
 	CharacteristicTypeName string         `db:"characteristic_type_name" json:"characteristicType"`
 }
 
+type Characteristics []*Characteristic
+
 type CharacteristicJSON struct {
 	Characteristic *Characteristic `json:"characteristic"`
 }
 
 type CharacteristicsJSON struct {
-	Characteristics []*Characteristic `json:"characteristics"`
+	Characteristics *Characteristics `json:"characteristics"`
 }
 
-type CharacteristicListOptions struct {
-	ListOptions
-	Genus string
+func (c *Characteristic) marshal() ([]byte, error) {
+	return json.Marshal(&CharacteristicJSON{Characteristic: c})
 }
 
-func serveCharacteristicsList(w http.ResponseWriter, r *http.Request) {
-	var opt CharacteristicListOptions
-	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	opt.Genus = mux.Vars(r)["genus"]
-
-	characteristics, err := dbGetCharacteristics(&opt)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if characteristics == nil {
-		characteristics = []*Characteristic{}
-	}
-	data, err := json.Marshal(CharacteristicsJSON{Characteristics: characteristics})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Write(data)
+func (c *Characteristics) marshal() ([]byte, error) {
+	return json.Marshal(&CharacteristicsJSON{Characteristics: c})
 }
 
-func serveCharacteristic(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	characteristic, err := dbGetCharacteristic(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	data, err := json.Marshal(CharacteristicJSON{Characteristic: characteristic})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Write(data)
-}
-
-func dbGetCharacteristics(opt *CharacteristicListOptions) ([]*Characteristic, error) {
+func (c CharacteristicService) list(opt *ListOptions) (entity, error) {
 	if opt == nil {
 		return nil, errors.New("must provide options")
 	}
@@ -123,15 +79,15 @@ func dbGetCharacteristics(opt *CharacteristicListOptions) ([]*Characteristic, er
 
 	sql += " GROUP BY c.id, ct.characteristic_type_name;"
 
-	var characteristics []*Characteristic
+	var characteristics Characteristics
 	err := DBH.Select(&characteristics, sql, vals...)
 	if err != nil {
 		return nil, err
 	}
-	return characteristics, nil
+	return &characteristics, nil
 }
 
-func dbGetCharacteristic(id int64) (*Characteristic, error) {
+func (c CharacteristicService) get(id int64, dummy string) (entity, error) {
 	var characteristic Characteristic
 	sql := `SELECT c.*, ct.characteristic_type_name,
 			array_agg(m.id) AS measurements, array_agg(st.id) AS strains

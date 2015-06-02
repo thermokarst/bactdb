@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -83,13 +85,13 @@ func Handler() http.Handler {
 	}
 
 	routes := []r{
-		r{serveStrainsList, "GET", "/strains"},
-		r{serveStrain, "GET", "/strains/{Id:.+}"},
-		r{serveUpdateStrain, "PUT", "/strains/{Id:.+}"},
-		r{serveMeasurementsList, "GET", "/measurements"},
-		r{serveMeasurement, "GET", "/measurements/{Id:.+}"},
-		r{serveCharacteristicsList, "GET", "/characteristics"},
-		r{serveCharacteristic, "GET", "/characteristics/{Id:.+}"},
+		r{handleLister(StrainService{}), "GET", "/strains"},
+		r{handleGetter(StrainService{}), "GET", "/strains/{Id:.+}"},
+		r{handleUpdater(StrainService{}), "PUT", "/strains/{Id:.+}"},
+		r{handleLister(MeasurementService{}), "GET", "/measurements"},
+		r{handleGetter(MeasurementService{}), "GET", "/measurements/{Id:.+}"},
+		r{handleLister(CharacteristicService{}), "GET", "/characteristics"},
+		r{handleGetter(CharacteristicService{}), "GET", "/characteristics/{Id:.+}"},
 	}
 
 	for _, route := range routes {
@@ -97,6 +99,93 @@ func Handler() http.Handler {
 	}
 
 	return corsHandler(m)
+}
+
+func handleGetter(g getter) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		e, err := g.get(id, mux.Vars(r)["genus"])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		data, err := e.marshal()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.Write(data)
+	}
+}
+
+func handleLister(l lister) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var opt ListOptions
+		if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		opt.Genus = mux.Vars(r)["genus"]
+
+		es, err := l.list(&opt)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		data, err := es.marshal()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.Write(data)
+	}
+}
+
+func handleUpdater(u updater) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		e, err := u.unmarshal(bodyBytes)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		c := context.Get(r, "claims")
+		var claims Claims = c.(Claims)
+
+		err = u.update(id, &e, claims)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		data, err := e.marshal()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.Write(data)
+	}
 }
 
 func tokenHandler(h http.Handler) http.Handler {

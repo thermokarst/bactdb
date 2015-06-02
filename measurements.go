@@ -4,12 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"strconv"
 	"strings"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
 var ErrMeasurementNotFound = errors.New("measurement not found")
@@ -17,6 +13,8 @@ var ErrMeasurementNotFound = errors.New("measurement not found")
 func init() {
 	DB.AddTableWithName(MeasurementBase{}, "measurements").SetKeys(true, "Id")
 }
+
+type MeasurementService struct{}
 
 // There are three types of supported measurements: fixed-test, free-text,
 // & numerical. The table has a constraint that will allow one or the other
@@ -48,67 +46,25 @@ type Measurement struct {
 	TestMethod          NullString `db:"test_method_name" json:"testMethod"`
 }
 
+type Measurements []*Measurement
+
 type MeasurementJSON struct {
 	Measurement *Measurement `json:"measurement"`
 }
 
 type MeasurementsJSON struct {
-	Measurements []*Measurement `json:"measurements"`
+	Measurements *Measurements `json:"measurements"`
 }
 
-type MeasurementListOptions struct {
-	ListOptions
-	Genus string
+func (m *Measurement) marshal() ([]byte, error) {
+	return json.Marshal(&MeasurementJSON{Measurement: m})
 }
 
-func serveMeasurementsList(w http.ResponseWriter, r *http.Request) {
-	var opt MeasurementListOptions
-	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	opt.Genus = mux.Vars(r)["genus"]
-
-	measurements, err := dbGetMeasurements(&opt)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if measurements == nil {
-		measurements = []*Measurement{}
-	}
-	data, err := json.Marshal(MeasurementsJSON{Measurements: measurements})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Write(data)
+func (m *Measurements) marshal() ([]byte, error) {
+	return json.Marshal(&MeasurementsJSON{Measurements: m})
 }
 
-func serveMeasurement(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	measurement, err := dbGetMeasurement(id, mux.Vars(r)["genus"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	data, err := json.Marshal(MeasurementJSON{Measurement: measurement})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Write(data)
-}
-
-func dbGetMeasurements(opt *MeasurementListOptions) ([]*Measurement, error) {
+func (m MeasurementService) list(opt *ListOptions) (entity, error) {
 	if opt == nil {
 		return nil, errors.New("must provide options")
 	}
@@ -142,15 +98,15 @@ func dbGetMeasurements(opt *MeasurementListOptions) ([]*Measurement, error) {
 
 	sql += ";"
 
-	var measurements []*Measurement
+	var measurements Measurements
 	err := DBH.Select(&measurements, sql, vals...)
 	if err != nil {
 		return nil, err
 	}
-	return measurements, nil
+	return &measurements, nil
 }
 
-func dbGetMeasurement(id int64, genus string) (*Measurement, error) {
+func (m MeasurementService) get(id int64, genus string) (entity, error) {
 	var measurement Measurement
 	sql := `SELECT m.*, c.characteristic_name,
 		t.text_measurement_name AS text_measurement_type_name,
