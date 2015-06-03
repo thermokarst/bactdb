@@ -22,7 +22,7 @@ type StrainService struct{}
 // StrainBase is what the DB expects to see for inserts/updates
 type StrainBase struct {
 	Id               int64      `db:"id" json:"id"`
-	SpeciesId        int64      `db:"species_id" json:"-"`
+	SpeciesId        int64      `db:"species_id" json:"species,string"` // quirk in ember select
 	StrainName       string     `db:"strain_name" json:"strainName"`
 	TypeStrain       bool       `db:"type_strain" json:"typeStrain"`
 	AccessionNumbers string     `db:"accession_numbers" json:"accessionNumbers"`
@@ -40,7 +40,6 @@ type StrainBase struct {
 // Strain & StrainJSON(s) are what ember expects to see
 type Strain struct {
 	*StrainBase
-	SpeciesName       string         `db:"species_name" json:"speciesName"`
 	Measurements      NullSliceInt64 `db:"measurements" json:"measurements"`
 	TotalMeasurements int64          `db:"total_measurements" json:"totalMeasurements"`
 }
@@ -75,8 +74,7 @@ func (s StrainService) list(opt *ListOptions) (entity, error) {
 	}
 	var vals []interface{}
 
-	sql := `SELECT st.*, sp.species_name, array_agg(m.id) AS measurements,
-		COUNT(m) AS total_measurements
+	sql := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements
 		FROM strains st
 		INNER JOIN species sp ON sp.id=st.species_id
 		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
@@ -95,7 +93,7 @@ func (s StrainService) list(opt *ListOptions) (entity, error) {
 		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
 	}
 
-	sql += " GROUP BY st.id, sp.species_name;"
+	sql += " GROUP BY st.id, st.species_id;"
 
 	var strains Strains
 	err := DBH.Select(&strains, sql, vals...)
@@ -107,14 +105,13 @@ func (s StrainService) list(opt *ListOptions) (entity, error) {
 
 func (s StrainService) get(id int64, genus string) (entity, error) {
 	var strain Strain
-	q := `SELECT st.*, sp.species_name, array_agg(m.id) AS measurements,
-		COUNT(m) AS total_measurements
+	q := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements
 		FROM strains st
 		INNER JOIN species sp ON sp.id=st.species_id
 		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
 		LEFT OUTER JOIN measurements m ON m.strain_id=st.id
 		WHERE st.id=$2
-		GROUP BY st.id, sp.species_name;`
+		GROUP BY st.id, st.species_id;`
 	if err := DBH.SelectOne(&strain, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrStrainNotFound
@@ -129,13 +126,6 @@ func (s StrainService) update(id int64, e *entity, claims Claims) error {
 	strain.UpdatedBy = claims.Sub
 	strain.UpdatedAt = currentTime()
 	strain.Id = id
-
-	var species_id struct{ Id int64 }
-	q := `SELECT id FROM species WHERE species_name = $1;`
-	if err := DBH.SelectOne(&species_id, q, strain.SpeciesName); err != nil {
-		return err
-	}
-	strain.StrainBase.SpeciesId = species_id.Id
 
 	count, err := DBH.Update(strain.StrainBase)
 	if err != nil {
