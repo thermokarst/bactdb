@@ -82,7 +82,7 @@ func (s SpeciesService) list(opt *ListOptions) (entity, error) {
 
 	if len(opt.Ids) != 0 {
 		var conds []string
-		s := "st.id IN ("
+		s := "sp.id IN ("
 		for i, id := range opt.Ids {
 			s = s + fmt.Sprintf("$%v,", i+2) // start param index at 2
 			vals = append(vals, id)
