@@ -86,6 +86,7 @@ func Handler() http.Handler {
 
 	routes := []r{
 		r{handleLister(StrainService{}), "GET", "/strains"},
+		r{handleCreater(StrainService{}), "POST", "/strains"},
 		r{handleGetter(StrainService{}), "GET", "/strains/{Id:.+}"},
 		r{handleUpdater(StrainService{}), "PUT", "/strains/{Id:.+}"},
 		r{handleLister(MeasurementService{}), "GET", "/measurements"},
@@ -175,6 +176,39 @@ func handleUpdater(u updater) http.HandlerFunc {
 		var claims Claims = c.(Claims)
 
 		err = u.update(id, &e, claims)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		data, err := e.marshal()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.Write(data)
+	}
+}
+
+func handleCreater(c creater) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		e, err := c.unmarshal(bodyBytes)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		con := context.Get(r, "claims")
+		var claims Claims = con.(Claims)
+
+		err = c.create(&e, claims)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

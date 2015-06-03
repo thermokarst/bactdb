@@ -16,3 +16,8 @@ type updater interface {
 	update(int64, *entity, Claims) error
 	unmarshal([]byte) (entity, error)
 }
+
+type creater interface {
+	create(*entity, Claims) error
+	unmarshal([]byte) (entity, error)
+}
