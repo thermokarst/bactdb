@@ -121,3 +121,34 @@ func (s SpeciesService) get(id int64, genus string) (entity, error) {
 	}
 	return &species, nil
 }
+
+func (s SpeciesService) update(id int64, e *entity, claims Claims) error {
+	species := (*e).(*Species)
+	species.UpdatedBy = claims.Sub
+	species.UpdatedAt = currentTime()
+	species.Id = id
+
+	count, err := DBH.Update(species.SpeciesBase)
+	if err != nil {
+		return err
+	}
+	if count != 1 {
+		return ErrSpeciesNotUpdated
+	}
+	return nil
+}
+
+func (s SpeciesService) create(e *entity, claims Claims) error {
+	species := (*e).(*Species)
+	ct := currentTime()
+	species.CreatedBy = claims.Sub
+	species.CreatedAt = ct
+	species.UpdatedBy = claims.Sub
+	species.UpdatedAt = ct
+
+	err := DBH.Insert(species.SpeciesBase)
+	if err != nil {
+		return err
+	}
+	return nil
+}
