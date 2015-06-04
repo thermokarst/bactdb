@@ -21,16 +21,18 @@ type SpeciesService struct{}
 
 // SpeciesBase is what the DB expects to see for inserts/updates
 type SpeciesBase struct {
-	Id          int64      `db:"id" json:"id"`
-	SpeciesName string     `db:"species_name" json:"speciesName"`
-	TypeSpecies NullBool   `db:"type_species" json:"typeSpecies"`
-	Etymology   NullString `db:"etymology" json:"etymology"`
-	CreatedAt   NullTime   `db:"created_at" json:"createdAt"`
-	UpdatedAt   NullTime   `db:"updated_at" json:"updatedAt"`
-	DeletedAt   NullTime   `db:"deleted_at" json:"deletedAt"`
-	CreatedBy   int64      `db:"created_by" json:"createdBy"`
-	UpdatedBy   int64      `db:"updated_by" json:"updatedBy"`
-	DeletedBy   NullInt64  `db:"deleted_by" json:"deletedBy"`
+	Id                  int64      `db:"id" json:"id"`
+	GenusID             int64      `db:"genus_id" json:"-"`
+	SubspeciesSpeciesID NullInt64  `db:"subspecies_species_id" json:"-"`
+	SpeciesName         string     `db:"species_name" json:"speciesName"`
+	TypeSpecies         NullBool   `db:"type_species" json:"typeSpecies"`
+	Etymology           NullString `db:"etymology" json:"etymology"`
+	CreatedAt           NullTime   `db:"created_at" json:"createdAt"`
+	UpdatedAt           NullTime   `db:"updated_at" json:"updatedAt"`
+	DeletedAt           NullTime   `db:"deleted_at" json:"deletedAt"`
+	CreatedBy           int64      `db:"created_by" json:"createdBy"`
+	UpdatedBy           int64      `db:"updated_by" json:"updatedBy"`
+	DeletedBy           NullInt64  `db:"deleted_by" json:"deletedBy"`
 }
 
 // Species & SpeciesJSON(s) are what ember expects to see
@@ -71,9 +73,7 @@ func (s SpeciesService) list(opt *ListOptions) (entity, error) {
 	}
 	var vals []interface{}
 
-	sql := `SELECT sp.id, sp.species_name, sp.type_species, sp.etymology,
-			sp.created_at, sp.created_by, sp.updated_at, sp.updated_by,
-			sp.deleted_at, sp.deleted_by, g.genus_name, array_agg(st.id) AS strains,
+	sql := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
 			COUNT(st) AS total_strains
 			FROM species sp
 			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
@@ -104,9 +104,7 @@ func (s SpeciesService) list(opt *ListOptions) (entity, error) {
 
 func (s SpeciesService) get(id int64, genus string) (entity, error) {
 	var species Species
-	q := `SELECT sp.id, sp.species_name, sp.type_species, sp.etymology,
-		sp.created_at, sp.created_by, sp.updated_at, sp.updated_by, sp.deleted_at,
-		sp.deleted_by, g.genus_name, array_agg(st.id) AS strains,
+	q := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
 		COUNT(st) AS total_strains
 		FROM species sp
 		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
@@ -145,6 +143,13 @@ func (s SpeciesService) create(e *entity, claims Claims) error {
 	species.CreatedAt = ct
 	species.UpdatedBy = claims.Sub
 	species.UpdatedAt = ct
+
+	var genus_id struct{ Id int64 }
+	q := `SELECT id FROM genera WHERE LOWER(genus_name) = $1;`
+	if err := DBH.SelectOne(&genus_id, q, species.GenusName); err != nil {
+		return err
+	}
+	species.SpeciesBase.GenusID = genus_id.Id
 
 	err := DBH.Insert(species.SpeciesBase)
 	if err != nil {
