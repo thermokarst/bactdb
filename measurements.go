@@ -23,7 +23,7 @@ type MeasurementService struct{}
 type MeasurementBase struct {
 	Id                    int64       `json:"id,omitempty"`
 	StrainId              int64       `db:"strain_id" json:"strain"`
-	CharacteristicId      int64       `db:"characteristic_id" json:"-"`
+	CharacteristicId      int64       `db:"characteristic_id" json:"characteristic"`
 	TextMeasurementTypeId NullInt64   `db:"text_measurement_type_id" json:"-"`
 	TxtValue              NullString  `db:"txt_value" json:"txtValue"`
 	NumValue              NullFloat64 `db:"num_value" json:"numValue"`
@@ -40,7 +40,6 @@ type MeasurementBase struct {
 // Measurement & MeasurementJSON(s) are what ember expects to see
 type Measurement struct {
 	*MeasurementBase
-	Characteristic      NullString `db:"characteristic_name" json:"characteristic"`
 	TextMeasurementType NullString `db:"text_measurement_type_name" json:"textMeasurementType"`
 	UnitType            NullString `db:"unit_type_name" json:"unitType"`
 	TestMethod          NullString `db:"test_method_name" json:"testMethod"`
@@ -70,8 +69,7 @@ func (m MeasurementService) list(opt *ListOptions) (entity, error) {
 	}
 
 	var vals []interface{}
-	sql := `SELECT m.*, c.characteristic_name,
-		t.text_measurement_name AS text_measurement_type_name,
+	sql := `SELECT m.*, t.text_measurement_name AS text_measurement_type_name,
 		u.symbol AS unit_type_name, te.name AS test_method_name
 		FROM measurements m
 		INNER JOIN strains st ON st.id=m.strain_id
@@ -108,8 +106,7 @@ func (m MeasurementService) list(opt *ListOptions) (entity, error) {
 
 func (m MeasurementService) get(id int64, genus string) (entity, error) {
 	var measurement Measurement
-	sql := `SELECT m.*, c.characteristic_name,
-		t.text_measurement_name AS text_measurement_type_name,
+	sql := `SELECT m.*, t.text_measurement_name AS text_measurement_type_name,
 		u.symbol AS unit_type_name, te.name AS test_method_name
 		FROM measurements m
 		INNER JOIN strains st ON st.id=m.strain_id
