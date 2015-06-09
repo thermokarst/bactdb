@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -63,9 +64,17 @@ func (m *Measurements) marshal() ([]byte, error) {
 	return json.Marshal(&MeasurementsJSON{Measurements: m})
 }
 
-func (m MeasurementService) list(opt *ListOptions) (entity, error) {
-	if opt == nil {
+func (m MeasurementService) list(val *url.Values) (entity, error) {
+	if val == nil {
 		return nil, errors.New("must provide options")
+	}
+	var opt struct {
+		ListOptions
+		Strain         *int64
+		Characteristic *int64
+	}
+	if err := schemaDecoder.Decode(&opt, *val); err != nil {
+		return nil, err
 	}
 
 	var vals []interface{}
@@ -81,17 +90,51 @@ func (m MeasurementService) list(opt *ListOptions) (entity, error) {
 		LEFT OUTER JOIN test_methods te ON te.id=m.test_method_id`
 	vals = append(vals, opt.Genus)
 
-	if len(opt.Ids) != 0 {
-		var conds []string
+	strainId := opt.Strain != nil
+	charId := opt.Characteristic != nil
+	ids := len(opt.Ids) != 0
 
-		m := "m.id IN ("
-		for i, id := range opt.Ids {
-			m = m + fmt.Sprintf("$%v,", i+2) // start param index at 2
-			vals = append(vals, id)
+	if strainId || charId || ids {
+		paramsCounter := 2
+		sql += "\nWHERE ("
+
+		// Filter by strain
+		if strainId {
+			sql += fmt.Sprintf("st.id=$%v", paramsCounter)
+			vals = append(vals, *opt.Strain)
+			paramsCounter++
 		}
-		m = m[:len(m)-1] + ")"
-		conds = append(conds, m)
-		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
+
+		if strainId && (charId || ids) {
+			sql += " AND "
+		}
+
+		// Filter by characteristic
+		if charId {
+			sql += fmt.Sprintf("c.id=$%v", paramsCounter)
+			vals = append(vals, *opt.Characteristic)
+			paramsCounter++
+		}
+
+		if charId && ids {
+			sql += " AND "
+		}
+
+		// Get specific records
+		if ids {
+			var conds []string
+
+			m := "m.id IN ("
+			for _, id := range opt.Ids {
+				m = m + fmt.Sprintf("$%v,", paramsCounter)
+				vals = append(vals, id)
+				paramsCounter++
+			}
+			m = m[:len(m)-1] + ")"
+			conds = append(conds, m)
+			sql += strings.Join(conds, ") AND (")
+		}
+		sql += ")"
 	}
 
 	sql += ";"

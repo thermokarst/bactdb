@@ -132,13 +132,8 @@ func handleGetter(g getter) http.HandlerFunc {
 
 func handleLister(l lister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var opt ListOptions
-		if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		opt.Genus = mux.Vars(r)["genus"]
+		opt := r.URL.Query()
+		opt.Add("Genus", mux.Vars(r)["genus"])
 
 		es, err := l.list(&opt)
 		if err != nil {

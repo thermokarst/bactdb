@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -67,12 +68,16 @@ func (s SpeciesService) unmarshal(b []byte) (entity, error) {
 	return sj.Species, err
 }
 
-func (s SpeciesService) list(opt *ListOptions) (entity, error) {
-	if opt == nil {
+func (s SpeciesService) list(val *url.Values) (entity, error) {
+	if val == nil {
 		return nil, errors.New("must provide options")
 	}
-	var vals []interface{}
+	var opt ListOptions
+	if err := schemaDecoder.Decode(&opt, *val); err != nil {
+		return nil, err
+	}
 
+	var vals []interface{}
 	sql := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
 			COUNT(st) AS total_strains
 			FROM species sp

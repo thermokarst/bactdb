@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -52,10 +53,15 @@ func (c *Characteristics) marshal() ([]byte, error) {
 	return json.Marshal(&CharacteristicsJSON{Characteristics: c})
 }
 
-func (c CharacteristicService) list(opt *ListOptions) (entity, error) {
-	if opt == nil {
+func (c CharacteristicService) list(val *url.Values) (entity, error) {
+	if val == nil {
 		return nil, errors.New("must provide options")
 	}
+	var opt ListOptions
+	if err := schemaDecoder.Decode(&opt, *val); err != nil {
+		return nil, err
+	}
+
 	var vals []interface{}
 	sql := `SELECT c.*, ct.characteristic_type_name,
 			array_agg(m.id) AS measurements, array_agg(st.id) AS strains

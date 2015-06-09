@@ -1,5 +1,7 @@
 package main
 
+import "net/url"
+
 type entity interface {
 	marshal() ([]byte, error)
 }
@@ -9,7 +11,7 @@ type getter interface {
 }
 
 type lister interface {
-	list(*ListOptions) (entity, error)
+	list(*url.Values) (entity, error)
 }
 
 type updater interface {
