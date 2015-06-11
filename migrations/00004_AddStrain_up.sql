@@ -8,6 +8,7 @@ CREATE TABLE strains (
     type_strain BOOLEAN NOT NULL,
     accession_numbers TEXT NULL,
     genbank TEXT NULL,
+    whole_genome_sequence TEXT NULL,
     isolated_from TEXT NULL,
     notes TEXT NULL,
 
