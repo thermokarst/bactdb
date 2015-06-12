@@ -22,20 +22,21 @@ type StrainService struct{}
 
 // StrainBase is what the DB expects to see for inserts/updates
 type StrainBase struct {
-	Id               int64      `db:"id" json:"id"`
-	SpeciesId        int64      `db:"species_id" json:"species,string"` // quirk in ember select
-	StrainName       string     `db:"strain_name" json:"strainName"`
-	TypeStrain       bool       `db:"type_strain" json:"typeStrain"`
-	AccessionNumbers string     `db:"accession_numbers" json:"accessionNumbers"`
-	Genbank          NullString `db:"genbank" json:"genbank"`
-	IsolatedFrom     NullString `db:"isolated_from" json:"isolatedFrom"`
-	Notes            NullString `db:"notes" json:"notes"`
-	CreatedAt        NullTime   `db:"created_at" json:"createdAt"`
-	UpdatedAt        NullTime   `db:"updated_at" json:"updatedAt"`
-	DeletedAt        NullTime   `db:"deleted_at" json:"deletedAt"`
-	CreatedBy        int64      `db:"created_by" json:"createdBy"`
-	UpdatedBy        int64      `db:"updated_by" json:"updatedBy"`
-	DeletedBy        NullInt64  `db:"deleted_by" json:"deletedBy"`
+	Id                  int64      `db:"id" json:"id"`
+	SpeciesId           int64      `db:"species_id" json:"species,string"` // quirk in ember select
+	StrainName          string     `db:"strain_name" json:"strainName"`
+	TypeStrain          bool       `db:"type_strain" json:"typeStrain"`
+	AccessionNumbers    string     `db:"accession_numbers" json:"accessionNumbers"`
+	Genbank             NullString `db:"genbank" json:"genbank"`
+	WholeGenomeSequence NullString `db:"whole_genome_sequence" json:"wholeGenomeSequence"`
+	IsolatedFrom        NullString `db:"isolated_from" json:"isolatedFrom"`
+	Notes               NullString `db:"notes" json:"notes"`
+	CreatedAt           NullTime   `db:"created_at" json:"createdAt"`
+	UpdatedAt           NullTime   `db:"updated_at" json:"updatedAt"`
+	DeletedAt           NullTime   `db:"deleted_at" json:"deletedAt"`
+	CreatedBy           int64      `db:"created_by" json:"createdBy"`
+	UpdatedBy           int64      `db:"updated_by" json:"updatedBy"`
+	DeletedBy           NullInt64  `db:"deleted_by" json:"deletedBy"`
 }
 
 // Strain & StrainJSON(s) are what ember expects to see
