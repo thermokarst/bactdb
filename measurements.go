@@ -3,9 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/url"
-	"strings"
 	"time"
 )
 
@@ -70,8 +68,8 @@ func (m MeasurementService) list(val *url.Values) (entity, error) {
 	}
 	var opt struct {
 		ListOptions
-		Strain         *int64
-		Characteristic *int64
+		Strains         []int64 `schema:"strain[]"`
+		Characteristics []int64 `schema:"characteristic[]"`
 	}
 	if err := schemaDecoder.Decode(&opt, *val); err != nil {
 		return nil, err
@@ -90,49 +88,38 @@ func (m MeasurementService) list(val *url.Values) (entity, error) {
 		LEFT OUTER JOIN test_methods te ON te.id=m.test_method_id`
 	vals = append(vals, opt.Genus)
 
-	strainId := opt.Strain != nil
-	charId := opt.Characteristic != nil
+	strainIds := len(opt.Strains) != 0
+	charIds := len(opt.Characteristics) != 0
 	ids := len(opt.Ids) != 0
 
-	if strainId || charId || ids {
-		paramsCounter := 2
+	if strainIds || charIds || ids {
+		var paramsCounter int64 = 2
 		sql += "\nWHERE ("
 
-		// Filter by strain
-		if strainId {
-			sql += fmt.Sprintf("st.id=$%v", paramsCounter)
-			vals = append(vals, *opt.Strain)
-			paramsCounter++
+		// Filter by strains
+		if strainIds {
+			sStr := valsIn("st.id", opt.Strains, &vals, &paramsCounter)
+			sql += sStr
 		}
 
-		if strainId && (charId || ids) {
+		if strainIds && (charIds || ids) {
 			sql += " AND "
 		}
 
-		// Filter by characteristic
-		if charId {
-			sql += fmt.Sprintf("c.id=$%v", paramsCounter)
-			vals = append(vals, *opt.Characteristic)
-			paramsCounter++
+		// Filter by characteristics
+		if charIds {
+			sChar := valsIn("c.id", opt.Characteristics, &vals, &paramsCounter)
+			sql += sChar
 		}
 
-		if charId && ids {
+		if charIds && ids {
 			sql += " AND "
 		}
 
 		// Get specific records
 		if ids {
-			var conds []string
-
-			m := "m.id IN ("
-			for _, id := range opt.Ids {
-				m = m + fmt.Sprintf("$%v,", paramsCounter)
-				vals = append(vals, id)
-				paramsCounter++
-			}
-			m = m[:len(m)-1] + ")"
-			conds = append(conds, m)
-			sql += strings.Join(conds, ") AND (")
+			sId := valsIn("m.id", opt.Ids, &vals, &paramsCounter)
+			sql += sId
 		}
 		sql += ")"
 	}
