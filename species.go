@@ -99,7 +99,7 @@ func (s SpeciesService) list(val *url.Values) (entity, error) {
 
 	sql += " GROUP BY sp.id, g.genus_name;"
 
-	var species ManySpecies
+	species := make(ManySpecies, 0)
 	err := DBH.Select(&species, sql, vals...)
 	if err != nil {
 		return nil, err

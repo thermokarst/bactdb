@@ -101,7 +101,7 @@ func (s StrainService) list(val *url.Values) (entity, error) {
 
 	sql += " GROUP BY st.id, st.species_id;"
 
-	var strains Strains
+	strains := make(Strains, 0)
 	err := DBH.Select(&strains, sql, vals...)
 	if err != nil {
 		return nil, err

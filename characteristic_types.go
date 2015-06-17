@@ -79,7 +79,7 @@ func (c CharacteristicTypeService) list(val *url.Values) (entity, error) {
 
 	sql += " GROUP BY ct.id;"
 
-	var characteristic_types CharacteristicTypes
+	characteristic_types := make(CharacteristicTypes, 0)
 	err := DBH.Select(&characteristic_types, sql, vals...)
 	if err != nil {
 		return nil, err

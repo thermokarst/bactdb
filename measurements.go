@@ -126,7 +126,7 @@ func (m MeasurementService) list(val *url.Values) (entity, error) {
 
 	sql += ";"
 
-	var measurements Measurements
+	measurements := make(Measurements, 0)
 	err := DBH.Select(&measurements, sql, vals...)
 	if err != nil {
 		return nil, err
