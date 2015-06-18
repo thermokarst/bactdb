@@ -20,7 +20,7 @@ type CharacteristicBase struct {
 	Id                   int64     `json:"id,omitempty"`
 	CharacteristicName   string    `db:"characteristic_name" json:"characteristicName"`
 	CharacteristicTypeId int64     `db:"characteristic_type_id" json:"characteristicType"`
-	Sort                 NullInt64 `db:"sort" json:"sort"`
+	SortOrder            NullInt64 `db:"sort_order" json:"sortOrder"`
 	CreatedAt            time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt            time.Time `db:"updated_at" json:"updatedAt"`
 	DeletedAt            NullTime  `db:"deleted_at" json:"deletedAt"`

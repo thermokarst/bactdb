@@ -5,7 +5,7 @@ CREATE TABLE characteristics (
     id BIGSERIAL NOT NULL,
     characteristic_name TEXT NOT NULL,
     characteristic_type_id BIGINT NOT NULL,
-    sort BIGINT NULL,
+    sort_order BIGINT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,

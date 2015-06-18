@@ -44,6 +44,7 @@ type Strain struct {
 	*StrainBase
 	Measurements      NullSliceInt64 `db:"measurements" json:"measurements"`
 	TotalMeasurements int64          `db:"total_measurements" json:"totalMeasurements"`
+	SortOrder         int64          `db:"sort_order" json:"sortOrder"`
 }
 
 type Strains []*Strain
@@ -80,7 +81,8 @@ func (s StrainService) list(val *url.Values) (entity, error) {
 	}
 
 	var vals []interface{}
-	sql := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements
+	sql := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements,
+		rank() OVER (ORDER BY sp.species_name ASC, st.type_strain ASC, st.strain_name ASC) AS sort_order
 		FROM strains st
 		INNER JOIN species sp ON sp.id=st.species_id
 		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
@@ -99,7 +101,7 @@ func (s StrainService) list(val *url.Values) (entity, error) {
 		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
 	}
 
-	sql += " GROUP BY st.id, st.species_id;"
+	sql += " GROUP BY st.id, st.species_id, sp.species_name;"
 
 	strains := make(Strains, 0)
 	err := DBH.Select(&strains, sql, vals...)
@@ -111,7 +113,8 @@ func (s StrainService) list(val *url.Values) (entity, error) {
 
 func (s StrainService) get(id int64, genus string) (entity, error) {
 	var strain Strain
-	q := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements
+	q := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements,
+		0 AS sort_order
 		FROM strains st
 		INNER JOIN species sp ON sp.id=st.species_id
 		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1

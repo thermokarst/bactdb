@@ -42,6 +42,7 @@ type Species struct {
 	GenusName    string         `db:"genus_name" json:"genusName"`
 	Strains      NullSliceInt64 `db:"strains" json:"strains"`
 	TotalStrains int64          `db:"total_strains" json:"totalStrains"`
+	SortOrder    int64          `db:"sort_order" json:"sortOrder"`
 }
 
 type ManySpecies []*Species
@@ -79,7 +80,8 @@ func (s SpeciesService) list(val *url.Values) (entity, error) {
 
 	var vals []interface{}
 	sql := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
-			COUNT(st) AS total_strains
+			COUNT(st) AS total_strains,
+			rank() OVER (ORDER BY sp.species_name ASC) AS sort_order
 			FROM species sp
 			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
 			LEFT OUTER JOIN strains st ON st.species_id=sp.id`
@@ -110,7 +112,7 @@ func (s SpeciesService) list(val *url.Values) (entity, error) {
 func (s SpeciesService) get(id int64, genus string) (entity, error) {
 	var species Species
 	q := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
-		COUNT(st) AS total_strains
+		COUNT(st) AS total_strains, 0 AS sort_order
 		FROM species sp
 		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
 		LEFT OUTER JOIN strains st ON st.species_id=sp.id

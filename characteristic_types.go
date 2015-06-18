@@ -30,6 +30,7 @@ type CharacteristicTypeBase struct {
 type CharacteristicType struct {
 	*CharacteristicTypeBase
 	Characteristics NullSliceInt64 `db:"characteristics" json:"characteristics"`
+	SortOrder       int64          `db:"sort_order" json:"sortOrder"`
 }
 
 type CharacteristicTypes []*CharacteristicType
@@ -60,7 +61,8 @@ func (c CharacteristicTypeService) list(val *url.Values) (entity, error) {
 	}
 
 	var vals []interface{}
-	sql := `SELECT ct.*, array_agg(c.id) AS characteristics
+	sql := `SELECT ct.*, array_agg(c.id) AS characteristics,
+			rank() OVER (ORDER BY ct.characteristic_type_name) AS sort_order
 			FROM characteristic_types ct
 			INNER JOIN characteristics c ON c.characteristic_type_id=ct.id`
 
@@ -89,7 +91,7 @@ func (c CharacteristicTypeService) list(val *url.Values) (entity, error) {
 
 func (c CharacteristicTypeService) get(id int64, dummy string) (entity, error) {
 	var characteristic_type CharacteristicType
-	sql := `SELECT ct.*, array_agg(c.id) AS characteristics
+	sql := `SELECT ct.*, array_agg(c.id) AS characteristics, 0 AS sort_order
 			FROM characteristic_types ct
 			INNER JOIN characteristics c ON c.characteristic_type_id=ct.id
 			WHERE ct.id=$1
