@@ -1,11 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"time"
-
-	"github.com/lib/pq"
-)
+import "fmt"
 
 // ListOptions specifies general pagination options for fetching a list of results
 type ListOptions struct {
@@ -35,15 +30,6 @@ func (o ListOptions) PerPageOrDefault() int64 {
 
 // DefaultPerPage is the default number of items to return in a paginated result set
 const DefaultPerPage = 10
-
-func currentTime() NullTime {
-	return NullTime{
-		pq.NullTime{
-			Time:  time.Now(),
-			Valid: true,
-		},
-	}
-}
 
 func valsIn(attribute string, values []int64, vals *[]interface{}, counter *int64) string {
 	if len(values) == 1 {

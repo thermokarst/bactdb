@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 )
 
 var (
@@ -28,8 +29,8 @@ type SpeciesBase struct {
 	SpeciesName         string     `db:"species_name" json:"speciesName"`
 	TypeSpecies         NullBool   `db:"type_species" json:"typeSpecies"`
 	Etymology           NullString `db:"etymology" json:"etymology"`
-	CreatedAt           NullTime   `db:"created_at" json:"createdAt"`
-	UpdatedAt           NullTime   `db:"updated_at" json:"updatedAt"`
+	CreatedAt           time.Time  `db:"created_at" json:"createdAt"`
+	UpdatedAt           time.Time  `db:"updated_at" json:"updatedAt"`
 	DeletedAt           NullTime   `db:"deleted_at" json:"deletedAt"`
 	CreatedBy           int64      `db:"created_by" json:"createdBy"`
 	UpdatedBy           int64      `db:"updated_by" json:"updatedBy"`
@@ -130,7 +131,7 @@ func (s SpeciesService) get(id int64, genus string) (entity, error) {
 func (s SpeciesService) update(id int64, e *entity, claims Claims) error {
 	species := (*e).(*Species)
 	species.UpdatedBy = claims.Sub
-	species.UpdatedAt = currentTime()
+	species.UpdatedAt = time.Now()
 	species.Id = id
 
 	count, err := DBH.Update(species.SpeciesBase)
@@ -145,7 +146,7 @@ func (s SpeciesService) update(id int64, e *entity, claims Claims) error {
 
 func (s SpeciesService) create(e *entity, claims Claims) error {
 	species := (*e).(*Species)
-	ct := currentTime()
+	ct := time.Now()
 	species.CreatedBy = claims.Sub
 	species.CreatedAt = ct
 	species.UpdatedBy = claims.Sub
