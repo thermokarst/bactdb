@@ -72,8 +72,8 @@ func Handler() http.Handler {
 	m.Handle("/authenticate", tokenHandler(j.GenerateToken())).Methods("POST")
 
 	// Auth routes
-	m.Handle("/users", j.Secure(http.HandlerFunc(serveUsersList), verifyClaims)).Methods("GET")
-	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(serveUser), verifyClaims)).Methods("GET")
+	m.Handle("/users", j.Secure(http.HandlerFunc(handleLister(UserService{})), verifyClaims)).Methods("GET")
+	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(handleGetter(UserService{})), verifyClaims)).Methods("GET")
 
 	// Path-based pattern matching subrouter
 	s := m.PathPrefix("/{genus}").Subrouter()
