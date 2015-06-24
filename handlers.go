@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -73,7 +74,9 @@ func Handler() http.Handler {
 
 	// Auth routes
 	m.Handle("/users", j.Secure(http.HandlerFunc(handleLister(UserService{})), verifyClaims)).Methods("GET")
+	m.Handle("/users", j.Secure(http.HandlerFunc(handleCreater(UserService{})), verifyClaims)).Methods("POST")
 	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(handleGetter(UserService{})), verifyClaims)).Methods("GET")
+	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(handleUpdater(UserService{})), verifyClaims)).Methods("PUT")
 
 	// Path-based pattern matching subrouter
 	s := m.PathPrefix("/{genus}").Subrouter()
@@ -106,6 +109,12 @@ func Handler() http.Handler {
 	}
 
 	return corsHandler(m)
+}
+
+func Error(w http.ResponseWriter, err string, code int) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(code)
+	fmt.Fprintln(w, err)
 }
 
 func handleGetter(g getter) http.HandlerFunc {
@@ -209,7 +218,7 @@ func handleCreater(c creater) http.HandlerFunc {
 
 		err = c.create(&e, claims)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
