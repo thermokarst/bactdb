@@ -108,11 +108,10 @@ func Handler() http.Handler {
 		s.Handle(route.p, j.Secure(http.HandlerFunc(route.f), verifyClaims)).Methods(route.m)
 	}
 
-	return corsHandler(m)
+	return jsonHandler(corsHandler(m))
 }
 
 func Error(w http.ResponseWriter, err string, code int) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(code)
 	fmt.Fprintln(w, err)
 }
@@ -136,7 +135,6 @@ func handleGetter(g getter) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.Write(data)
 	}
 }
@@ -155,7 +153,6 @@ func handleLister(l lister) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.Write(data)
 	}
 }
@@ -194,7 +191,6 @@ func handleUpdater(u updater) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.Write(data)
 	}
 }
@@ -227,14 +223,12 @@ func handleCreater(c creater) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.Write(data)
 	}
 }
 
 func tokenHandler(h http.Handler) http.Handler {
 	token := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		// Hackish, but we want the token in a JSON object
 		w.Write([]byte(`{"token":"`))
 		h.ServeHTTP(w, r)
@@ -261,4 +255,12 @@ func corsHandler(h http.Handler) http.Handler {
 		}
 	}
 	return http.HandlerFunc(cors)
+}
+
+func jsonHandler(h http.Handler) http.Handler {
+	j := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		h.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(j)
 }
