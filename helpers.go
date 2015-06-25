@@ -12,6 +12,7 @@ import (
 var (
 	ErrMustProvideOptions     = errors.New("Must provide necessary options")
 	ErrMustProvideOptionsJSON = newJSONError(ErrMustProvideOptions, http.StatusBadRequest)
+	StatusUnprocessableEntity = 422
 )
 
 // ListOptions specifies general pagination options for fetching a list of results

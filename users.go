@@ -43,7 +43,9 @@ type UserValidation struct {
 }
 
 func (uv UserValidation) Error() string {
-	errs, err := json.Marshal(uv)
+	errs, err := json.Marshal(struct {
+		UserValidation `json:"errors"`
+	}{uv})
 	if err != nil {
 		return err.Error()
 	}
@@ -74,7 +76,7 @@ func (u UserService) unmarshal(b []byte) (entity, error) {
 	return uj.User, err
 }
 
-func (u *User) validate() *appError {
+func (u *User) validate() error {
 	var uv UserValidation
 	validationError := false
 
@@ -84,8 +86,7 @@ func (u *User) validate() *appError {
 	}
 
 	if validationError {
-		errs, _ := json.Marshal(uv)
-		return newJSONError(errors.New(string(errs)), http.StatusBadRequest)
+		return uv
 	}
 	return nil
 }
@@ -137,7 +138,7 @@ func (u UserService) update(id int64, e *entity, claims Claims) *appError {
 func (u UserService) create(e *entity, claims Claims) *appError {
 	user := (*e).(*User)
 	if err := user.validate(); err != nil {
-		return err
+		return &appError{Error: err, Status: StatusUnprocessableEntity}
 	}
 	ct := currentTime()
 	user.CreatedAt = ct
