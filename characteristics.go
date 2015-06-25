@@ -1,12 +1,19 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
+)
+
+var (
+	ErrCharacteristicNotFound     = errors.New("Characteristic not found")
+	ErrCharacteristicNotFoundJSON = newJSONError(ErrCharacteristicNotFound, http.StatusNotFound)
 )
 
 func init() {
@@ -91,16 +98,19 @@ func (c CharacteristicService) list(val *url.Values) (entity, error) {
 	return &characteristics, nil
 }
 
-func (c CharacteristicService) get(id int64, dummy string) (entity, error) {
+func (c CharacteristicService) get(id int64, dummy string) (entity, *appError) {
 	var characteristic Characteristic
-	sql := `SELECT c.*, array_agg(m.id) AS measurements, array_agg(st.id) AS strains
+	q := `SELECT c.*, array_agg(m.id) AS measurements, array_agg(st.id) AS strains
 			FROM characteristics c
 			LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id
 			LEFT OUTER JOIN strains st ON st.id=m.strain_id
 			WHERE c.id=$1
 			GROUP BY c.id;`
-	if err := DBH.SelectOne(&characteristic, sql, id); err != nil {
-		return nil, err
+	if err := DBH.SelectOne(&characteristic, q, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrCharacteristicNotFoundJSON
+		}
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 	return &characteristic, nil
 }

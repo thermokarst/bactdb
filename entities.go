@@ -7,7 +7,7 @@ type entity interface {
 }
 
 type getter interface {
-	get(int64, string) (entity, error)
+	get(int64, string) (entity, *appError)
 }
 
 type lister interface {

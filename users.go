@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -11,7 +12,8 @@ import (
 )
 
 var (
-	ErrUserNotFound           = errors.New("user not found")
+	ErrUserNotFound           = errors.New("User not found")
+	ErrUserNotFoundJSON       = newJSONError(ErrUserNotFound, http.StatusNotFound)
 	ErrInvalidEmailOrPassword = errors.New("Invalid email or password")
 )
 
@@ -104,14 +106,14 @@ func (u UserService) list(val *url.Values) (entity, error) {
 	return &users, nil
 }
 
-func (u UserService) get(id int64, genus string) (entity, error) {
+func (u UserService) get(id int64, genus string) (entity, *appError) {
 	var user User
 	q := `SELECT * FROM users WHERE id=$1;`
 	if err := DBH.SelectOne(&user, q, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrUserNotFound
+			return nil, ErrUserNotFoundJSON
 		}
-		return nil, err
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 	return &user, nil
 }

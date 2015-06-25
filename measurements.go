@@ -1,13 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"net/url"
 	"time"
 )
 
-var ErrMeasurementNotFound = errors.New("measurement not found")
+var (
+	ErrMeasurementNotFound     = errors.New("Measurement not found")
+	ErrMeasurementNotFoundJSON = newJSONError(ErrMeasurementNotFound, http.StatusNotFound)
+)
 
 func init() {
 	DB.AddTableWithName(MeasurementBase{}, "measurements").SetKeys(true, "Id")
@@ -134,9 +139,9 @@ func (m MeasurementService) list(val *url.Values) (entity, error) {
 	return &measurements, nil
 }
 
-func (m MeasurementService) get(id int64, genus string) (entity, error) {
+func (m MeasurementService) get(id int64, genus string) (entity, *appError) {
 	var measurement Measurement
-	sql := `SELECT m.*, t.text_measurement_name AS text_measurement_type_name,
+	q := `SELECT m.*, t.text_measurement_name AS text_measurement_type_name,
 		u.symbol AS unit_type_name, te.name AS test_method_name
 		FROM measurements m
 		INNER JOIN strains st ON st.id=m.strain_id
@@ -147,11 +152,11 @@ func (m MeasurementService) get(id int64, genus string) (entity, error) {
 		LEFT OUTER JOIN unit_types u ON u.id=m.unit_type_id
 		LEFT OUTER JOIN test_methods te ON te.id=m.test_method_id
 		WHERE m.id=$2;`
-	if err := DBH.SelectOne(&measurement, sql, genus, id); err != nil {
-		return nil, err
-	}
-	if &measurement == nil {
-		return nil, ErrMeasurementNotFound
+	if err := DBH.SelectOne(&measurement, q, genus, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrMeasurementNotFoundJSON
+		}
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 	return &measurement, nil
 }

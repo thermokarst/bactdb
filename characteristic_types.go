@@ -1,12 +1,19 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
+)
+
+var (
+	ErrCharacteristicTypeNotFound     = errors.New("Characteristic Type not found")
+	ErrCharacteristicTypeNotFoundJSON = newJSONError(ErrCharacteristicTypeNotFound, http.StatusNotFound)
 )
 
 func init() {
@@ -89,15 +96,18 @@ func (c CharacteristicTypeService) list(val *url.Values) (entity, error) {
 	return &characteristic_types, nil
 }
 
-func (c CharacteristicTypeService) get(id int64, dummy string) (entity, error) {
+func (c CharacteristicTypeService) get(id int64, dummy string) (entity, *appError) {
 	var characteristic_type CharacteristicType
-	sql := `SELECT ct.*, array_agg(c.id) AS characteristics, 0 AS sort_order
+	q := `SELECT ct.*, array_agg(c.id) AS characteristics, 0 AS sort_order
 			FROM characteristic_types ct
 			INNER JOIN characteristics c ON c.characteristic_type_id=ct.id
 			WHERE ct.id=$1
 			GROUP BY ct.id;`
-	if err := DBH.SelectOne(&characteristic_type, sql, id); err != nil {
-		return nil, err
+	if err := DBH.SelectOne(&characteristic_type, q, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrCharacteristicTypeNotFoundJSON
+		}
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 	return &characteristic_type, nil
 }

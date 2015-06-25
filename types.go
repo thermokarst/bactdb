@@ -186,3 +186,28 @@ func strToIntSlice(s string) []int64 {
 	}
 	return a
 }
+
+type ErrorJSON struct {
+	Err error
+}
+
+func (ej ErrorJSON) Error() string {
+	e, _ := json.Marshal(struct {
+		Err string `json:"error"`
+	}{
+		Err: ej.Err.Error(),
+	})
+	return string(e)
+}
+
+type appError struct {
+	Error  error
+	Status int
+}
+
+func newJSONError(err error, status int) *appError {
+	return &appError{
+		Error:  ErrorJSON{Err: err},
+		Status: status,
+	}
+}

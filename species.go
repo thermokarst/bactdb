@@ -5,14 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
 )
 
 var (
-	ErrSpeciesNotFound   = errors.New("species not found")
-	ErrSpeciesNotUpdated = errors.New("species not updated")
+	ErrSpeciesNotFound     = errors.New("Species not found")
+	ErrSpeciesNotFoundJSON = newJSONError(ErrSpeciesNotFound, http.StatusNotFound)
+	ErrSpeciesNotUpdated   = errors.New("Species not updated")
 )
 
 func init() {
@@ -110,7 +112,7 @@ func (s SpeciesService) list(val *url.Values) (entity, error) {
 	return &species, nil
 }
 
-func (s SpeciesService) get(id int64, genus string) (entity, error) {
+func (s SpeciesService) get(id int64, genus string) (entity, *appError) {
 	var species Species
 	q := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
 		COUNT(st) AS total_strains, 0 AS sort_order
@@ -121,9 +123,9 @@ func (s SpeciesService) get(id int64, genus string) (entity, error) {
 		GROUP BY sp.id, g.genus_name;`
 	if err := DBH.SelectOne(&species, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrStrainNotFound
+			return nil, ErrSpeciesNotFoundJSON
 		}
-		return nil, err
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 	return &species, nil
 }

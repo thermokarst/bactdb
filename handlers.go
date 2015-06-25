@@ -68,74 +68,73 @@ func Handler() http.Handler {
 	}
 
 	m := mux.NewRouter()
+	userService := UserService{}
+	strainService := StrainService{}
+	speciesService := SpeciesService{}
+	characteristicService := CharacteristicService{}
+	characteristicTypeService := CharacteristicTypeService{}
+	measurementService := MeasurementService{}
 
 	// Non-auth routes
 	m.Handle("/authenticate", tokenHandler(j.GenerateToken())).Methods("POST")
 
 	// Auth routes
-	m.Handle("/users", j.Secure(http.HandlerFunc(handleLister(UserService{})), verifyClaims)).Methods("GET")
-	m.Handle("/users", j.Secure(http.HandlerFunc(handleCreater(UserService{})), verifyClaims)).Methods("POST")
-	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(handleGetter(UserService{})), verifyClaims)).Methods("GET")
-	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(handleUpdater(UserService{})), verifyClaims)).Methods("PUT")
+	m.Handle("/users", j.Secure(http.HandlerFunc(handleLister(userService)), verifyClaims)).Methods("GET")
+	m.Handle("/users", j.Secure(http.HandlerFunc(handleCreater(userService)), verifyClaims)).Methods("POST")
+	m.Handle("/users/{Id:.+}", j.Secure(errorHandler(handleGetter(userService)), verifyClaims)).Methods("GET")
+	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(handleUpdater(userService)), verifyClaims)).Methods("PUT")
 
 	// Path-based pattern matching subrouter
 	s := m.PathPrefix("/{genus}").Subrouter()
 
 	type r struct {
-		f http.HandlerFunc
+		f errorHandler
 		m string
 		p string
 	}
 
 	routes := []r{
-		r{handleLister(StrainService{}), "GET", "/strains"},
-		r{handleCreater(StrainService{}), "POST", "/strains"},
-		r{handleGetter(StrainService{}), "GET", "/strains/{Id:.+}"},
-		r{handleUpdater(StrainService{}), "PUT", "/strains/{Id:.+}"},
-		r{handleLister(MeasurementService{}), "GET", "/measurements"},
-		r{handleGetter(MeasurementService{}), "GET", "/measurements/{Id:.+}"},
-		r{handleLister(CharacteristicService{}), "GET", "/characteristics"},
-		r{handleGetter(CharacteristicService{}), "GET", "/characteristics/{Id:.+}"},
-		r{handleLister(SpeciesService{}), "GET", "/species"},
-		r{handleCreater(SpeciesService{}), "POST", "/species"},
-		r{handleGetter(SpeciesService{}), "GET", "/species/{Id:.+}"},
-		r{handleUpdater(SpeciesService{}), "PUT", "/species/{Id:.+}"},
-		r{handleLister(CharacteristicTypeService{}), "GET", "/characteristicTypes"},
-		r{handleGetter(CharacteristicTypeService{}), "GET", "/characteristicTypes/{Id:.+}"},
+		// r{handleLister(speciesService), "GET", "/species"},
+		// r{handleCreater(speciesService), "POST", "/species"},
+		r{handleGetter(speciesService), "GET", "/species/{Id:.+}"},
+		// r{handleUpdater(speciesService), "PUT", "/species/{Id:.+}"},
+		// r{handleLister(strainService), "GET", "/strains"},
+		// r{handleCreater(strainService), "POST", "/strains"},
+		r{handleGetter(strainService), "GET", "/strains/{Id:.+}"},
+		// r{handleUpdater(strainService), "PUT", "/strains/{Id:.+}"},
+		// r{handleLister(characteristicService), "GET", "/characteristics"},
+		r{handleGetter(characteristicService), "GET", "/characteristics/{Id:.+}"},
+		// r{handleLister(characteristicTypeService), "GET", "/characteristicTypes"},
+		r{handleGetter(characteristicTypeService), "GET", "/characteristicTypes/{Id:.+}"},
+		// r{handleLister(measurementService), "GET", "/measurements"},
+		r{handleGetter(measurementService), "GET", "/measurements/{Id:.+}"},
 	}
 
 	for _, route := range routes {
-		s.Handle(route.p, j.Secure(http.HandlerFunc(route.f), verifyClaims)).Methods(route.m)
+		s.Handle(route.p, j.Secure(errorHandler(route.f), verifyClaims)).Methods(route.m)
 	}
 
 	return jsonHandler(corsHandler(m))
 }
 
-func Error(w http.ResponseWriter, err string, code int) {
-	w.WriteHeader(code)
-	fmt.Fprintln(w, err)
-}
-
-func handleGetter(g getter) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func handleGetter(g getter) errorHandler {
+	return func(w http.ResponseWriter, r *http.Request) *appError {
 		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
-		e, err := g.get(id, mux.Vars(r)["genus"])
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		e, appErr := g.get(id, mux.Vars(r)["genus"])
+		if appErr != nil {
+			return appErr
 		}
 
 		data, err := e.marshal()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
+		return nil
 	}
 }
 
@@ -214,7 +213,7 @@ func handleCreater(c creater) http.HandlerFunc {
 
 		err = c.create(&e, claims)
 		if err != nil {
-			Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -263,4 +262,13 @@ func jsonHandler(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(j)
+}
+
+type errorHandler func(http.ResponseWriter, *http.Request) *appError
+
+func (fn errorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if err := fn(w, r); err != nil {
+		w.WriteHeader(err.Status)
+		fmt.Fprintln(w, err.Error.Error())
+	}
 }
