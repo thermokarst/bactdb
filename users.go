@@ -73,7 +73,7 @@ func (u UserService) unmarshal(b []byte) (entity, error) {
 	return uj.User, err
 }
 
-func (u *User) validate() error {
+func (u *User) validate() *appError {
 	var uv UserValidation
 	validationError := false
 
@@ -84,7 +84,7 @@ func (u *User) validate() error {
 
 	if validationError {
 		errs, _ := json.Marshal(uv)
-		return errors.New(string(errs))
+		return newJSONError(errors.New(string(errs)), http.StatusBadRequest)
 	}
 	return nil
 }
@@ -133,7 +133,7 @@ func (u UserService) update(id int64, e *entity, claims Claims) error {
 	return nil
 }
 
-func (u UserService) create(e *entity, claims Claims) error {
+func (u UserService) create(e *entity, claims Claims) *appError {
 	user := (*e).(*User)
 	if err := user.validate(); err != nil {
 		return err
@@ -143,12 +143,12 @@ func (u UserService) create(e *entity, claims Claims) error {
 	user.UpdatedAt = ct
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
 	if err != nil {
-		return err
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	user.Password = string(hash)
 
 	if err := DBH.Insert(user); err != nil {
-		return err
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	return nil
 }

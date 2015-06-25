@@ -149,7 +149,7 @@ func (s StrainService) update(id int64, e *entity, claims Claims) error {
 	return nil
 }
 
-func (s StrainService) create(e *entity, claims Claims) error {
+func (s StrainService) create(e *entity, claims Claims) *appError {
 	strain := (*e).(*Strain)
 	ct := time.Now()
 	strain.CreatedBy = claims.Sub
@@ -158,7 +158,7 @@ func (s StrainService) create(e *entity, claims Claims) error {
 	strain.UpdatedAt = ct
 
 	if err := DBH.Insert(strain.StrainBase); err != nil {
-		return err
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	return nil
 }

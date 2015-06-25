@@ -80,7 +80,7 @@ func Handler() http.Handler {
 
 	// Auth routes
 	m.Handle("/users", j.Secure(errorHandler(handleLister(userService)), verifyClaims)).Methods("GET")
-	m.Handle("/users", j.Secure(http.HandlerFunc(handleCreater(userService)), verifyClaims)).Methods("POST")
+	m.Handle("/users", j.Secure(errorHandler(handleCreater(userService)), verifyClaims)).Methods("POST")
 	m.Handle("/users/{Id:.+}", j.Secure(errorHandler(handleGetter(userService)), verifyClaims)).Methods("GET")
 	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(handleUpdater(userService)), verifyClaims)).Methods("PUT")
 
@@ -95,11 +95,11 @@ func Handler() http.Handler {
 
 	routes := []r{
 		r{handleLister(speciesService), "GET", "/species"},
-		// r{handleCreater(speciesService), "POST", "/species"},
+		r{handleCreater(speciesService), "POST", "/species"},
 		r{handleGetter(speciesService), "GET", "/species/{Id:.+}"},
 		// r{handleUpdater(speciesService), "PUT", "/species/{Id:.+}"},
 		r{handleLister(strainService), "GET", "/strains"},
-		// r{handleCreater(strainService), "POST", "/strains"},
+		r{handleCreater(strainService), "POST", "/strains"},
 		r{handleGetter(strainService), "GET", "/strains/{Id:.+}"},
 		// r{handleUpdater(strainService), "PUT", "/strains/{Id:.+}"},
 		r{handleLister(characteristicService), "GET", "/characteristics"},
@@ -194,35 +194,32 @@ func handleUpdater(u updater) http.HandlerFunc {
 	}
 }
 
-func handleCreater(c creater) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func handleCreater(c creater) errorHandler {
+	return func(w http.ResponseWriter, r *http.Request) *appError {
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		e, err := c.unmarshal(bodyBytes)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		con := context.Get(r, "claims")
 		var claims Claims = con.(Claims)
 
-		err = c.create(&e, claims)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		appErr := c.create(&e, claims)
+		if appErr != nil {
+			return appErr
 		}
 
 		data, err := e.marshal()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
+		return nil
 	}
 }
 

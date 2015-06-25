@@ -146,7 +146,7 @@ func (s SpeciesService) update(id int64, e *entity, claims Claims) error {
 	return nil
 }
 
-func (s SpeciesService) create(e *entity, claims Claims) error {
+func (s SpeciesService) create(e *entity, claims Claims) *appError {
 	species := (*e).(*Species)
 	ct := time.Now()
 	species.CreatedBy = claims.Sub
@@ -155,15 +155,15 @@ func (s SpeciesService) create(e *entity, claims Claims) error {
 	species.UpdatedAt = ct
 
 	var genus_id struct{ Id int64 }
-	q := `SELECT id FROM genera WHERE LOWER(genus_name) = $1;`
+	q := `SELECT id FROM genera WHERE LOWER(genus_name) = LOWER($1);`
 	if err := DBH.SelectOne(&genus_id, q, species.GenusName); err != nil {
-		return err
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	species.SpeciesBase.GenusID = genus_id.Id
 
 	err := DBH.Insert(species.SpeciesBase)
 	if err != nil {
-		return err
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	return nil
 }
