@@ -77,10 +77,10 @@ func Handler() http.Handler {
 
 	// Non-auth routes
 	m.Handle("/authenticate", tokenHandler(j.GenerateToken())).Methods("POST")
+	m.Handle("/users", errorHandler(handleCreater(userService))).Methods("POST")
 
 	// Auth routes
 	m.Handle("/users", j.Secure(errorHandler(handleLister(userService)), verifyClaims)).Methods("GET")
-	m.Handle("/users", j.Secure(errorHandler(handleCreater(userService)), verifyClaims)).Methods("POST")
 	m.Handle("/users/{Id:.+}", j.Secure(errorHandler(handleGetter(userService)), verifyClaims)).Methods("GET")
 	m.Handle("/users/{Id:.+}", j.Secure(errorHandler(handleUpdater(userService)), verifyClaims)).Methods("PUT")
 
