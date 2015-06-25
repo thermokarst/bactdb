@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	ErrStrainNotFound     = errors.New("Strain not found")
-	ErrStrainNotFoundJSON = newJSONError(ErrStrainNotFound, http.StatusNotFound)
-	ErrStrainNotUpdated   = errors.New("Strain not updated")
+	ErrStrainNotFound       = errors.New("Strain not found")
+	ErrStrainNotFoundJSON   = newJSONError(ErrStrainNotFound, http.StatusNotFound)
+	ErrStrainNotUpdated     = errors.New("Strain not updated")
+	ErrStrainNotUpdatedJSON = newJSONError(ErrStrainNotUpdated, http.StatusBadRequest)
 )
 
 func init() {
@@ -133,7 +134,7 @@ func (s StrainService) get(id int64, genus string) (entity, *appError) {
 	return &strain, nil
 }
 
-func (s StrainService) update(id int64, e *entity, claims Claims) error {
+func (s StrainService) update(id int64, e *entity, claims Claims) *appError {
 	strain := (*e).(*Strain)
 	strain.UpdatedBy = claims.Sub
 	strain.UpdatedAt = time.Now()
@@ -141,10 +142,10 @@ func (s StrainService) update(id int64, e *entity, claims Claims) error {
 
 	count, err := DBH.Update(strain.StrainBase)
 	if err != nil {
-		return err
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
-		return ErrStrainNotUpdated
+		return ErrStrainNotUpdatedJSON
 	}
 	return nil
 }

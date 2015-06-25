@@ -82,7 +82,7 @@ func Handler() http.Handler {
 	m.Handle("/users", j.Secure(errorHandler(handleLister(userService)), verifyClaims)).Methods("GET")
 	m.Handle("/users", j.Secure(errorHandler(handleCreater(userService)), verifyClaims)).Methods("POST")
 	m.Handle("/users/{Id:.+}", j.Secure(errorHandler(handleGetter(userService)), verifyClaims)).Methods("GET")
-	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(handleUpdater(userService)), verifyClaims)).Methods("PUT")
+	m.Handle("/users/{Id:.+}", j.Secure(errorHandler(handleUpdater(userService)), verifyClaims)).Methods("PUT")
 
 	// Path-based pattern matching subrouter
 	s := m.PathPrefix("/{genus}").Subrouter()
@@ -97,11 +97,11 @@ func Handler() http.Handler {
 		r{handleLister(speciesService), "GET", "/species"},
 		r{handleCreater(speciesService), "POST", "/species"},
 		r{handleGetter(speciesService), "GET", "/species/{Id:.+}"},
-		// r{handleUpdater(speciesService), "PUT", "/species/{Id:.+}"},
+		r{handleUpdater(speciesService), "PUT", "/species/{Id:.+}"},
 		r{handleLister(strainService), "GET", "/strains"},
 		r{handleCreater(strainService), "POST", "/strains"},
 		r{handleGetter(strainService), "GET", "/strains/{Id:.+}"},
-		// r{handleUpdater(strainService), "PUT", "/strains/{Id:.+}"},
+		r{handleUpdater(strainService), "PUT", "/strains/{Id:.+}"},
 		r{handleLister(characteristicService), "GET", "/characteristics"},
 		r{handleGetter(characteristicService), "GET", "/characteristics/{Id:.+}"},
 		r{handleLister(characteristicTypeService), "GET", "/characteristicTypes"},
@@ -156,41 +156,37 @@ func handleLister(l lister) errorHandler {
 	}
 }
 
-func handleUpdater(u updater) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func handleUpdater(u updater) errorHandler {
+	return func(w http.ResponseWriter, r *http.Request) *appError {
 		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		e, err := u.unmarshal(bodyBytes)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		c := context.Get(r, "claims")
 		var claims Claims = c.(Claims)
 
-		err = u.update(id, &e, claims)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		appErr := u.update(id, &e, claims)
+		if appErr != nil {
+			return appErr
 		}
 
 		data, err := e.marshal()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
+		return nil
 	}
 }
 

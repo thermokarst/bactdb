@@ -14,6 +14,8 @@ import (
 var (
 	ErrUserNotFound           = errors.New("User not found")
 	ErrUserNotFoundJSON       = newJSONError(ErrUserNotFound, http.StatusNotFound)
+	ErrUserNotUpdated         = errors.New("User not updated")
+	ErrUserNotUpdatedJSON     = newJSONError(ErrUserNotUpdated, http.StatusBadRequest)
 	ErrInvalidEmailOrPassword = errors.New("Invalid email or password")
 )
 
@@ -118,17 +120,17 @@ func (u UserService) get(id int64, genus string) (entity, *appError) {
 	return &user, nil
 }
 
-func (u UserService) update(id int64, e *entity, claims Claims) error {
+func (u UserService) update(id int64, e *entity, claims Claims) *appError {
 	user := (*e).(*User)
 	user.UpdatedAt = time.Now()
 	user.Id = id
 
 	count, err := DBH.Update(user)
 	if err != nil {
-		return err
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
-		return ErrStrainNotUpdated
+		return ErrUserNotUpdatedJSON
 	}
 	return nil
 }

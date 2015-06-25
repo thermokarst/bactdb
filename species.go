@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	ErrSpeciesNotFound     = errors.New("Species not found")
-	ErrSpeciesNotFoundJSON = newJSONError(ErrSpeciesNotFound, http.StatusNotFound)
-	ErrSpeciesNotUpdated   = errors.New("Species not updated")
+	ErrSpeciesNotFound       = errors.New("Species not found")
+	ErrSpeciesNotFoundJSON   = newJSONError(ErrSpeciesNotFound, http.StatusNotFound)
+	ErrSpeciesNotUpdated     = errors.New("Species not updated")
+	ErrSpeciesNotUpdatedJSON = newJSONError(ErrSpeciesNotUpdated, http.StatusBadRequest)
 )
 
 func init() {
@@ -130,7 +131,7 @@ func (s SpeciesService) get(id int64, genus string) (entity, *appError) {
 	return &species, nil
 }
 
-func (s SpeciesService) update(id int64, e *entity, claims Claims) error {
+func (s SpeciesService) update(id int64, e *entity, claims Claims) *appError {
 	species := (*e).(*Species)
 	species.UpdatedBy = claims.Sub
 	species.UpdatedAt = time.Now()
@@ -138,10 +139,10 @@ func (s SpeciesService) update(id int64, e *entity, claims Claims) error {
 
 	count, err := DBH.Update(species.SpeciesBase)
 	if err != nil {
-		return err
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
-		return ErrSpeciesNotUpdated
+		return ErrSpeciesNotUpdatedJSON
 	}
 	return nil
 }
