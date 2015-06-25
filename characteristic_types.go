@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 )
 
 var (
@@ -26,8 +25,8 @@ type CharacteristicTypeService struct{}
 type CharacteristicTypeBase struct {
 	Id                     int64     `json:"id,omitempty"`
 	CharacteristicTypeName string    `db:"characteristic_type_name" json:"characteristicTypeName"`
-	CreatedAt              time.Time `db:"created_at" json:"createdAt"`
-	UpdatedAt              time.Time `db:"updated_at" json:"updatedAt"`
+	CreatedAt              NullTime  `db:"created_at" json:"createdAt"`
+	UpdatedAt              NullTime  `db:"updated_at" json:"updatedAt"`
 	DeletedAt              NullTime  `db:"deleted_at" json:"deletedAt"`
 	CreatedBy              int64     `db:"created_by" json:"createdBy"`
 	UpdatedBy              int64     `db:"updated_by" json:"updatedBy"`

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -26,14 +25,14 @@ func init() {
 type UserService struct{}
 
 type User struct {
-	Id        int64     `json:"id,omitempty"`
-	Email     string    `db:"email" json:"email"`
-	Password  string    `db:"password" json:"-"`
-	Name      string    `db:"name" json:"name"`
-	Role      string    `db:"role" json:"role"`
-	CreatedAt time.Time `db:"created_at" json:"createdAt"`
-	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
-	DeletedAt NullTime  `db:"deleted_at" json:"deletedAt"`
+	Id        int64    `json:"id,omitempty"`
+	Email     string   `db:"email" json:"email"`
+	Password  string   `db:"password" json:"-"`
+	Name      string   `db:"name" json:"name"`
+	Role      string   `db:"role" json:"role"`
+	CreatedAt NullTime `db:"created_at" json:"createdAt"`
+	UpdatedAt NullTime `db:"updated_at" json:"updatedAt"`
+	DeletedAt NullTime `db:"deleted_at" json:"deletedAt"`
 }
 
 type UserValidation struct {
@@ -122,7 +121,7 @@ func (u UserService) get(id int64, genus string) (entity, *appError) {
 
 func (u UserService) update(id int64, e *entity, claims Claims) *appError {
 	user := (*e).(*User)
-	user.UpdatedAt = time.Now()
+	user.UpdatedAt = currentTime()
 	user.Id = id
 
 	count, err := DBH.Update(user)
@@ -140,7 +139,7 @@ func (u UserService) create(e *entity, claims Claims) *appError {
 	if err := user.validate(); err != nil {
 		return err
 	}
-	ct := time.Now()
+	ct := currentTime()
 	user.CreatedAt = ct
 	user.UpdatedAt = ct
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)

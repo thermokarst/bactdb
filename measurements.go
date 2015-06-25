@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"time"
 )
 
 var (
@@ -35,8 +34,8 @@ type MeasurementBase struct {
 	UnitTypeId            NullInt64   `db:"unit_type_id" json:"-"`
 	Notes                 NullString  `db:"notes" json:"notes"`
 	TestMethodId          NullInt64   `db:"test_method_id" json:"-"`
-	CreatedAt             time.Time   `db:"created_at" json:"createdAt"`
-	UpdatedAt             time.Time   `db:"updated_at" json:"updatedAt"`
+	CreatedAt             NullTime    `db:"created_at" json:"createdAt"`
+	UpdatedAt             NullTime    `db:"updated_at" json:"updatedAt"`
 	CreatedBy             int64       `db:"created_by" json:"createdBy"`
 	UpdatedBy             int64       `db:"updated_by" json:"updatedBy"`
 }

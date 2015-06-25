@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 )
 
 var (
@@ -35,8 +34,8 @@ type StrainBase struct {
 	WholeGenomeSequence NullString `db:"whole_genome_sequence" json:"wholeGenomeSequence"`
 	IsolatedFrom        NullString `db:"isolated_from" json:"isolatedFrom"`
 	Notes               NullString `db:"notes" json:"notes"`
-	CreatedAt           time.Time  `db:"created_at" json:"createdAt"`
-	UpdatedAt           time.Time  `db:"updated_at" json:"updatedAt"`
+	CreatedAt           NullTime   `db:"created_at" json:"createdAt"`
+	UpdatedAt           NullTime   `db:"updated_at" json:"updatedAt"`
 	DeletedAt           NullTime   `db:"deleted_at" json:"deletedAt"`
 	CreatedBy           int64      `db:"created_by" json:"createdBy"`
 	UpdatedBy           int64      `db:"updated_by" json:"updatedBy"`
@@ -137,7 +136,7 @@ func (s StrainService) get(id int64, genus string) (entity, *appError) {
 func (s StrainService) update(id int64, e *entity, claims Claims) *appError {
 	strain := (*e).(*Strain)
 	strain.UpdatedBy = claims.Sub
-	strain.UpdatedAt = time.Now()
+	strain.UpdatedAt = currentTime()
 	strain.Id = id
 
 	count, err := DBH.Update(strain.StrainBase)
@@ -152,7 +151,7 @@ func (s StrainService) update(id int64, e *entity, claims Claims) *appError {
 
 func (s StrainService) create(e *entity, claims Claims) *appError {
 	strain := (*e).(*Strain)
-	ct := time.Now()
+	ct := currentTime()
 	strain.CreatedBy = claims.Sub
 	strain.CreatedAt = ct
 	strain.UpdatedBy = claims.Sub

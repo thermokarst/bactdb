@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
+
+	"github.com/lib/pq"
 )
 
 var (
@@ -53,4 +56,13 @@ func valsIn(attribute string, values []int64, vals *[]interface{}, counter *int6
 	}
 	m = m[:len(m)-1] + ")"
 	return m
+}
+
+func currentTime() NullTime {
+	return NullTime{
+		pq.NullTime{
+			Time:  time.Now(),
+			Valid: true,
+		},
+	}
 }
