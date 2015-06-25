@@ -203,7 +203,10 @@ func handleCreater(c creater) errorHandler {
 		}
 
 		con := context.Get(r, "claims")
-		var claims Claims = con.(Claims)
+		var claims Claims
+		if con != nil {
+			claims = con.(Claims)
+		}
 
 		appErr := c.create(&e, claims)
 		if appErr != nil {
