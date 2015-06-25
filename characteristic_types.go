@@ -58,13 +58,13 @@ func (c *CharacteristicTypes) marshal() ([]byte, error) {
 	return json.Marshal(&CharacteristicTypesJSON{CharacteristicTypes: c})
 }
 
-func (c CharacteristicTypeService) list(val *url.Values) (entity, error) {
+func (c CharacteristicTypeService) list(val *url.Values) (entity, *appError) {
 	if val == nil {
-		return nil, errors.New("must provide options")
+		return nil, ErrMustProvideOptionsJSON
 	}
 	var opt ListOptions
 	if err := schemaDecoder.Decode(&opt, *val); err != nil {
-		return nil, err
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	var vals []interface{}
@@ -91,7 +91,7 @@ func (c CharacteristicTypeService) list(val *url.Values) (entity, error) {
 	characteristic_types := make(CharacteristicTypes, 0)
 	err := DBH.Select(&characteristic_types, sql, vals...)
 	if err != nil {
-		return nil, err
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 	return &characteristic_types, nil
 }

@@ -74,13 +74,13 @@ func (s StrainService) unmarshal(b []byte) (entity, error) {
 	return sj.Strain, err
 }
 
-func (s StrainService) list(val *url.Values) (entity, error) {
+func (s StrainService) list(val *url.Values) (entity, *appError) {
 	if val == nil {
-		return nil, errors.New("must provide options")
+		return nil, ErrMustProvideOptionsJSON
 	}
 	var opt ListOptions
 	if err := schemaDecoder.Decode(&opt, *val); err != nil {
-		return nil, err
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	var vals []interface{}
@@ -109,7 +109,7 @@ func (s StrainService) list(val *url.Values) (entity, error) {
 	strains := make(Strains, 0)
 	err := DBH.Select(&strains, sql, vals...)
 	if err != nil {
-		return nil, err
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 	return &strains, nil
 }

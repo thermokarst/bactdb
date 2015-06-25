@@ -79,7 +79,7 @@ func Handler() http.Handler {
 	m.Handle("/authenticate", tokenHandler(j.GenerateToken())).Methods("POST")
 
 	// Auth routes
-	m.Handle("/users", j.Secure(http.HandlerFunc(handleLister(userService)), verifyClaims)).Methods("GET")
+	m.Handle("/users", j.Secure(errorHandler(handleLister(userService)), verifyClaims)).Methods("GET")
 	m.Handle("/users", j.Secure(http.HandlerFunc(handleCreater(userService)), verifyClaims)).Methods("POST")
 	m.Handle("/users/{Id:.+}", j.Secure(errorHandler(handleGetter(userService)), verifyClaims)).Methods("GET")
 	m.Handle("/users/{Id:.+}", j.Secure(http.HandlerFunc(handleUpdater(userService)), verifyClaims)).Methods("PUT")
@@ -94,19 +94,19 @@ func Handler() http.Handler {
 	}
 
 	routes := []r{
-		// r{handleLister(speciesService), "GET", "/species"},
+		r{handleLister(speciesService), "GET", "/species"},
 		// r{handleCreater(speciesService), "POST", "/species"},
 		r{handleGetter(speciesService), "GET", "/species/{Id:.+}"},
 		// r{handleUpdater(speciesService), "PUT", "/species/{Id:.+}"},
-		// r{handleLister(strainService), "GET", "/strains"},
+		r{handleLister(strainService), "GET", "/strains"},
 		// r{handleCreater(strainService), "POST", "/strains"},
 		r{handleGetter(strainService), "GET", "/strains/{Id:.+}"},
 		// r{handleUpdater(strainService), "PUT", "/strains/{Id:.+}"},
-		// r{handleLister(characteristicService), "GET", "/characteristics"},
+		r{handleLister(characteristicService), "GET", "/characteristics"},
 		r{handleGetter(characteristicService), "GET", "/characteristics/{Id:.+}"},
-		// r{handleLister(characteristicTypeService), "GET", "/characteristicTypes"},
+		r{handleLister(characteristicTypeService), "GET", "/characteristicTypes"},
 		r{handleGetter(characteristicTypeService), "GET", "/characteristicTypes/{Id:.+}"},
-		// r{handleLister(measurementService), "GET", "/measurements"},
+		r{handleLister(measurementService), "GET", "/measurements"},
 		r{handleGetter(measurementService), "GET", "/measurements/{Id:.+}"},
 	}
 
@@ -138,21 +138,21 @@ func handleGetter(g getter) errorHandler {
 	}
 }
 
-func handleLister(l lister) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func handleLister(l lister) errorHandler {
+	return func(w http.ResponseWriter, r *http.Request) *appError {
 		opt := r.URL.Query()
 		opt.Add("Genus", mux.Vars(r)["genus"])
 
-		es, err := l.list(&opt)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		es, appErr := l.list(&opt)
+		if appErr != nil {
+			return appErr
 		}
 		data, err := es.marshal()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
+		return nil
 	}
 }
 

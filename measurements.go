@@ -67,9 +67,9 @@ func (m *Measurements) marshal() ([]byte, error) {
 	return json.Marshal(&MeasurementsJSON{Measurements: m})
 }
 
-func (m MeasurementService) list(val *url.Values) (entity, error) {
+func (m MeasurementService) list(val *url.Values) (entity, *appError) {
 	if val == nil {
-		return nil, errors.New("must provide options")
+		return nil, ErrMustProvideOptionsJSON
 	}
 	var opt struct {
 		ListOptions
@@ -77,7 +77,7 @@ func (m MeasurementService) list(val *url.Values) (entity, error) {
 		Characteristics []int64 `schema:"characteristic[]"`
 	}
 	if err := schemaDecoder.Decode(&opt, *val); err != nil {
-		return nil, err
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	var vals []interface{}
@@ -134,7 +134,7 @@ func (m MeasurementService) list(val *url.Values) (entity, error) {
 	measurements := make(Measurements, 0)
 	err := DBH.Select(&measurements, sql, vals...)
 	if err != nil {
-		return nil, err
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 	return &measurements, nil
 }

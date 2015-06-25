@@ -1,6 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+)
+
+var (
+	ErrMustProvideOptions     = errors.New("Must provide necessary options")
+	ErrMustProvideOptionsJSON = newJSONError(ErrMustProvideOptions, http.StatusBadRequest)
+)
 
 // ListOptions specifies general pagination options for fetching a list of results
 type ListOptions struct {

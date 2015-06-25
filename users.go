@@ -89,19 +89,19 @@ func (u *User) validate() error {
 	return nil
 }
 
-func (u UserService) list(val *url.Values) (entity, error) {
+func (u UserService) list(val *url.Values) (entity, *appError) {
 	if val == nil {
-		return nil, errors.New("must provide options")
+		return nil, ErrMustProvideOptionsJSON
 	}
 	var opt ListOptions
 	if err := schemaDecoder.Decode(&opt, *val); err != nil {
-		return nil, err
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	users := make(Users, 0)
 	sql := `SELECT * FROM users;`
 	if err := DBH.Select(&users, sql); err != nil {
-		return nil, err
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 	return &users, nil
 }
