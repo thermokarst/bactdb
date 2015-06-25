@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"unicode"
 
 	"github.com/lib/pq"
 )
@@ -13,6 +14,7 @@ var (
 	ErrMustProvideOptions     = errors.New("Must provide necessary options")
 	ErrMustProvideOptionsJSON = newJSONError(ErrMustProvideOptions, http.StatusBadRequest)
 	StatusUnprocessableEntity = 422
+	MustProvideAValue         = "Must provide a value"
 )
 
 // ListOptions specifies general pagination options for fetching a list of results
@@ -66,4 +68,24 @@ func currentTime() NullTime {
 			Valid: true,
 		},
 	}
+}
+
+// http://stackoverflow.com/a/25840157/313548
+func verifyPassword(s string) (sevenOrMore, number, upper bool) {
+	letters := 0
+	for _, s := range s {
+		switch {
+		case unicode.IsNumber(s):
+			number = true
+		case unicode.IsUpper(s):
+			upper = true
+			letters++
+		case unicode.IsLetter(s) || s == ' ':
+			letters++
+		default:
+			// returns false, false, false, false
+		}
+	}
+	sevenOrMore = letters >= 7
+	return
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"regexp"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -27,7 +28,7 @@ type UserService struct{}
 type User struct {
 	Id        int64    `json:"id,omitempty"`
 	Email     string   `db:"email" json:"email"`
-	Password  string   `db:"password" json:"-"`
+	Password  string   `db:"password" json:"password,omitempty"`
 	Name      string   `db:"name" json:"name"`
 	Role      string   `db:"role" json:"role"`
 	CreatedAt NullTime `db:"created_at" json:"createdAt"`
@@ -81,8 +82,31 @@ func (u *User) validate() error {
 	validationError := false
 
 	if u.Name == "" {
-		uv.Name = append(uv.Name, "Must provide a value")
+		uv.Name = append(uv.Name, MustProvideAValue)
 		validationError = true
+	}
+
+	if u.Email == "" {
+		uv.Email = append(uv.Email, MustProvideAValue)
+		validationError = true
+	}
+
+	regex, _ := regexp.Compile(`(\w[-._\w]*\w@\w[-._\w]*\w\.\w{2,3})`)
+	if u.Email != "" && !regex.MatchString(u.Email) {
+		uv.Email = append(uv.Email, "Must provide a valid email address")
+		validationError = true
+	}
+
+	if u.Password == "" {
+		uv.Password = append(uv.Password, MustProvideAValue)
+		validationError = true
+	} else {
+		sevenOrMore, number, upper := verifyPassword(u.Password)
+		if !sevenOrMore || !number || !upper {
+			uv.Password = append(uv.Password, "Password must be at least 8 characters"+
+				" long, and have at least one number and one uppercase letter")
+			validationError = true
+		}
 	}
 
 	if validationError {
@@ -101,7 +125,8 @@ func (u UserService) list(val *url.Values) (entity, *appError) {
 	}
 
 	users := make(Users, 0)
-	sql := `SELECT * FROM users;`
+	sql := `SELECT id, email, 'password' AS password, name, role,
+		created_at, updated_at, deleted_at FROM users;`
 	if err := DBH.Select(&users, sql); err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
@@ -110,7 +135,8 @@ func (u UserService) list(val *url.Values) (entity, *appError) {
 
 func (u UserService) get(id int64, genus string) (entity, *appError) {
 	var user User
-	q := `SELECT * FROM users WHERE id=$1;`
+	q := `SELECT id, email, 'password' AS password, name, role,
+		created_at, updated_at, deleted_at FROM users WHERE id=$1;`
 	if err := DBH.SelectOne(&user, q, id); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrUserNotFoundJSON
@@ -148,6 +174,7 @@ func (u UserService) create(e *entity, claims Claims) *appError {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 	user.Password = string(hash)
+	user.Role = "R"
 
 	if err := DBH.Insert(user); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
