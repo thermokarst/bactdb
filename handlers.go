@@ -77,18 +77,13 @@ func Handler() http.Handler {
 	characteristicTypeService := CharacteristicTypeService{}
 	measurementService := MeasurementService{}
 
-	// Non-auth routes
 	m.Handle("/authenticate", tokenHandler(j.GenerateToken())).Methods("POST")
-	m.Handle("/users", errorHandler(handleCreater(userService))).Methods("POST")
-	m.Handle("/users/verify/{Nonce}", http.HandlerFunc(handleUserVerify)).Methods("GET")
 
-	// Auth routes
-	m.Handle("/users", j.Secure(errorHandler(handleLister(userService)), verifyClaims)).Methods("GET")
-	m.Handle("/users/{Id:.+}", j.Secure(errorHandler(handleGetter(userService)), verifyClaims)).Methods("GET")
-	m.Handle("/users/{Id:.+}", j.Secure(errorHandler(handleUpdater(userService)), verifyClaims)).Methods("PUT")
-
-	// Path-based pattern matching subrouter
+	// Everything past here is lumped under a genus
 	s := m.PathPrefix("/{genus}").Subrouter()
+
+	s.Handle("/users", errorHandler(handleCreater(userService))).Methods("POST")
+	s.Handle("/users/verify/{Nonce}", http.HandlerFunc(handleUserVerify)).Methods("GET")
 
 	type r struct {
 		f errorHandler
@@ -96,7 +91,11 @@ func Handler() http.Handler {
 		p string
 	}
 
+	// Everything past this point requires a valid token
 	routes := []r{
+		r{handleLister(userService), "GET", "/users"},
+		r{handleGetter(userService), "GET", "/users/{Id:.+}"},
+		r{handleUpdater(userService), "PUT", "/users/{Id:.+}"},
 		r{handleLister(speciesService), "GET", "/species"},
 		r{handleCreater(speciesService), "POST", "/species"},
 		r{handleGetter(speciesService), "GET", "/species/{Id:.+}"},
