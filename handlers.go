@@ -23,6 +23,7 @@ type Claims struct {
 	Role string
 	Iat  int64
 	Exp  int64
+	Ref  string
 }
 
 func Handler() http.Handler {
@@ -39,6 +40,7 @@ func Handler() http.Handler {
 			"role": user.Role,
 			"iat":  currentTime.Unix(),
 			"exp":  currentTime.Add(time.Minute * 60 * 24).Unix(),
+			"ref":  "",
 		}, nil
 	}
 
@@ -78,6 +80,7 @@ func Handler() http.Handler {
 	// Non-auth routes
 	m.Handle("/authenticate", tokenHandler(j.GenerateToken())).Methods("POST")
 	m.Handle("/users", errorHandler(handleCreater(userService))).Methods("POST")
+	m.Handle("/users/verify/{Nonce}", http.HandlerFunc(handleUserVerify)).Methods("GET")
 
 	// Auth routes
 	m.Handle("/users", j.Secure(errorHandler(handleLister(userService)), verifyClaims)).Methods("GET")

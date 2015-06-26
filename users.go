@@ -4,9 +4,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
+
+	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,6 +22,8 @@ var (
 	ErrUserNotUpdated         = errors.New("User not updated")
 	ErrUserNotUpdatedJSON     = newJSONError(ErrUserNotUpdated, http.StatusBadRequest)
 	ErrInvalidEmailOrPassword = errors.New("Invalid email or password")
+	ErrEmailAddressTaken      = errors.New("Email address already registered")
+	ErrEmailAddressTakenJSON  = newJSONError(ErrEmailAddressTaken, http.StatusBadRequest)
 )
 
 func init() {
@@ -31,6 +38,7 @@ type User struct {
 	Password  string   `db:"password" json:"password,omitempty"`
 	Name      string   `db:"name" json:"name"`
 	Role      string   `db:"role" json:"role"`
+	Verified  bool     `db:"verified" json:"-"`
 	CreatedAt NullTime `db:"created_at" json:"createdAt"`
 	UpdatedAt NullTime `db:"updated_at" json:"updatedAt"`
 	DeletedAt NullTime `db:"deleted_at" json:"deletedAt"`
@@ -126,7 +134,10 @@ func (u UserService) list(val *url.Values) (entity, *appError) {
 
 	users := make(Users, 0)
 	sql := `SELECT id, email, 'password' AS password, name, role,
-		created_at, updated_at, deleted_at FROM users;`
+		created_at, updated_at, deleted_at
+		FROM users
+		WHERE verified IS NOT FALSE
+		AND deleted_at IS NULL;`
 	if err := DBH.Select(&users, sql); err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
@@ -136,7 +147,11 @@ func (u UserService) list(val *url.Values) (entity, *appError) {
 func (u UserService) get(id int64, genus string) (entity, *appError) {
 	var user User
 	q := `SELECT id, email, 'password' AS password, name, role,
-		created_at, updated_at, deleted_at FROM users WHERE id=$1;`
+		created_at, updated_at, deleted_at
+		FROM users
+		WHERE id=$1
+		AND verified IS NOT FALSE
+		AND deleted_at IS NULL;`
 	if err := DBH.SelectOne(&user, q, id); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrUserNotFoundJSON
@@ -175,10 +190,29 @@ func (u UserService) create(e *entity, claims Claims) *appError {
 	}
 	user.Password = string(hash)
 	user.Role = "R"
+	user.Verified = false
 
 	if err := DBH.Insert(user); err != nil {
+		if err, ok := err.(*pq.Error); ok {
+			if err.Code == "23505" {
+				return ErrEmailAddressTakenJSON
+			}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
+
+	user.Password = "password" // don't want to send the hashed PW back to the client
+
+	q := `INSERT INTO verification (user_id, nonce, created_at) VALUES ($1, $2, $3);`
+	nonce, err := generateNonce()
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+	_, err = DBH.Exec(q, user.Id, nonce, ct)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
 	return nil
 }
 
@@ -206,4 +240,47 @@ func dbGetUserByEmail(email string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func handleUserVerify(w http.ResponseWriter, r *http.Request) {
+	nonce := mux.Vars(r)["Nonce"]
+	q := `SELECT user_id FROM verification WHERE nonce=$1;`
+
+	var user_id int64
+	if err := DBH.SelectOne(&user_id, q, nonce); err != nil {
+		log.Printf("%+v", err)
+		return
+	}
+
+	if user_id == 0 {
+		fmt.Fprintln(w, "NOT FOUND/EXPIRED")
+		return
+	}
+
+	var user User
+	if err := DBH.Get(&user, user_id); err != nil {
+		fmt.Printf("%+v", err)
+		return
+	}
+
+	user.UpdatedAt = currentTime()
+	user.Verified = true
+
+	count, err := DBH.Update(&user)
+	if err != nil {
+		fmt.Printf("%+v", err)
+		return
+	}
+	if count != 1 {
+		fmt.Printf("%+v", "hmm")
+		return
+	}
+
+	q = `DELETE FROM verification WHERE user_id=$1;`
+	_, err = DBH.Exec(q, user_id)
+	if err != nil {
+		log.Printf("%+v", err)
+	}
+
+	fmt.Fprintln(w, user_id)
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -88,4 +90,13 @@ func verifyPassword(s string) (sevenOrMore, number, upper bool) {
 	}
 	sevenOrMore = letters >= 7
 	return
+}
+
+func generateNonce() (string, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
 }
