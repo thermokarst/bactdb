@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/gorilla/context"
 	"github.com/lib/pq"
 )
 
@@ -99,4 +100,14 @@ func generateNonce() (string, error) {
 		return "", err
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+func getClaims(r *http.Request) Claims {
+	con := context.Get(r, "claims")
+	var claims Claims
+	if con != nil {
+		claims = con.(Claims)
+	}
+	claims.Ref = r.Header.Get("Origin")
+	return claims
 }

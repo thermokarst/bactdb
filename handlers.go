@@ -175,8 +175,7 @@ func handleUpdater(u updater) errorHandler {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
 
-		c := context.Get(r, "claims")
-		var claims Claims = c.(Claims)
+		claims := getClaims(r)
 
 		appErr := u.update(id, &e, claims)
 		if appErr != nil {
@@ -204,11 +203,7 @@ func handleCreater(c creater) errorHandler {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
 
-		con := context.Get(r, "claims")
-		var claims Claims
-		if con != nil {
-			claims = con.(Claims)
-		}
+		claims := getClaims(r)
 
 		appErr := c.create(&e, claims)
 		if appErr != nil {

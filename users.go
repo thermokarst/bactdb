@@ -203,12 +203,12 @@ func (u UserService) create(e *entity, claims Claims) *appError {
 
 	user.Password = "password" // don't want to send the hashed PW back to the client
 
-	q := `INSERT INTO verification (user_id, nonce, created_at) VALUES ($1, $2, $3);`
+	q := `INSERT INTO verification (user_id, nonce, referer, created_at) VALUES ($1, $2, $3, $4);`
 	nonce, err := generateNonce()
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
-	_, err = DBH.Exec(q, user.Id, nonce, ct)
+	_, err = DBH.Exec(q, user.Id, nonce, claims.Ref, ct)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -244,22 +244,29 @@ func dbGetUserByEmail(email string) (*User, error) {
 
 func handleUserVerify(w http.ResponseWriter, r *http.Request) {
 	nonce := mux.Vars(r)["Nonce"]
-	q := `SELECT user_id FROM verification WHERE nonce=$1;`
+	q := `SELECT user_id, referer FROM verification WHERE nonce=$1;`
 
-	var user_id int64
-	if err := DBH.SelectOne(&user_id, q, nonce); err != nil {
-		log.Printf("%+v", err)
+	var ver struct {
+		User_id int64
+		Referer string
+	}
+	if err := DBH.SelectOne(&ver, q, nonce); err != nil {
+		log.Print(err)
+		fmt.Fprintln(w, "Invalid URL")
 		return
 	}
 
-	if user_id == 0 {
-		fmt.Fprintln(w, "NOT FOUND/EXPIRED")
+	failURL := fmt.Sprintf("%s/users/new/fail", ver.Referer)
+	successURL := fmt.Sprintf("%s/users/new/success", ver.Referer)
+
+	if ver.User_id == 0 {
+		http.Redirect(w, r, failURL, http.StatusMovedPermanently)
 		return
 	}
 
 	var user User
-	if err := DBH.Get(&user, user_id); err != nil {
-		fmt.Printf("%+v", err)
+	if err := DBH.Get(&user, ver.User_id); err != nil {
+		http.Redirect(w, r, failURL, http.StatusMovedPermanently)
 		return
 	}
 
@@ -268,19 +275,19 @@ func handleUserVerify(w http.ResponseWriter, r *http.Request) {
 
 	count, err := DBH.Update(&user)
 	if err != nil {
-		fmt.Printf("%+v", err)
+		http.Redirect(w, r, failURL, http.StatusMovedPermanently)
 		return
 	}
 	if count != 1 {
-		fmt.Printf("%+v", "hmm")
+		http.Redirect(w, r, failURL, http.StatusMovedPermanently)
 		return
 	}
 
 	q = `DELETE FROM verification WHERE user_id=$1;`
-	_, err = DBH.Exec(q, user_id)
+	_, err = DBH.Exec(q, user.Id)
 	if err != nil {
-		log.Printf("%+v", err)
+		http.Redirect(w, r, failURL, http.StatusMovedPermanently)
+		return
 	}
-
-	fmt.Fprintln(w, user_id)
+	http.Redirect(w, r, successURL, http.StatusMovedPermanently)
 }

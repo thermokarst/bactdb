@@ -4,6 +4,7 @@
 CREATE TABLE verification (
     user_id BIGINT NOT NULL,
     nonce CHARACTER(60) NOT NULL UNIQUE,
+    referer CHARACTER VARYING(100) NOT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
