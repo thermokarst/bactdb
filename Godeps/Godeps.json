@@ -38,6 +38,14 @@
 			"Rev": "30ed2200d7ec99cf17272292f1d4b7b0bd7165db"
 		},
 		{
+			"ImportPath": "github.com/mailgun/mailgun-go",
+			"Rev": "9578dc67692294bb7e2a6f4b15dd18c97af19440"
+		},
+		{
+			"ImportPath": "github.com/mbanzon/simplehttp",
+			"Rev": "04c542e7ac706a25820090f274ea6a4f39a63326"
+		},
+		{
 			"ImportPath": "github.com/thermokarst/jwt",
 			"Rev": "66ca404d841ed908aa6cc9361107b0c363c94cd8"
 		},

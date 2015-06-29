@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,12 +14,14 @@ import (
 	"github.com/jmoiron/modl"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/mailgun/mailgun-go"
 )
 
 var (
 	DB                             = &modl.DbMap{Dialect: modl.PostgresDialect{}}
 	DBH           modl.SqlExecutor = DB
 	schemaDecoder                  = schema.NewDecoder()
+	mgAccts                        = make(map[string]mailgun.Mailgun)
 )
 
 func main() {
@@ -83,6 +86,22 @@ func main() {
 
 func cmdServe(c *cli.Context) {
 	var err error
+
+	// Set up Mailgun handlers:
+	// [{"ref":"hymenobacter","domain":"hymenobacter.info","public":"abc","private":"123"}]
+	type account struct {
+		Ref     string
+		Domain  string
+		Public  string
+		Private string
+	}
+	var accounts []account
+	json.Unmarshal([]byte(os.Getenv("ACCOUNT_KEYS")), &accounts)
+	log.Printf("Mailgun: %+v", accounts)
+
+	for _, a := range accounts {
+		mgAccts[a.Ref] = mailgun.NewMailgun(a.Domain, a.Private, a.Public)
+	}
 
 	addr := os.Getenv("PORT")
 	if addr == "" {

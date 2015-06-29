@@ -108,6 +108,9 @@ func getClaims(r *http.Request) Claims {
 	if con != nil {
 		claims = con.(Claims)
 	}
-	claims.Ref = r.Header.Get("Origin")
+	origin := r.Header.Get("Origin")
+	if origin != "" {
+		claims.Ref = origin
+	}
 	return claims
 }

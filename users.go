@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
+	"github.com/mailgun/mailgun-go"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -136,7 +137,7 @@ func (u UserService) list(val *url.Values) (entity, *appError) {
 	sql := `SELECT id, email, 'password' AS password, name, role,
 		created_at, updated_at, deleted_at
 		FROM users
-		WHERE verified IS NOT FALSE
+		WHERE verified IS TRUE
 		AND deleted_at IS NULL;`
 	if err := DBH.Select(&users, sql); err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
@@ -150,7 +151,7 @@ func (u UserService) get(id int64, genus string) (entity, *appError) {
 		created_at, updated_at, deleted_at
 		FROM users
 		WHERE id=$1
-		AND verified IS NOT FALSE
+		AND verified IS TRUE
 		AND deleted_at IS NULL;`
 	if err := DBH.SelectOne(&user, q, id); err != nil {
 		if err == sql.ErrNoRows {
@@ -213,13 +214,36 @@ func (u UserService) create(e *entity, claims Claims) *appError {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
+	// Send out confirmation email
+	mg, ok := mgAccts[claims.Ref]
+	if ok {
+		sender := fmt.Sprintf("%s Admin <admin@%s>", mg.Domain(), mg.Domain())
+		recipient := fmt.Sprintf("%s <%s>", user.Name, user.Email)
+		subject := fmt.Sprintf("New Account Confirmation - %s", mg.Domain())
+		message := fmt.Sprintf("You are receiving this message because this email "+
+			"address was used to sign up for an account at %s. Please visit this "+
+			"URL to complete the sign up process: %s/users/new/verify/%s. If you "+
+			"did not request an account, please disregard this message.",
+			mg.Domain(), claims.Ref, nonce)
+		m := mailgun.NewMessage(sender, subject, message, recipient)
+		_, _, err := mg.Send(m)
+		if err != nil {
+			log.Printf("%+v\n", err)
+			return newJSONError(err, http.StatusInternalServerError)
+		}
+	}
+
 	return nil
 }
 
 // for thermokarst/jwt: authentication callback
 func dbAuthenticate(email string, password string) error {
 	var user User
-	q := `SELECT * FROM users WHERE lower(email)=lower($1);`
+	q := `SELECT *
+		FROM users
+		WHERE lower(email)=lower($1)
+		AND verified IS TRUE
+		AND deleted_at IS NULL;`
 	if err := DBH.SelectOne(&user, q, email); err != nil {
 		return ErrInvalidEmailOrPassword
 	}
@@ -232,7 +256,11 @@ func dbAuthenticate(email string, password string) error {
 // for thermokarst/jwt: setting user in claims bundle
 func dbGetUserByEmail(email string) (*User, error) {
 	var user User
-	q := `SELECT * FROM users WHERE lower(email)=lower($1);`
+	q := `SELECT *
+		FROM users
+		WHERE lower(email)=lower($1)
+		AND verified IS TRUE
+		AND deleted_at IS NULL;`
 	if err := DBH.SelectOne(&user, q, email); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrUserNotFound
