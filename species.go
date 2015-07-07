@@ -39,7 +39,6 @@ type SpeciesBase struct {
 	DeletedBy           NullInt64  `db:"deleted_by" json:"deletedBy"`
 }
 
-// Species & SpeciesJSON(s) are what ember expects to see
 type Species struct {
 	*SpeciesBase
 	GenusName    string         `db:"genus_name" json:"genusName"`
@@ -67,14 +66,6 @@ type ManySpeciesPayload struct {
 	Meta    *SpeciesMeta `json:"meta"`
 }
 
-type SpeciesJSON struct {
-	Species *Species `json:"species"`
-}
-
-func (s *Species) marshal() ([]byte, error) {
-	return json.Marshal(&SpeciesJSON{Species: s})
-}
-
 func (s *SpeciesPayload) marshal() ([]byte, error) {
 	return json.Marshal(s)
 }
@@ -84,9 +75,9 @@ func (s *ManySpeciesPayload) marshal() ([]byte, error) {
 }
 
 func (s SpeciesService) unmarshal(b []byte) (entity, error) {
-	var sj SpeciesJSON
+	var sj SpeciesPayload
 	err := json.Unmarshal(b, &sj)
-	return sj.Species, err
+	return &sj, err
 }
 
 func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError) {
@@ -132,35 +123,18 @@ func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError)
 }
 
 func (s SpeciesService) get(id int64, genus string, claims Claims) (entity, *appError) {
-	var species Species
-	q := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
-		COUNT(st) AS total_strains, 0 AS sort_order
-		FROM species sp
-		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
-		LEFT OUTER JOIN strains st ON st.species_id=sp.id
-		WHERE sp.id=$2
-		GROUP BY sp.id, g.genus_name;`
-	if err := DBH.SelectOne(&species, q, genus, id); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrSpeciesNotFoundJSON
-		}
-		return nil, newJSONError(err, http.StatusInternalServerError)
-	}
-
-	opt := ListOptions{Genus: genus, Ids: []int64{id}}
-
-	strains_opt, err := strainOptsFromSpecies(opt)
+	species, err := getSpecies(id, genus)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains, err := listStrains(*strains_opt)
+	strains, err := strainsFromSpeciesId(id, genus)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	payload := SpeciesPayload{
-		Species: &species,
+		Species: species,
 		Strains: strains,
 		Meta: &SpeciesMeta{
 			CanAdd:  canAdd(claims),
@@ -172,44 +146,75 @@ func (s SpeciesService) get(id int64, genus string, claims Claims) (entity, *app
 }
 
 func (s SpeciesService) update(id int64, e *entity, claims Claims) *appError {
-	species := (*e).(*Species)
-	species.UpdatedBy = claims.Sub
-	species.UpdatedAt = currentTime()
-	species.Id = id
+	payload := (*e).(*SpeciesPayload)
+	payload.Species.UpdatedBy = claims.Sub
+	payload.Species.UpdatedAt = currentTime()
+	payload.Species.Id = id
 
-	genus_id, err := genusIdFromName(species.GenusName)
+	genus_id, err := genusIdFromName(payload.Species.GenusName)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
-	species.SpeciesBase.GenusID = genus_id
+	payload.Species.SpeciesBase.GenusID = genus_id
 
-	count, err := DBH.Update(species.SpeciesBase)
+	count, err := DBH.Update(payload.Species.SpeciesBase)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
 		return ErrSpeciesNotUpdatedJSON
 	}
+
+	species, err := getSpecies(id, payload.Species.GenusName)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	strains, err := strainsFromSpeciesId(id, payload.Species.GenusName)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	payload.Species = species
+	payload.Strains = strains
+	payload.Meta = &SpeciesMeta{
+		CanAdd:  canAdd(claims),
+		CanEdit: canEdit(claims, map[int64]int64{payload.Species.Id: payload.Species.CreatedBy}),
+	}
+
 	return nil
 }
 
 func (s SpeciesService) create(e *entity, claims Claims) *appError {
-	species := (*e).(*Species)
+	payload := (*e).(*SpeciesPayload)
 	ct := currentTime()
-	species.CreatedBy = claims.Sub
-	species.CreatedAt = ct
-	species.UpdatedBy = claims.Sub
-	species.UpdatedAt = ct
+	payload.Species.CreatedBy = claims.Sub
+	payload.Species.CreatedAt = ct
+	payload.Species.UpdatedBy = claims.Sub
+	payload.Species.UpdatedAt = ct
 
-	genus_id, err := genusIdFromName(species.GenusName)
+	genus_id, err := genusIdFromName(payload.Species.GenusName)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
-	species.SpeciesBase.GenusID = genus_id
+	payload.Species.SpeciesBase.GenusID = genus_id
 
-	err = DBH.Insert(species.SpeciesBase)
+	err = DBH.Insert(payload.Species.SpeciesBase)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	species, err := getSpecies(payload.Species.Id, payload.Species.GenusName)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	// Note, no strains when new species
+
+	payload.Species = species
+	payload.Meta = &SpeciesMeta{
+		CanAdd:  canAdd(claims),
+		CanEdit: canEdit(claims, map[int64]int64{payload.Species.Id: payload.Species.CreatedBy}),
 	}
 	return nil
 }
@@ -247,6 +252,25 @@ func strainOptsFromSpecies(opt ListOptions) (*ListOptions, error) {
 	return &ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
 }
 
+func strainsFromSpeciesId(id int64, genus string) (*Strains, error) {
+	opt := ListOptions{
+		Genus: genus,
+		Ids:   []int64{id},
+	}
+
+	strains_opt, err := strainOptsFromSpecies(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	strains, err := listStrains(*strains_opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return strains, nil
+}
+
 func listSpecies(opt ListOptions) (*ManySpecies, error) {
 	var vals []interface{}
 
@@ -254,7 +278,7 @@ func listSpecies(opt ListOptions) (*ManySpecies, error) {
 			COUNT(st) AS total_strains,
 			rank() OVER (ORDER BY sp.species_name ASC) AS sort_order
 			FROM species sp
-			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
+			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
 			LEFT OUTER JOIN strains st ON st.species_id=sp.id`
 	vals = append(vals, opt.Genus)
 
@@ -275,6 +299,24 @@ func listSpecies(opt ListOptions) (*ManySpecies, error) {
 	species := make(ManySpecies, 0)
 	err := DBH.Select(&species, q, vals...)
 	if err != nil {
+		return nil, err
+	}
+	return &species, nil
+}
+
+func getSpecies(id int64, genus string) (*Species, error) {
+	var species Species
+	q := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
+		COUNT(st) AS total_strains, 0 AS sort_order
+		FROM species sp
+		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
+		LEFT OUTER JOIN strains st ON st.species_id=sp.id
+		WHERE sp.id=$2
+		GROUP BY sp.id, g.genus_name;`
+	if err := DBH.SelectOne(&species, q, genus, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrSpeciesNotFound
+		}
 		return nil, err
 	}
 	return &species, nil

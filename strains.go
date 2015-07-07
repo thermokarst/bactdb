@@ -26,7 +26,7 @@ type StrainService struct{}
 // StrainBase is what the DB expects to see for inserts/updates
 type StrainBase struct {
 	Id                  int64      `db:"id" json:"id"`
-	SpeciesId           int64      `db:"species_id" json:"species,string"` // quirk in ember select
+	SpeciesId           int64      `db:"species_id" json:"species"`
 	StrainName          string     `db:"strain_name" json:"strainName"`
 	TypeStrain          bool       `db:"type_strain" json:"typeStrain"`
 	AccessionNumbers    string     `db:"accession_numbers" json:"accessionNumbers"`
@@ -147,7 +147,7 @@ func listStrains(opt ListOptions) (*Strains, error) {
 		rank() OVER (ORDER BY sp.species_name ASC, st.type_strain ASC, st.strain_name ASC) AS sort_order
 		FROM strains st
 		INNER JOIN species sp ON sp.id=st.species_id
-		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
+		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
 		LEFT OUTER JOIN measurements m ON m.strain_id=st.id`
 	vals = append(vals, opt.Genus)
 
