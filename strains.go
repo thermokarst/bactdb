@@ -84,45 +84,11 @@ func (s StrainService) list(val *url.Values, claims Claims) (entity, *appError) 
 	}
 
 	strains, err := listStrains(opt)
-
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	return strains, nil
-}
-
-func listStrains(opt ListOptions) (*Strains, error) {
-	var vals []interface{}
-
-	sql := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements,
-		rank() OVER (ORDER BY sp.species_name ASC, st.type_strain ASC, st.strain_name ASC) AS sort_order
-		FROM strains st
-		INNER JOIN species sp ON sp.id=st.species_id
-		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
-		LEFT OUTER JOIN measurements m ON m.strain_id=st.id`
-	vals = append(vals, opt.Genus)
-
-	if len(opt.Ids) != 0 {
-		var conds []string
-		s := "st.id IN ("
-		for i, id := range opt.Ids {
-			s = s + fmt.Sprintf("$%v,", i+2) // start param index at 2
-			vals = append(vals, id)
-		}
-		s = s[:len(s)-1] + ")"
-		conds = append(conds, s)
-		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
-	}
-
-	sql += " GROUP BY st.id, st.species_id, sp.species_name;"
-
-	strains := make(Strains, 0)
-	err := DBH.Select(&strains, sql, vals...)
-	if err != nil {
-		return nil, err
-	}
-	return &strains, nil
 }
 
 func (s StrainService) get(id int64, genus string, claims Claims) (entity, *appError) {
@@ -172,4 +138,37 @@ func (s StrainService) create(e *entity, claims Claims) *appError {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 	return nil
+}
+
+func listStrains(opt ListOptions) (*Strains, error) {
+	var vals []interface{}
+
+	q := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements,
+		rank() OVER (ORDER BY sp.species_name ASC, st.type_strain ASC, st.strain_name ASC) AS sort_order
+		FROM strains st
+		INNER JOIN species sp ON sp.id=st.species_id
+		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
+		LEFT OUTER JOIN measurements m ON m.strain_id=st.id`
+	vals = append(vals, opt.Genus)
+
+	if len(opt.Ids) != 0 {
+		var conds []string
+		s := "st.id IN ("
+		for i, id := range opt.Ids {
+			s = s + fmt.Sprintf("$%v,", i+2) // start param index at 2
+			vals = append(vals, id)
+		}
+		s = s[:len(s)-1] + ")"
+		conds = append(conds, s)
+		q += " WHERE (" + strings.Join(conds, ") AND (") + ")"
+	}
+
+	q += " GROUP BY st.id, st.species_id, sp.species_name;"
+
+	strains := make(Strains, 0)
+	err := DBH.Select(&strains, q, vals...)
+	if err != nil {
+		return nil, err
+	}
+	return &strains, nil
 }

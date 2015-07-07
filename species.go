@@ -98,31 +98,7 @@ func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError)
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	var vals []interface{}
-	sql := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
-			COUNT(st) AS total_strains,
-			rank() OVER (ORDER BY sp.species_name ASC) AS sort_order
-			FROM species sp
-			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
-			LEFT OUTER JOIN strains st ON st.species_id=sp.id`
-	vals = append(vals, opt.Genus)
-
-	if len(opt.Ids) != 0 {
-		var conds []string
-		s := "sp.id IN ("
-		for i, id := range opt.Ids {
-			s = s + fmt.Sprintf("$%v,", i+2) // start param index at 2
-			vals = append(vals, id)
-		}
-		s = s[:len(s)-1] + ")"
-		conds = append(conds, s)
-		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
-	}
-
-	sql += " GROUP BY sp.id, g.genus_name;"
-
-	species := make(ManySpecies, 0)
-	err := DBH.Select(&species, sql, vals...)
+	species, err := listSpecies(opt)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
@@ -139,12 +115,12 @@ func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError)
 
 	edit_list := make(map[int64]int64)
 
-	for _, v := range species {
+	for _, v := range *species {
 		edit_list[v.Id] = v.CreatedBy
 	}
 
 	payload := ManySpeciesPayload{
-		Species: &species,
+		Species: species,
 		Strains: strains,
 		Meta: &SpeciesMeta{
 			CanAdd:  canAdd(claims),
@@ -153,30 +129,6 @@ func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError)
 	}
 
 	return &payload, nil
-}
-
-func strainOptsFromSpecies(opt ListOptions) (*ListOptions, error) {
-	relatedStrainIds := make([]int64, 0)
-
-	if opt.Ids == nil {
-		q := `SELECT DISTINCT st.id
-			FROM strains st
-			INNER JOIN species sp ON sp.id=st.species_id
-			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1);`
-		if err := DBH.Select(&relatedStrainIds, q, opt.Genus); err != nil {
-			return nil, err
-		}
-	} else {
-		var vals []interface{}
-		var count int64 = 1
-		q := fmt.Sprintf("SELECT DISTINCT id FROM strains WHERE %s;", valsIn("species_id", opt.Ids, &vals, &count))
-
-		if err := DBH.Select(&relatedStrainIds, q, vals...); err != nil {
-			return nil, err
-		}
-	}
-
-	return &ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
 }
 
 func (s SpeciesService) get(id int64, genus string, claims Claims) (entity, *appError) {
@@ -269,4 +221,61 @@ func genusIdFromName(genus_name string) (int64, error) {
 		return 0, err
 	}
 	return genus_id.Id, nil
+}
+
+func strainOptsFromSpecies(opt ListOptions) (*ListOptions, error) {
+	relatedStrainIds := make([]int64, 0)
+
+	if opt.Ids == nil {
+		q := `SELECT DISTINCT st.id
+			FROM strains st
+			INNER JOIN species sp ON sp.id=st.species_id
+			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1);`
+		if err := DBH.Select(&relatedStrainIds, q, opt.Genus); err != nil {
+			return nil, err
+		}
+	} else {
+		var vals []interface{}
+		var count int64 = 1
+		q := fmt.Sprintf("SELECT DISTINCT id FROM strains WHERE %s;", valsIn("species_id", opt.Ids, &vals, &count))
+
+		if err := DBH.Select(&relatedStrainIds, q, vals...); err != nil {
+			return nil, err
+		}
+	}
+
+	return &ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
+}
+
+func listSpecies(opt ListOptions) (*ManySpecies, error) {
+	var vals []interface{}
+
+	q := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
+			COUNT(st) AS total_strains,
+			rank() OVER (ORDER BY sp.species_name ASC) AS sort_order
+			FROM species sp
+			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
+			LEFT OUTER JOIN strains st ON st.species_id=sp.id`
+	vals = append(vals, opt.Genus)
+
+	if len(opt.Ids) != 0 {
+		var conds []string
+		s := "sp.id IN ("
+		for i, id := range opt.Ids {
+			s = s + fmt.Sprintf("$%v,", i+2) // start param index at 2
+			vals = append(vals, id)
+		}
+		s = s[:len(s)-1] + ")"
+		conds = append(conds, s)
+		q += " WHERE (" + strings.Join(conds, ") AND (") + ")"
+	}
+
+	q += " GROUP BY sp.id, g.genus_name;"
+
+	species := make(ManySpecies, 0)
+	err := DBH.Select(&species, q, vals...)
+	if err != nil {
+		return nil, err
+	}
+	return &species, nil
 }
