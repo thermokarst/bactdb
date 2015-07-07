@@ -125,7 +125,7 @@ func listStrains(opt ListOptions) (*Strains, error) {
 	return &strains, nil
 }
 
-func (s StrainService) get(id int64, genus string) (entity, *appError) {
+func (s StrainService) get(id int64, genus string, claims Claims) (entity, *appError) {
 	var strain Strain
 	q := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements,
 		0 AS sort_order

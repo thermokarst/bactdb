@@ -145,7 +145,7 @@ func (u UserService) list(val *url.Values, claims Claims) (entity, *appError) {
 	return &users, nil
 }
 
-func (u UserService) get(id int64, genus string) (entity, *appError) {
+func (u UserService) get(id int64, genus string, claims Claims) (entity, *appError) {
 	var user User
 	q := `SELECT id, email, 'password' AS password, name, role,
 		created_at, updated_at, deleted_at

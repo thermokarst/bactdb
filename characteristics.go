@@ -97,7 +97,7 @@ func (c CharacteristicService) list(val *url.Values, claims Claims) (entity, *ap
 	return &characteristics, nil
 }
 
-func (c CharacteristicService) get(id int64, dummy string) (entity, *appError) {
+func (c CharacteristicService) get(id int64, dummy string, claims Claims) (entity, *appError) {
 	var characteristic Characteristic
 	q := `SELECT c.*, array_agg(m.id) AS measurements, array_agg(st.id) AS strains
 			FROM characteristics c

@@ -127,7 +127,9 @@ func handleGetter(g getter) errorHandler {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
 
-		e, appErr := g.get(id, mux.Vars(r)["genus"])
+		claims := getClaims(r)
+
+		e, appErr := g.get(id, mux.Vars(r)["genus"], claims)
 		if appErr != nil {
 			return appErr
 		}

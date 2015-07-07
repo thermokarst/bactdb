@@ -51,7 +51,14 @@ type Species struct {
 type ManySpecies []*Species
 
 type SpeciesMeta struct {
-	CanAdd bool `json:"canAdd"`
+	CanAdd  bool    `json:"canAdd"`
+	CanEdit []int64 `json:"canEdit"`
+}
+
+type SpeciesPayload struct {
+	Species *Species     `json:"species"`
+	Strains *Strains     `json:"strains"`
+	Meta    *SpeciesMeta `json:"meta"`
 }
 
 type ManySpeciesPayload struct {
@@ -66,6 +73,10 @@ type SpeciesJSON struct {
 
 func (s *Species) marshal() ([]byte, error) {
 	return json.Marshal(&SpeciesJSON{Species: s})
+}
+
+func (s *SpeciesPayload) marshal() ([]byte, error) {
+	return json.Marshal(s)
 }
 
 func (s *ManySpeciesPayload) marshal() ([]byte, error) {
@@ -126,10 +137,19 @@ func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError)
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
+	edit_list := make(map[int64]int64)
+
+	for _, v := range species {
+		edit_list[v.Id] = v.CreatedBy
+	}
+
 	payload := ManySpeciesPayload{
 		Species: &species,
 		Strains: strains,
-		Meta:    &SpeciesMeta{CanAdd: canAdd(claims)},
+		Meta: &SpeciesMeta{
+			CanAdd:  canAdd(claims),
+			CanEdit: canEdit(claims, edit_list),
+		},
 	}
 
 	return &payload, nil
@@ -159,7 +179,7 @@ func strainOptsFromSpecies(opt ListOptions) (*ListOptions, error) {
 	return &ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
 }
 
-func (s SpeciesService) get(id int64, genus string) (entity, *appError) {
+func (s SpeciesService) get(id int64, genus string, claims Claims) (entity, *appError) {
 	var species Species
 	q := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
 		COUNT(st) AS total_strains, 0 AS sort_order
@@ -174,7 +194,29 @@ func (s SpeciesService) get(id int64, genus string) (entity, *appError) {
 		}
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
-	return &species, nil
+
+	opt := ListOptions{Genus: genus, Ids: []int64{id}}
+
+	strains_opt, err := strainOptsFromSpecies(opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	strains, err := listStrains(*strains_opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	payload := SpeciesPayload{
+		Species: &species,
+		Strains: strains,
+		Meta: &SpeciesMeta{
+			CanAdd:  canAdd(claims),
+			CanEdit: canEdit(claims, map[int64]int64{species.Id: species.CreatedBy}),
+		},
+	}
+
+	return &payload, nil
 }
 
 func (s SpeciesService) update(id int64, e *entity, claims Claims) *appError {
