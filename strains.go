@@ -83,7 +83,18 @@ func (s StrainService) list(val *url.Values, claims Claims) (entity, *appError) 
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
+	strains, err := listStrains(opt)
+
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	return strains, nil
+}
+
+func listStrains(opt ListOptions) (*Strains, error) {
 	var vals []interface{}
+
 	sql := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements,
 		rank() OVER (ORDER BY sp.species_name ASC, st.type_strain ASC, st.strain_name ASC) AS sort_order
 		FROM strains st
@@ -109,7 +120,7 @@ func (s StrainService) list(val *url.Values, claims Claims) (entity, *appError) 
 	strains := make(Strains, 0)
 	err := DBH.Select(&strains, sql, vals...)
 	if err != nil {
-		return nil, newJSONError(err, http.StatusInternalServerError)
+		return nil, err
 	}
 	return &strains, nil
 }

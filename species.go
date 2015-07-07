@@ -56,6 +56,7 @@ type SpeciesMeta struct {
 
 type ManySpeciesPayload struct {
 	Species *ManySpecies `json:"species"`
+	Strains *Strains     `json:"strains"`
 	Meta    *SpeciesMeta `json:"meta"`
 }
 
@@ -115,9 +116,47 @@ func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError)
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	meta := SpeciesMeta{CanAdd: canAdd(claims)}
-	payload := ManySpeciesPayload{Species: &species, Meta: &meta}
+	strains_opt, err := strainOptsFromSpecies(opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	strains, err := listStrains(*strains_opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	payload := ManySpeciesPayload{
+		Species: &species,
+		Strains: strains,
+		Meta:    &SpeciesMeta{CanAdd: canAdd(claims)},
+	}
+
 	return &payload, nil
+}
+
+func strainOptsFromSpecies(opt ListOptions) (*ListOptions, error) {
+	relatedStrainIds := make([]int64, 0)
+
+	if opt.Ids == nil {
+		q := `SELECT DISTINCT st.id
+			FROM strains st
+			INNER JOIN species sp ON sp.id=st.species_id
+			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1);`
+		if err := DBH.Select(&relatedStrainIds, q, opt.Genus); err != nil {
+			return nil, err
+		}
+	} else {
+		var vals []interface{}
+		var count int64 = 1
+		q := fmt.Sprintf("SELECT DISTINCT id FROM strains WHERE %s;", valsIn("species_id", opt.Ids, &vals, &count))
+
+		if err := DBH.Select(&relatedStrainIds, q, vals...); err != nil {
+			return nil, err
+		}
+	}
+
+	return &ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
 }
 
 func (s SpeciesService) get(id int64, genus string) (entity, *appError) {
