@@ -66,7 +66,7 @@ func (m *Measurements) marshal() ([]byte, error) {
 	return json.Marshal(&MeasurementsJSON{Measurements: m})
 }
 
-func (m MeasurementService) list(val *url.Values) (entity, *appError) {
+func (m MeasurementService) list(val *url.Values, claims Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}

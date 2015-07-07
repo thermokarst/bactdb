@@ -74,7 +74,7 @@ func (s StrainService) unmarshal(b []byte) (entity, error) {
 	return sj.Strain, err
 }
 
-func (s StrainService) list(val *url.Values) (entity, *appError) {
+func (s StrainService) list(val *url.Values, claims Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}

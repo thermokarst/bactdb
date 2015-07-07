@@ -59,7 +59,7 @@ func (c *Characteristics) marshal() ([]byte, error) {
 	return json.Marshal(&CharacteristicsJSON{Characteristics: c})
 }
 
-func (c CharacteristicService) list(val *url.Values) (entity, *appError) {
+func (c CharacteristicService) list(val *url.Values, claims Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}

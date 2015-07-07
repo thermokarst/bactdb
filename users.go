@@ -124,7 +124,7 @@ func (u *User) validate() error {
 	return nil
 }
 
-func (u UserService) list(val *url.Values) (entity, *appError) {
+func (u UserService) list(val *url.Values, claims Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}

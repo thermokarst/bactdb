@@ -114,3 +114,7 @@ func getClaims(r *http.Request) Claims {
 	}
 	return claims
 }
+
+func canAdd(claims Claims) bool {
+	return claims.Role == "A" || claims.Role == "W"
+}

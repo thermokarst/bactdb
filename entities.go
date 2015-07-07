@@ -11,7 +11,7 @@ type getter interface {
 }
 
 type lister interface {
-	list(*url.Values) (entity, *appError)
+	list(*url.Values, Claims) (entity, *appError)
 }
 
 type updater interface {

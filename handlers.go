@@ -146,7 +146,9 @@ func handleLister(l lister) errorHandler {
 		opt := r.URL.Query()
 		opt.Add("Genus", mux.Vars(r)["genus"])
 
-		es, appErr := l.list(&opt)
+		claims := getClaims(r)
+
+		es, appErr := l.list(&opt, claims)
 		if appErr != nil {
 			return appErr
 		}

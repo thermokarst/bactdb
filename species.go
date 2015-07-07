@@ -50,20 +50,25 @@ type Species struct {
 
 type ManySpecies []*Species
 
-type SpeciesJSON struct {
-	Species *Species `json:"species"`
+type SpeciesMeta struct {
+	CanAdd bool `json:"canAdd"`
 }
 
-type ManySpeciesJSON struct {
-	ManySpecies *ManySpecies `json:"species"`
+type ManySpeciesPayload struct {
+	Species *ManySpecies `json:"species"`
+	Meta    *SpeciesMeta `json:"meta"`
+}
+
+type SpeciesJSON struct {
+	Species *Species `json:"species"`
 }
 
 func (s *Species) marshal() ([]byte, error) {
 	return json.Marshal(&SpeciesJSON{Species: s})
 }
 
-func (s *ManySpecies) marshal() ([]byte, error) {
-	return json.Marshal(&ManySpeciesJSON{ManySpecies: s})
+func (s *ManySpeciesPayload) marshal() ([]byte, error) {
+	return json.Marshal(s)
 }
 
 func (s SpeciesService) unmarshal(b []byte) (entity, error) {
@@ -72,7 +77,7 @@ func (s SpeciesService) unmarshal(b []byte) (entity, error) {
 	return sj.Species, err
 }
 
-func (s SpeciesService) list(val *url.Values) (entity, *appError) {
+func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}
@@ -109,7 +114,10 @@ func (s SpeciesService) list(val *url.Values) (entity, *appError) {
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
-	return &species, nil
+
+	meta := SpeciesMeta{CanAdd: canAdd(claims)}
+	payload := ManySpeciesPayload{Species: &species, Meta: &meta}
+	return &payload, nil
 }
 
 func (s SpeciesService) get(id int64, genus string) (entity, *appError) {
