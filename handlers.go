@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strconv"
 	"strings"
@@ -221,10 +222,37 @@ func handleCreater(c creater) errorHandler {
 
 func tokenHandler(h http.Handler) http.Handler {
 	token := func(w http.ResponseWriter, r *http.Request) {
-		// Hackish, but we want the token in a JSON object
-		w.Write([]byte(`{"token":"`))
-		h.ServeHTTP(w, r)
-		w.Write([]byte(`"}`))
+		recorder := httptest.NewRecorder()
+		h.ServeHTTP(recorder, r)
+
+		for key, val := range recorder.Header() {
+			w.Header()[key] = val
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(recorder.Code)
+
+		tokenData := string(recorder.Body.Bytes())
+
+		var data []byte
+
+		if recorder.Code != 200 {
+			data, _ = json.Marshal(struct {
+				Error string `json:"error"`
+			}{
+				Error: tokenData,
+			})
+		} else {
+			data, _ = json.Marshal(struct {
+				Token string `json:"token"`
+			}{
+				Token: tokenData,
+			})
+		}
+
+		w.Write(data)
+		return
+
 	}
 	return http.HandlerFunc(token)
 }
