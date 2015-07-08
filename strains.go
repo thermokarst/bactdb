@@ -42,7 +42,6 @@ type StrainBase struct {
 	DeletedBy           NullInt64  `db:"deleted_by" json:"deletedBy"`
 }
 
-// Strain & StrainJSON(s) are what ember expects to see
 type Strain struct {
 	*StrainBase
 	Measurements      NullSliceInt64 `db:"measurements" json:"measurements"`
@@ -52,26 +51,35 @@ type Strain struct {
 
 type Strains []*Strain
 
-type StrainJSON struct {
-	Strain *Strain `json:"strain"`
+type StrainMeta struct {
+	CanAdd  bool    `json:"canAdd"`
+	CanEdit []int64 `json:"canEdit"`
 }
 
-type StrainsJSON struct {
-	Strains *Strains `json:"strains"`
+type StrainPayload struct {
+	Strain  *Strain      `json:"strain"`
+	Species *ManySpecies `json:"species"`
+	Meta    *StrainMeta  `json:"meta"`
 }
 
-func (s *Strain) marshal() ([]byte, error) {
-	return json.Marshal(&StrainJSON{Strain: s})
+type StrainsPayload struct {
+	Strains *Strains     `json:"strains"`
+	Species *ManySpecies `json:"species"`
+	Meta    *StrainMeta  `json:"meta"`
 }
 
-func (s *Strains) marshal() ([]byte, error) {
-	return json.Marshal(&StrainsJSON{Strains: s})
+func (s *StrainPayload) marshal() ([]byte, error) {
+	return json.Marshal(s)
+}
+
+func (s *StrainsPayload) marshal() ([]byte, error) {
+	return json.Marshal(s)
 }
 
 func (s StrainService) unmarshal(b []byte) (entity, error) {
-	var sj StrainJSON
+	var sj StrainPayload
 	err := json.Unmarshal(b, &sj)
-	return sj.Strain, err
+	return &sj, err
 }
 
 func (s StrainService) list(val *url.Values, claims Claims) (entity, *appError) {
@@ -88,55 +96,92 @@ func (s StrainService) list(val *url.Values, claims Claims) (entity, *appError) 
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	return strains, nil
+	species_opt, err := speciesOptsFromStrains(opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	species, err := listSpecies(*species_opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	edit_list := make(map[int64]int64)
+
+	for _, v := range *strains {
+		edit_list[v.Id] = v.CreatedBy
+	}
+
+	payload := StrainsPayload{
+		Strains: strains,
+		Species: species,
+		Meta: &StrainMeta{
+			CanAdd:  canAdd(claims),
+			CanEdit: canEdit(claims, edit_list),
+		},
+	}
+
+	return &payload, nil
 }
 
 func (s StrainService) get(id int64, genus string, claims Claims) (entity, *appError) {
-	var strain Strain
-	q := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements,
-		0 AS sort_order
-		FROM strains st
-		INNER JOIN species sp ON sp.id=st.species_id
-		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
-		LEFT OUTER JOIN measurements m ON m.strain_id=st.id
-		WHERE st.id=$2
-		GROUP BY st.id, st.species_id;`
-	if err := DBH.SelectOne(&strain, q, genus, id); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrStrainNotFoundJSON
-		}
+	strain, err := getStrain(id, genus)
+	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
-	return &strain, nil
+
+	species, err := getSpecies(strain.SpeciesId, genus)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	var many_species ManySpecies = []*Species{species}
+
+	payload := StrainPayload{
+		Strain:  strain,
+		Species: &many_species,
+		Meta: &StrainMeta{
+			CanAdd:  canAdd(claims),
+			CanEdit: canEdit(claims, map[int64]int64{strain.Id: strain.CreatedBy}),
+		},
+	}
+
+	return &payload, nil
 }
 
 func (s StrainService) update(id int64, e *entity, claims Claims) *appError {
-	strain := (*e).(*Strain)
-	strain.UpdatedBy = claims.Sub
-	strain.UpdatedAt = currentTime()
-	strain.Id = id
+	payload := (*e).(*StrainPayload)
+	payload.Strain.UpdatedBy = claims.Sub
+	payload.Strain.UpdatedAt = currentTime()
+	payload.Strain.Id = id
 
-	count, err := DBH.Update(strain.StrainBase)
+	count, err := DBH.Update(payload.Strain.StrainBase)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
 		return ErrStrainNotUpdatedJSON
 	}
+
+	// TODO: add species and meta to payload
+
 	return nil
 }
 
 func (s StrainService) create(e *entity, claims Claims) *appError {
-	strain := (*e).(*Strain)
+	payload := (*e).(*StrainPayload)
 	ct := currentTime()
-	strain.CreatedBy = claims.Sub
-	strain.CreatedAt = ct
-	strain.UpdatedBy = claims.Sub
-	strain.UpdatedAt = ct
+	payload.Strain.CreatedBy = claims.Sub
+	payload.Strain.CreatedAt = ct
+	payload.Strain.UpdatedBy = claims.Sub
+	payload.Strain.UpdatedAt = ct
 
-	if err := DBH.Insert(strain.StrainBase); err != nil {
+	if err := DBH.Insert(payload.Strain.StrainBase); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
+
+	// TODO: add species and meta to payload
+
 	return nil
 }
 
@@ -171,4 +216,46 @@ func listStrains(opt ListOptions) (*Strains, error) {
 		return nil, err
 	}
 	return &strains, nil
+}
+
+func getStrain(id int64, genus string) (*Strain, error) {
+	var strain Strain
+	q := `SELECT st.*, array_agg(m.id) AS measurements,
+		COUNT(m) AS total_measurements, 0 AS sort_order
+		FROM strains st
+		INNER JOIN species sp ON sp.id=st.species_id
+		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
+		LEFT OUTER JOIN measurements m ON m.strain_id=st.id
+		WHERE st.id=$2
+		GROUP BY st.id, st.species_id;`
+	if err := DBH.SelectOne(&strain, q, genus, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrStrainNotFound
+		}
+		return nil, err
+	}
+	return &strain, nil
+}
+
+func speciesOptsFromStrains(opt ListOptions) (*ListOptions, error) {
+	relatedSpeciesIds := make([]int64, 0)
+
+	if opt.Ids == nil {
+		q := `SELECT DISTINCT st.species_id
+			FROM strains st
+			INNER JOIN species sp ON sp.id=st.species_id
+			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1);`
+		if err := DBH.Select(&relatedSpeciesIds, q, opt.Genus); err != nil {
+			return nil, err
+		}
+	} else {
+		var vals []interface{}
+		var count int64 = 1
+		q := fmt.Sprintf("SELECT DISTINCT species_id FROM strains WHERE %s;", valsIn("id", opt.Ids, &vals, &count))
+		if err := DBH.Select(&relatedSpeciesIds, q, vals...); err != nil {
+			return nil, err
+		}
+	}
+
+	return &ListOptions{Genus: opt.Genus, Ids: relatedSpeciesIds}, nil
 }
