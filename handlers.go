@@ -182,7 +182,7 @@ func handleUpdater(u updater) errorHandler {
 
 		claims := getClaims(r)
 
-		appErr := u.update(id, &e, claims)
+		appErr := u.update(id, &e, mux.Vars(r)["genus"], claims)
 		if appErr != nil {
 			return appErr
 		}

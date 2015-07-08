@@ -15,7 +15,7 @@ type lister interface {
 }
 
 type updater interface {
-	update(int64, *entity, Claims) *appError
+	update(int64, *entity, string, Claims) *appError
 	unmarshal([]byte) (entity, error)
 }
 

@@ -149,7 +149,7 @@ func (s StrainService) get(id int64, genus string, claims Claims) (entity, *appE
 	return &payload, nil
 }
 
-func (s StrainService) update(id int64, e *entity, claims Claims) *appError {
+func (s StrainService) update(id int64, e *entity, genus string, claims Claims) *appError {
 	payload := (*e).(*StrainPayload)
 	payload.Strain.UpdatedBy = claims.Sub
 	payload.Strain.UpdatedAt = currentTime()
@@ -163,7 +163,25 @@ func (s StrainService) update(id int64, e *entity, claims Claims) *appError {
 		return ErrStrainNotUpdatedJSON
 	}
 
-	// TODO: add species and meta to payload
+	strain, err := getStrain(id, genus)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	species, err := getSpecies(strain.SpeciesId, genus)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	var many_species ManySpecies = []*Species{species}
+
+	payload.Strain = strain
+
+	payload.Species = &many_species
+	payload.Meta = &StrainMeta{
+		CanAdd:  canAdd(claims),
+		CanEdit: canEdit(claims, map[int64]int64{strain.Id: strain.CreatedBy}),
+	}
 
 	return nil
 }

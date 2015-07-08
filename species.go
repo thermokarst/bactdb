@@ -145,13 +145,13 @@ func (s SpeciesService) get(id int64, genus string, claims Claims) (entity, *app
 	return &payload, nil
 }
 
-func (s SpeciesService) update(id int64, e *entity, claims Claims) *appError {
+func (s SpeciesService) update(id int64, e *entity, genus string, claims Claims) *appError {
 	payload := (*e).(*SpeciesPayload)
 	payload.Species.UpdatedBy = claims.Sub
 	payload.Species.UpdatedAt = currentTime()
 	payload.Species.Id = id
 
-	genus_id, err := genusIdFromName(payload.Species.GenusName)
+	genus_id, err := genusIdFromName(genus)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -165,12 +165,12 @@ func (s SpeciesService) update(id int64, e *entity, claims Claims) *appError {
 		return ErrSpeciesNotUpdatedJSON
 	}
 
-	species, err := getSpecies(id, payload.Species.GenusName)
+	species, err := getSpecies(id, genus)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains, err := strainsFromSpeciesId(id, payload.Species.GenusName)
+	strains, err := strainsFromSpeciesId(id, genus)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -179,7 +179,7 @@ func (s SpeciesService) update(id int64, e *entity, claims Claims) *appError {
 	payload.Strains = strains
 	payload.Meta = &SpeciesMeta{
 		CanAdd:  canAdd(claims),
-		CanEdit: canEdit(claims, map[int64]int64{payload.Species.Id: payload.Species.CreatedBy}),
+		CanEdit: canEdit(claims, map[int64]int64{species.Id: species.CreatedBy}),
 	}
 
 	return nil
