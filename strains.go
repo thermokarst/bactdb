@@ -176,7 +176,6 @@ func (s StrainService) update(id int64, e *entity, genus string, claims Claims) 
 	var many_species ManySpecies = []*Species{species}
 
 	payload.Strain = strain
-
 	payload.Species = &many_species
 	payload.Meta = &StrainMeta{
 		CanAdd:  canAdd(claims),
@@ -186,7 +185,7 @@ func (s StrainService) update(id int64, e *entity, genus string, claims Claims) 
 	return nil
 }
 
-func (s StrainService) create(e *entity, claims Claims) *appError {
+func (s StrainService) create(e *entity, genus string, claims Claims) *appError {
 	payload := (*e).(*StrainPayload)
 	ct := currentTime()
 	payload.Strain.CreatedBy = claims.Sub
@@ -198,7 +197,24 @@ func (s StrainService) create(e *entity, claims Claims) *appError {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	// TODO: add species and meta to payload
+	strain, err := getStrain(payload.Strain.Id, genus)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	species, err := getSpecies(strain.SpeciesId, genus)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	var many_species ManySpecies = []*Species{species}
+
+	payload.Strain = strain
+	payload.Species = &many_species
+	payload.Meta = &StrainMeta{
+		CanAdd:  canAdd(claims),
+		CanEdit: canEdit(claims, map[int64]int64{strain.Id: strain.CreatedBy}),
+	}
 
 	return nil
 }

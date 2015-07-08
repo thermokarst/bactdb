@@ -210,7 +210,7 @@ func handleCreater(c creater) errorHandler {
 
 		claims := getClaims(r)
 
-		appErr := c.create(&e, claims)
+		appErr := c.create(&e, mux.Vars(r)["genus"], claims)
 		if appErr != nil {
 			return appErr
 		}

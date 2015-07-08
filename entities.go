@@ -20,6 +20,6 @@ type updater interface {
 }
 
 type creater interface {
-	create(*entity, Claims) *appError
+	create(*entity, string, Claims) *appError
 	unmarshal([]byte) (entity, error)
 }

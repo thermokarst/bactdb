@@ -177,7 +177,7 @@ func (u UserService) update(id int64, e *entity, dummy string, claims Claims) *a
 	return nil
 }
 
-func (u UserService) create(e *entity, claims Claims) *appError {
+func (u UserService) create(e *entity, dummy string, claims Claims) *appError {
 	user := (*e).(*User)
 	if err := user.validate(); err != nil {
 		return &appError{Error: err, Status: StatusUnprocessableEntity}

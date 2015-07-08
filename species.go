@@ -165,6 +165,7 @@ func (s SpeciesService) update(id int64, e *entity, genus string, claims Claims)
 		return ErrSpeciesNotUpdatedJSON
 	}
 
+	// Reload to send back down the wire
 	species, err := getSpecies(id, genus)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
@@ -185,7 +186,7 @@ func (s SpeciesService) update(id int64, e *entity, genus string, claims Claims)
 	return nil
 }
 
-func (s SpeciesService) create(e *entity, claims Claims) *appError {
+func (s SpeciesService) create(e *entity, genus string, claims Claims) *appError {
 	payload := (*e).(*SpeciesPayload)
 	ct := currentTime()
 	payload.Species.CreatedBy = claims.Sub
@@ -193,7 +194,7 @@ func (s SpeciesService) create(e *entity, claims Claims) *appError {
 	payload.Species.UpdatedBy = claims.Sub
 	payload.Species.UpdatedAt = ct
 
-	genus_id, err := genusIdFromName(payload.Species.GenusName)
+	genus_id, err := genusIdFromName(genus)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -204,7 +205,8 @@ func (s SpeciesService) create(e *entity, claims Claims) *appError {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species, err := getSpecies(payload.Species.Id, payload.Species.GenusName)
+	// Reload to send back down the wire
+	species, err := getSpecies(payload.Species.Id, genus)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -214,7 +216,7 @@ func (s SpeciesService) create(e *entity, claims Claims) *appError {
 	payload.Species = species
 	payload.Meta = &SpeciesMeta{
 		CanAdd:  canAdd(claims),
-		CanEdit: canEdit(claims, map[int64]int64{payload.Species.Id: payload.Species.CreatedBy}),
+		CanEdit: canEdit(claims, map[int64]int64{species.Id: species.CreatedBy}),
 	}
 	return nil
 }
