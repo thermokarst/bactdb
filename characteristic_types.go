@@ -57,7 +57,7 @@ func (c *CharacteristicTypes) marshal() ([]byte, error) {
 	return json.Marshal(&CharacteristicTypesJSON{CharacteristicTypes: c})
 }
 
-func (c CharacteristicTypeService) list(val *url.Values, claims Claims) (entity, *appError) {
+func (c CharacteristicTypeService) list(val *url.Values, claims *Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}
@@ -95,7 +95,7 @@ func (c CharacteristicTypeService) list(val *url.Values, claims Claims) (entity,
 	return &characteristic_types, nil
 }
 
-func (c CharacteristicTypeService) get(id int64, dummy string, claims Claims) (entity, *appError) {
+func (c CharacteristicTypeService) get(id int64, dummy string, claims *Claims) (entity, *appError) {
 	var characteristic_type CharacteristicType
 	q := `SELECT ct.*, array_agg(c.id) AS characteristics, 0 AS sort_order
 			FROM characteristic_types ct

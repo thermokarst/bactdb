@@ -124,7 +124,7 @@ func (u *User) validate() error {
 	return nil
 }
 
-func (u UserService) list(val *url.Values, claims Claims) (entity, *appError) {
+func (u UserService) list(val *url.Values, claims *Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}
@@ -145,7 +145,7 @@ func (u UserService) list(val *url.Values, claims Claims) (entity, *appError) {
 	return &users, nil
 }
 
-func (u UserService) get(id int64, dummy string, claims Claims) (entity, *appError) {
+func (u UserService) get(id int64, dummy string, claims *Claims) (entity, *appError) {
 	var user User
 	q := `SELECT id, email, 'password' AS password, name, role,
 		created_at, updated_at, deleted_at
@@ -162,7 +162,7 @@ func (u UserService) get(id int64, dummy string, claims Claims) (entity, *appErr
 	return &user, nil
 }
 
-func (u UserService) update(id int64, e *entity, dummy string, claims Claims) *appError {
+func (u UserService) update(id int64, e *entity, dummy string, claims *Claims) *appError {
 	user := (*e).(*User)
 	user.UpdatedAt = currentTime()
 	user.Id = id
@@ -177,7 +177,7 @@ func (u UserService) update(id int64, e *entity, dummy string, claims Claims) *a
 	return nil
 }
 
-func (u UserService) create(e *entity, dummy string, claims Claims) *appError {
+func (u UserService) create(e *entity, dummy string, claims *Claims) *appError {
 	user := (*e).(*User)
 	if err := user.validate(); err != nil {
 		return &appError{Error: err, Status: StatusUnprocessableEntity}

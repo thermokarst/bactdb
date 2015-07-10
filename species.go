@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/jmoiron/modl"
 )
 
 var (
@@ -19,6 +21,18 @@ var (
 
 func init() {
 	DB.AddTableWithName(SpeciesBase{}, "species").SetKeys(true, "Id")
+}
+
+func (s *SpeciesBase) PreInsert(e modl.SqlExecutor) error {
+	ct := currentTime()
+	s.CreatedAt = ct
+	s.UpdatedAt = ct
+	return nil
+}
+
+func (s *SpeciesBase) PreUpdate(e modl.SqlExecutor) error {
+	s.UpdatedAt = currentTime()
+	return nil
 }
 
 type SpeciesService struct{}
@@ -45,13 +59,13 @@ type Species struct {
 	Strains      NullSliceInt64 `db:"strains" json:"strains"`
 	TotalStrains int64          `db:"total_strains" json:"totalStrains"`
 	SortOrder    int64          `db:"sort_order" json:"sortOrder"`
+	CanEdit      bool           `db:"-" json:"canEdit"`
 }
 
 type ManySpecies []*Species
 
 type SpeciesMeta struct {
-	CanAdd  bool    `json:"canAdd"`
-	CanEdit []int64 `json:"canEdit"`
+	CanAdd bool `json:"canAdd"`
 }
 
 type SpeciesPayload struct {
@@ -80,7 +94,7 @@ func (s SpeciesService) unmarshal(b []byte) (entity, error) {
 	return &sj, err
 }
 
-func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError) {
+func (s SpeciesService) list(val *url.Values, claims *Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}
@@ -89,7 +103,7 @@ func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError)
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species, err := listSpecies(opt)
+	species, err := listSpecies(opt, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
@@ -99,36 +113,29 @@ func (s SpeciesService) list(val *url.Values, claims Claims) (entity, *appError)
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains, err := listStrains(*strains_opt)
+	strains, err := listStrains(*strains_opt, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
-	}
-
-	edit_list := make(map[int64]int64)
-
-	for _, v := range *species {
-		edit_list[v.Id] = v.CreatedBy
 	}
 
 	payload := ManySpeciesPayload{
 		Species: species,
 		Strains: strains,
 		Meta: &SpeciesMeta{
-			CanAdd:  canAdd(claims),
-			CanEdit: canEdit(claims, edit_list),
+			CanAdd: canAdd(claims),
 		},
 	}
 
 	return &payload, nil
 }
 
-func (s SpeciesService) get(id int64, genus string, claims Claims) (entity, *appError) {
-	species, err := getSpecies(id, genus)
+func (s SpeciesService) get(id int64, genus string, claims *Claims) (entity, *appError) {
+	species, err := getSpecies(id, genus, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains, err := strainsFromSpeciesId(id, genus)
+	strains, err := strainsFromSpeciesId(id, genus, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
@@ -137,18 +144,16 @@ func (s SpeciesService) get(id int64, genus string, claims Claims) (entity, *app
 		Species: species,
 		Strains: strains,
 		Meta: &SpeciesMeta{
-			CanAdd:  canAdd(claims),
-			CanEdit: canEdit(claims, map[int64]int64{species.Id: species.CreatedBy}),
+			CanAdd: canAdd(claims),
 		},
 	}
 
 	return &payload, nil
 }
 
-func (s SpeciesService) update(id int64, e *entity, genus string, claims Claims) *appError {
+func (s SpeciesService) update(id int64, e *entity, genus string, claims *Claims) *appError {
 	payload := (*e).(*SpeciesPayload)
 	payload.Species.UpdatedBy = claims.Sub
-	payload.Species.UpdatedAt = currentTime()
 	payload.Species.Id = id
 
 	genus_id, err := genusIdFromName(genus)
@@ -166,12 +171,12 @@ func (s SpeciesService) update(id int64, e *entity, genus string, claims Claims)
 	}
 
 	// Reload to send back down the wire
-	species, err := getSpecies(id, genus)
+	species, err := getSpecies(id, genus, claims)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains, err := strainsFromSpeciesId(id, genus)
+	strains, err := strainsFromSpeciesId(id, genus, claims)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -179,20 +184,16 @@ func (s SpeciesService) update(id int64, e *entity, genus string, claims Claims)
 	payload.Species = species
 	payload.Strains = strains
 	payload.Meta = &SpeciesMeta{
-		CanAdd:  canAdd(claims),
-		CanEdit: canEdit(claims, map[int64]int64{species.Id: species.CreatedBy}),
+		CanAdd: canAdd(claims),
 	}
 
 	return nil
 }
 
-func (s SpeciesService) create(e *entity, genus string, claims Claims) *appError {
+func (s SpeciesService) create(e *entity, genus string, claims *Claims) *appError {
 	payload := (*e).(*SpeciesPayload)
-	ct := currentTime()
 	payload.Species.CreatedBy = claims.Sub
-	payload.Species.CreatedAt = ct
 	payload.Species.UpdatedBy = claims.Sub
-	payload.Species.UpdatedAt = ct
 
 	genus_id, err := genusIdFromName(genus)
 	if err != nil {
@@ -206,7 +207,7 @@ func (s SpeciesService) create(e *entity, genus string, claims Claims) *appError
 	}
 
 	// Reload to send back down the wire
-	species, err := getSpecies(payload.Species.Id, genus)
+	species, err := getSpecies(payload.Species.Id, genus, claims)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -215,8 +216,7 @@ func (s SpeciesService) create(e *entity, genus string, claims Claims) *appError
 
 	payload.Species = species
 	payload.Meta = &SpeciesMeta{
-		CanAdd:  canAdd(claims),
-		CanEdit: canEdit(claims, map[int64]int64{species.Id: species.CreatedBy}),
+		CanAdd: canAdd(claims),
 	}
 	return nil
 }
@@ -254,7 +254,7 @@ func strainOptsFromSpecies(opt ListOptions) (*ListOptions, error) {
 	return &ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
 }
 
-func strainsFromSpeciesId(id int64, genus string) (*Strains, error) {
+func strainsFromSpeciesId(id int64, genus string, claims *Claims) (*Strains, error) {
 	opt := ListOptions{
 		Genus: genus,
 		Ids:   []int64{id},
@@ -265,7 +265,7 @@ func strainsFromSpeciesId(id int64, genus string) (*Strains, error) {
 		return nil, err
 	}
 
-	strains, err := listStrains(*strains_opt)
+	strains, err := listStrains(*strains_opt, claims)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +273,7 @@ func strainsFromSpeciesId(id int64, genus string) (*Strains, error) {
 	return strains, nil
 }
 
-func listSpecies(opt ListOptions) (*ManySpecies, error) {
+func listSpecies(opt ListOptions, claims *Claims) (*ManySpecies, error) {
 	var vals []interface{}
 
 	q := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
@@ -303,10 +303,15 @@ func listSpecies(opt ListOptions) (*ManySpecies, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	for _, s := range species {
+		s.CanEdit = canEdit(claims, s.CreatedBy)
+	}
+
 	return &species, nil
 }
 
-func getSpecies(id int64, genus string) (*Species, error) {
+func getSpecies(id int64, genus string, claims *Claims) (*Species, error) {
 	var species Species
 	q := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
 		COUNT(st) AS total_strains, 0 AS sort_order
@@ -321,5 +326,8 @@ func getSpecies(id int64, genus string) (*Species, error) {
 		}
 		return nil, err
 	}
+
+	species.CanEdit = canEdit(claims, species.CreatedBy)
+
 	return &species, nil
 }

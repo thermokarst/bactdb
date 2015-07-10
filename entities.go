@@ -7,19 +7,19 @@ type entity interface {
 }
 
 type getter interface {
-	get(int64, string, Claims) (entity, *appError)
+	get(int64, string, *Claims) (entity, *appError)
 }
 
 type lister interface {
-	list(*url.Values, Claims) (entity, *appError)
+	list(*url.Values, *Claims) (entity, *appError)
 }
 
 type updater interface {
-	update(int64, *entity, string, Claims) *appError
+	update(int64, *entity, string, *Claims) *appError
 	unmarshal([]byte) (entity, error)
 }
 
 type creater interface {
-	create(*entity, string, Claims) *appError
+	create(*entity, string, *Claims) *appError
 	unmarshal([]byte) (entity, error)
 }

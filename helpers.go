@@ -115,21 +115,10 @@ func getClaims(r *http.Request) Claims {
 	return claims
 }
 
-func canAdd(claims Claims) bool {
+func canAdd(claims *Claims) bool {
 	return claims.Role == "A" || claims.Role == "W"
 }
 
-func canEdit(claims Claims, id_list map[int64]int64) []int64 {
-	id := claims.Sub
-	role := claims.Role
-
-	out := make([]int64, 0)
-
-	for k, v := range id_list {
-		if (role == "W" && id == v) || role == "A" {
-			out = append(out, k)
-		}
-	}
-
-	return out
+func canEdit(claims *Claims, author int64) bool {
+	return claims.Sub == author || claims.Role == "A"
 }

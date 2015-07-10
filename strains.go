@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/jmoiron/modl"
 )
 
 var (
@@ -19,6 +21,18 @@ var (
 
 func init() {
 	DB.AddTableWithName(StrainBase{}, "strains").SetKeys(true, "Id")
+}
+
+func (s *StrainBase) PreInsert(e modl.SqlExecutor) error {
+	ct := currentTime()
+	s.CreatedAt = ct
+	s.UpdatedAt = ct
+	return nil
+}
+
+func (s *StrainBase) PreUpdate(e modl.SqlExecutor) error {
+	s.UpdatedAt = currentTime()
+	return nil
 }
 
 type StrainService struct{}
@@ -47,13 +61,13 @@ type Strain struct {
 	Measurements      NullSliceInt64 `db:"measurements" json:"measurements"`
 	TotalMeasurements int64          `db:"total_measurements" json:"totalMeasurements"`
 	SortOrder         int64          `db:"sort_order" json:"sortOrder"`
+	CanEdit           bool           `db:"can_edit" json:"canEdit"`
 }
 
 type Strains []*Strain
 
 type StrainMeta struct {
-	CanAdd  bool    `json:"canAdd"`
-	CanEdit []int64 `json:"canEdit"`
+	CanAdd bool `json:"canAdd"`
 }
 
 type StrainPayload struct {
@@ -82,7 +96,7 @@ func (s StrainService) unmarshal(b []byte) (entity, error) {
 	return &sj, err
 }
 
-func (s StrainService) list(val *url.Values, claims Claims) (entity, *appError) {
+func (s StrainService) list(val *url.Values, claims *Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}
@@ -91,7 +105,7 @@ func (s StrainService) list(val *url.Values, claims Claims) (entity, *appError) 
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains, err := listStrains(opt)
+	strains, err := listStrains(opt, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
@@ -101,36 +115,29 @@ func (s StrainService) list(val *url.Values, claims Claims) (entity, *appError) 
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species, err := listSpecies(*species_opt)
+	species, err := listSpecies(*species_opt, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
-	}
-
-	edit_list := make(map[int64]int64)
-
-	for _, v := range *strains {
-		edit_list[v.Id] = v.CreatedBy
 	}
 
 	payload := StrainsPayload{
 		Strains: strains,
 		Species: species,
 		Meta: &StrainMeta{
-			CanAdd:  canAdd(claims),
-			CanEdit: canEdit(claims, edit_list),
+			CanAdd: canAdd(claims),
 		},
 	}
 
 	return &payload, nil
 }
 
-func (s StrainService) get(id int64, genus string, claims Claims) (entity, *appError) {
-	strain, err := getStrain(id, genus)
+func (s StrainService) get(id int64, genus string, claims *Claims) (entity, *appError) {
+	strain, err := getStrain(id, genus, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species, err := getSpecies(strain.SpeciesId, genus)
+	species, err := getSpecies(strain.SpeciesId, genus, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
@@ -141,18 +148,16 @@ func (s StrainService) get(id int64, genus string, claims Claims) (entity, *appE
 		Strain:  strain,
 		Species: &many_species,
 		Meta: &StrainMeta{
-			CanAdd:  canAdd(claims),
-			CanEdit: canEdit(claims, map[int64]int64{strain.Id: strain.CreatedBy}),
+			CanAdd: canAdd(claims),
 		},
 	}
 
 	return &payload, nil
 }
 
-func (s StrainService) update(id int64, e *entity, genus string, claims Claims) *appError {
+func (s StrainService) update(id int64, e *entity, genus string, claims *Claims) *appError {
 	payload := (*e).(*StrainPayload)
 	payload.Strain.UpdatedBy = claims.Sub
-	payload.Strain.UpdatedAt = currentTime()
 	payload.Strain.Id = id
 
 	count, err := DBH.Update(payload.Strain.StrainBase)
@@ -163,12 +168,12 @@ func (s StrainService) update(id int64, e *entity, genus string, claims Claims) 
 		return ErrStrainNotUpdatedJSON
 	}
 
-	strain, err := getStrain(id, genus)
+	strain, err := getStrain(id, genus, claims)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species, err := getSpecies(strain.SpeciesId, genus)
+	species, err := getSpecies(strain.SpeciesId, genus, claims)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -178,31 +183,27 @@ func (s StrainService) update(id int64, e *entity, genus string, claims Claims) 
 	payload.Strain = strain
 	payload.Species = &many_species
 	payload.Meta = &StrainMeta{
-		CanAdd:  canAdd(claims),
-		CanEdit: canEdit(claims, map[int64]int64{strain.Id: strain.CreatedBy}),
+		CanAdd: canAdd(claims),
 	}
 
 	return nil
 }
 
-func (s StrainService) create(e *entity, genus string, claims Claims) *appError {
+func (s StrainService) create(e *entity, genus string, claims *Claims) *appError {
 	payload := (*e).(*StrainPayload)
-	ct := currentTime()
 	payload.Strain.CreatedBy = claims.Sub
-	payload.Strain.CreatedAt = ct
 	payload.Strain.UpdatedBy = claims.Sub
-	payload.Strain.UpdatedAt = ct
 
 	if err := DBH.Insert(payload.Strain.StrainBase); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strain, err := getStrain(payload.Strain.Id, genus)
+	strain, err := getStrain(payload.Strain.Id, genus, claims)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species, err := getSpecies(strain.SpeciesId, genus)
+	species, err := getSpecies(strain.SpeciesId, genus, claims)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -212,14 +213,13 @@ func (s StrainService) create(e *entity, genus string, claims Claims) *appError 
 	payload.Strain = strain
 	payload.Species = &many_species
 	payload.Meta = &StrainMeta{
-		CanAdd:  canAdd(claims),
-		CanEdit: canEdit(claims, map[int64]int64{strain.Id: strain.CreatedBy}),
+		CanAdd: canAdd(claims),
 	}
 
 	return nil
 }
 
-func listStrains(opt ListOptions) (*Strains, error) {
+func listStrains(opt ListOptions, claims *Claims) (*Strains, error) {
 	var vals []interface{}
 
 	q := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements,
@@ -249,10 +249,15 @@ func listStrains(opt ListOptions) (*Strains, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	for _, s := range strains {
+		s.CanEdit = canEdit(claims, s.CreatedBy)
+	}
+
 	return &strains, nil
 }
 
-func getStrain(id int64, genus string) (*Strain, error) {
+func getStrain(id int64, genus string, claims *Claims) (*Strain, error) {
 	var strain Strain
 	q := `SELECT st.*, array_agg(m.id) AS measurements,
 		COUNT(m) AS total_measurements, 0 AS sort_order
@@ -268,6 +273,9 @@ func getStrain(id int64, genus string) (*Strain, error) {
 		}
 		return nil, err
 	}
+
+	strain.CanEdit = canEdit(claims, strain.CreatedBy)
+
 	return &strain, nil
 }
 

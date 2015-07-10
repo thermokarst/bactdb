@@ -66,7 +66,7 @@ func (m *Measurements) marshal() ([]byte, error) {
 	return json.Marshal(&MeasurementsJSON{Measurements: m})
 }
 
-func (m MeasurementService) list(val *url.Values, claims Claims) (entity, *appError) {
+func (m MeasurementService) list(val *url.Values, claims *Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}
@@ -138,7 +138,7 @@ func (m MeasurementService) list(val *url.Values, claims Claims) (entity, *appEr
 	return &measurements, nil
 }
 
-func (m MeasurementService) get(id int64, genus string, claims Claims) (entity, *appError) {
+func (m MeasurementService) get(id int64, genus string, claims *Claims) (entity, *appError) {
 	var measurement Measurement
 	q := `SELECT m.*, t.text_measurement_name AS text_measurement_type_name,
 		u.symbol AS unit_type_name, te.name AS test_method_name

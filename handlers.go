@@ -129,7 +129,7 @@ func handleGetter(g getter) errorHandler {
 
 		claims := getClaims(r)
 
-		e, appErr := g.get(id, mux.Vars(r)["genus"], claims)
+		e, appErr := g.get(id, mux.Vars(r)["genus"], &claims)
 		if appErr != nil {
 			return appErr
 		}
@@ -150,7 +150,7 @@ func handleLister(l lister) errorHandler {
 
 		claims := getClaims(r)
 
-		es, appErr := l.list(&opt, claims)
+		es, appErr := l.list(&opt, &claims)
 		if appErr != nil {
 			return appErr
 		}
@@ -182,7 +182,7 @@ func handleUpdater(u updater) errorHandler {
 
 		claims := getClaims(r)
 
-		appErr := u.update(id, &e, mux.Vars(r)["genus"], claims)
+		appErr := u.update(id, &e, mux.Vars(r)["genus"], &claims)
 		if appErr != nil {
 			return appErr
 		}
@@ -210,7 +210,7 @@ func handleCreater(c creater) errorHandler {
 
 		claims := getClaims(r)
 
-		appErr := c.create(&e, mux.Vars(r)["genus"], claims)
+		appErr := c.create(&e, mux.Vars(r)["genus"], &claims)
 		if appErr != nil {
 			return appErr
 		}
