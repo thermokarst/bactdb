@@ -25,7 +25,7 @@ type CharacteristicService struct{}
 type CharacteristicBase struct {
 	Id                   int64     `json:"id,omitempty"`
 	CharacteristicName   string    `db:"characteristic_name" json:"characteristicName"`
-	CharacteristicTypeId int64     `db:"characteristic_type_id" json:"characteristicType"`
+	CharacteristicTypeId int64     `db:"characteristic_type_id" json:"-"`
 	SortOrder            NullInt64 `db:"sort_order" json:"sortOrder"`
 	CreatedAt            NullTime  `db:"created_at" json:"createdAt"`
 	UpdatedAt            NullTime  `db:"updated_at" json:"updatedAt"`
@@ -37,8 +37,9 @@ type CharacteristicBase struct {
 
 type Characteristic struct {
 	*CharacteristicBase
-	Measurements NullSliceInt64 `db:"measurements" json:"measurements"`
-	Strains      NullSliceInt64 `db:"strains" json:"strains"`
+	Measurements       NullSliceInt64 `db:"measurements" json:"measurements"`
+	Strains            NullSliceInt64 `db:"strains" json:"strains"`
+	CharacteristicType string         `db:"characteristic_type_name" json:"characteristicTypeName"`
 }
 
 type Characteristics []*Characteristic
@@ -69,8 +70,10 @@ func (c CharacteristicService) list(val *url.Values, claims *Claims) (entity, *a
 	}
 
 	var vals []interface{}
-	sql := `SELECT c.*, array_agg(m.id) AS measurements, array_agg(st.id) AS strains
+	sql := `SELECT c.*, array_agg(m.id) AS measurements,
+			array_agg(st.id) AS strains, ct.characteristic_type_name
 			FROM characteristics c
+			INNER JOIN characteristic_types ct ON ct.id=c.characteristic_type_id
 			LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id
 			LEFT OUTER JOIN strains st ON st.id=m.strain_id`
 
@@ -87,7 +90,7 @@ func (c CharacteristicService) list(val *url.Values, claims *Claims) (entity, *a
 		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
 	}
 
-	sql += " GROUP BY c.id;"
+	sql += " GROUP BY c.id, ct.characteristic_type_name;"
 
 	characteristics := make(Characteristics, 0)
 	err := DBH.Select(&characteristics, sql, vals...)
@@ -99,12 +102,14 @@ func (c CharacteristicService) list(val *url.Values, claims *Claims) (entity, *a
 
 func (c CharacteristicService) get(id int64, dummy string, claims *Claims) (entity, *appError) {
 	var characteristic Characteristic
-	q := `SELECT c.*, array_agg(m.id) AS measurements, array_agg(st.id) AS strains
+	q := `SELECT c.*, array_agg(m.id) AS measurements,
+			array_agg(st.id) AS strains, ct.characteristic_type_name
 			FROM characteristics c
+			INNER JOIN characteristic_types ct ON ct.id=c.characteristic_type_id
 			LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id
 			LEFT OUTER JOIN strains st ON st.id=m.strain_id
 			WHERE c.id=$1
-			GROUP BY c.id;`
+			GROUP BY c.id, ct.characteristic_type_name;`
 	if err := DBH.SelectOne(&characteristic, q, id); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrCharacteristicNotFoundJSON

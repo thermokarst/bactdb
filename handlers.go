@@ -75,7 +75,6 @@ func Handler() http.Handler {
 	strainService := StrainService{}
 	speciesService := SpeciesService{}
 	characteristicService := CharacteristicService{}
-	characteristicTypeService := CharacteristicTypeService{}
 	measurementService := MeasurementService{}
 
 	m.Handle("/authenticate", tokenHandler(j.GenerateToken())).Methods("POST")
@@ -107,8 +106,6 @@ func Handler() http.Handler {
 		r{handleUpdater(strainService), "PUT", "/strains/{Id:.+}"},
 		r{handleLister(characteristicService), "GET", "/characteristics"},
 		r{handleGetter(characteristicService), "GET", "/characteristics/{Id:.+}"},
-		r{handleLister(characteristicTypeService), "GET", "/characteristicTypes"},
-		r{handleGetter(characteristicTypeService), "GET", "/characteristicTypes/{Id:.+}"},
 		r{handleLister(measurementService), "GET", "/measurements"},
 		r{handleGetter(measurementService), "GET", "/measurements/{Id:.+}"},
 	}
