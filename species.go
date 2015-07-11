@@ -13,10 +13,8 @@ import (
 )
 
 var (
-	ErrSpeciesNotFound       = errors.New("Species not found")
-	ErrSpeciesNotFoundJSON   = newJSONError(ErrSpeciesNotFound, http.StatusNotFound)
-	ErrSpeciesNotUpdated     = errors.New("Species not updated")
-	ErrSpeciesNotUpdatedJSON = newJSONError(ErrSpeciesNotUpdated, http.StatusBadRequest)
+	ErrSpeciesNotFound   = errors.New("Species not found")
+	ErrSpeciesNotUpdated = errors.New("Species not updated")
 )
 
 func init() {
@@ -167,7 +165,7 @@ func (s SpeciesService) update(id int64, e *entity, genus string, claims *Claims
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
-		return ErrSpeciesNotUpdatedJSON
+		return newJSONError(ErrSpeciesNotUpdated, http.StatusBadRequest)
 	}
 
 	// Reload to send back down the wire

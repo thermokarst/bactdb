@@ -13,10 +13,8 @@ import (
 )
 
 var (
-	ErrStrainNotFound       = errors.New("Strain not found")
-	ErrStrainNotFoundJSON   = newJSONError(ErrStrainNotFound, http.StatusNotFound)
-	ErrStrainNotUpdated     = errors.New("Strain not updated")
-	ErrStrainNotUpdatedJSON = newJSONError(ErrStrainNotUpdated, http.StatusBadRequest)
+	ErrStrainNotFound   = errors.New("Strain not found")
+	ErrStrainNotUpdated = errors.New("Strain not updated")
 )
 
 func init() {
@@ -165,7 +163,7 @@ func (s StrainService) update(id int64, e *entity, genus string, claims *Claims)
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
-		return ErrStrainNotUpdatedJSON
+		return newJSONError(ErrStrainNotUpdated, http.StatusBadRequest)
 	}
 
 	strain, err := getStrain(id, genus, claims)
