@@ -65,6 +65,7 @@ type CharacteristicPayload struct {
 	Characteristic *Characteristic     `json:"characteristic"`
 	Measurements   *Measurements       `json:"measurements"`
 	Strains        *Strains            `json:"strains"`
+	Species        *ManySpecies        `json:"species"`
 	Meta           *CharacteristicMeta `json:"meta"`
 }
 
@@ -72,6 +73,7 @@ type CharacteristicsPayload struct {
 	Characteristics *Characteristics    `json:"characteristics"`
 	Measurements    *Measurements       `json:"measurements"`
 	Strains         *Strains            `json:"strains"`
+	Species         *ManySpecies        `json:"species"`
 	Meta            *CharacteristicMeta `json:"meta"`
 }
 
@@ -107,11 +109,22 @@ func (c CharacteristicService) list(val *url.Values, claims *Claims) (entity, *a
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
+	species_opt, err := speciesOptsFromStrains(*strains_opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	species, err := listSpecies(*species_opt, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
 	// TODO: tack on measurements
 	payload := CharacteristicsPayload{
 		Characteristics: characteristics,
 		Measurements:    nil,
 		Strains:         strains,
+		Species:         species,
 		Meta: &CharacteristicMeta{
 			CanAdd: canAdd(claims),
 		},
@@ -126,7 +139,17 @@ func (c CharacteristicService) get(id int64, genus string, claims *Claims) (enti
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains, err := strainsFromCharacteristicId(id, genus, claims)
+	strains, strain_opts, err := strainsFromCharacteristicId(id, genus, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	species_opt, err := speciesOptsFromStrains(*strain_opts)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	species, err := listSpecies(*species_opt, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
@@ -136,6 +159,7 @@ func (c CharacteristicService) get(id int64, genus string, claims *Claims) (enti
 		Characteristic: characteristic,
 		Measurements:   nil,
 		Strains:        strains,
+		Species:        species,
 		Meta: &CharacteristicMeta{
 			CanAdd: canAdd(claims),
 		},
@@ -197,7 +221,7 @@ func strainOptsFromCharacteristics(opt ListOptions) (*ListOptions, error) {
 	return &ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
 }
 
-func strainsFromCharacteristicId(id int64, genus string, claims *Claims) (*Strains, error) {
+func strainsFromCharacteristicId(id int64, genus string, claims *Claims) (*Strains, *ListOptions, error) {
 	opt := ListOptions{
 		Genus: genus,
 		Ids:   []int64{id},
@@ -205,15 +229,15 @@ func strainsFromCharacteristicId(id int64, genus string, claims *Claims) (*Strai
 
 	strains_opt, err := strainOptsFromCharacteristics(opt)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	strains, err := listStrains(*strains_opt, claims)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return strains, nil
+	return strains, strains_opt, nil
 }
 
 func getCharacteristic(id int64, claims *Claims) (*Characteristic, error) {
