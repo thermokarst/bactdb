@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
+
+	"github.com/jmoiron/modl"
 )
 
 var (
@@ -19,9 +20,20 @@ func init() {
 	DB.AddTableWithName(CharacteristicBase{}, "characteristics").SetKeys(true, "Id")
 }
 
+func (c *CharacteristicBase) PreInsert(e modl.SqlExecutor) error {
+	ct := currentTime()
+	c.CreatedAt = ct
+	c.UpdatedAt = ct
+	return nil
+}
+
+func (c *CharacteristicBase) PreUpdate(e modl.SqlExecutor) error {
+	c.UpdatedAt = currentTime()
+	return nil
+}
+
 type CharacteristicService struct{}
 
-// A Characteristic is a lookup type
 type CharacteristicBase struct {
 	Id                   int64     `json:"id,omitempty"`
 	CharacteristicName   string    `db:"characteristic_name" json:"characteristicName"`
@@ -40,24 +52,35 @@ type Characteristic struct {
 	Measurements       NullSliceInt64 `db:"measurements" json:"measurements"`
 	Strains            NullSliceInt64 `db:"strains" json:"strains"`
 	CharacteristicType string         `db:"characteristic_type_name" json:"characteristicTypeName"`
+	CanEdit            bool           `db:"-" json:"canEdit"`
 }
 
 type Characteristics []*Characteristic
 
-type CharacteristicJSON struct {
-	Characteristic *Characteristic `json:"characteristic"`
+type CharacteristicMeta struct {
+	CanAdd bool `json:"canAdd"`
 }
 
-type CharacteristicsJSON struct {
-	Characteristics *Characteristics `json:"characteristics"`
+type CharacteristicPayload struct {
+	Characteristic *Characteristic     `json:"characteristic"`
+	Measurements   *Measurements       `json:"measurements"`
+	Strains        *Strains            `json:"strains"`
+	Meta           *CharacteristicMeta `json:"meta"`
 }
 
-func (c *Characteristic) marshal() ([]byte, error) {
-	return json.Marshal(&CharacteristicJSON{Characteristic: c})
+type CharacteristicsPayload struct {
+	Characteristics *Characteristics    `json:"characteristics"`
+	Measurements    *Measurements       `json:"measurements"`
+	Strains         *Strains            `json:"strains"`
+	Meta            *CharacteristicMeta `json:"meta"`
 }
 
-func (c *Characteristics) marshal() ([]byte, error) {
-	return json.Marshal(&CharacteristicsJSON{Characteristics: c})
+func (c *CharacteristicPayload) marshal() ([]byte, error) {
+	return json.Marshal(c)
+}
+
+func (c *CharacteristicsPayload) marshal() ([]byte, error) {
+	return json.Marshal(c)
 }
 
 func (c CharacteristicService) list(val *url.Values, claims *Claims) (entity, *appError) {
@@ -69,8 +92,62 @@ func (c CharacteristicService) list(val *url.Values, claims *Claims) (entity, *a
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
+	characteristics, err := listCharacteristics(opt, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	strains_opt, err := strainOptsFromCharacteristics(opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	strains, err := listStrains(*strains_opt, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	// TODO: tack on measurements
+	payload := CharacteristicsPayload{
+		Characteristics: characteristics,
+		Measurements:    nil,
+		Strains:         strains,
+		Meta: &CharacteristicMeta{
+			CanAdd: canAdd(claims),
+		},
+	}
+
+	return &payload, nil
+}
+
+func (c CharacteristicService) get(id int64, genus string, claims *Claims) (entity, *appError) {
+	characteristic, err := getCharacteristic(id, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	strains, err := strainsFromCharacteristicId(id, genus, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	// TODO: tack on measurements
+	payload := CharacteristicPayload{
+		Characteristic: characteristic,
+		Measurements:   nil,
+		Strains:        strains,
+		Meta: &CharacteristicMeta{
+			CanAdd: canAdd(claims),
+		},
+	}
+
+	return &payload, nil
+}
+
+func listCharacteristics(opt ListOptions, claims *Claims) (*Characteristics, error) {
 	var vals []interface{}
-	sql := `SELECT c.*, array_agg(m.id) AS measurements,
+
+	q := `SELECT c.*, array_agg(m.id) AS measurements,
 			array_agg(st.id) AS strains, ct.characteristic_type_name
 			FROM characteristics c
 			INNER JOIN characteristic_types ct ON ct.id=c.characteristic_type_id
@@ -78,29 +155,68 @@ func (c CharacteristicService) list(val *url.Values, claims *Claims) (entity, *a
 			LEFT OUTER JOIN strains st ON st.id=m.strain_id`
 
 	if len(opt.Ids) != 0 {
-		var conds []string
+		var counter int64 = 1
+		w := valsIn("c.id", opt.Ids, &vals, &counter)
 
-		c := "c.id IN ("
-		for i, id := range opt.Ids {
-			c = c + fmt.Sprintf("$%v,", i+1) // start param index at 1
-			vals = append(vals, id)
-		}
-		c = c[:len(c)-1] + ")"
-		conds = append(conds, c)
-		sql += " WHERE (" + strings.Join(conds, ") AND (") + ")"
+		q += fmt.Sprintf(" WHERE %s", w)
 	}
 
-	sql += " GROUP BY c.id, ct.characteristic_type_name;"
+	q += " GROUP BY c.id, ct.characteristic_type_name;"
 
 	characteristics := make(Characteristics, 0)
-	err := DBH.Select(&characteristics, sql, vals...)
+	err := DBH.Select(&characteristics, q, vals...)
 	if err != nil {
-		return nil, newJSONError(err, http.StatusInternalServerError)
+		return nil, err
 	}
+
+	for _, c := range characteristics {
+		c.CanEdit = canEdit(claims, c.CreatedBy)
+	}
+
 	return &characteristics, nil
 }
 
-func (c CharacteristicService) get(id int64, dummy string, claims *Claims) (entity, *appError) {
+func strainOptsFromCharacteristics(opt ListOptions) (*ListOptions, error) {
+	relatedStrainIds := make([]int64, 0)
+
+	if opt.Ids == nil {
+		q := `SELECT DISTINCT strain_id FROM measurements;`
+		if err := DBH.Select(&relatedStrainIds, q); err != nil {
+			return nil, err
+		}
+	} else {
+		var vals []interface{}
+		var count int64 = 1
+		q := fmt.Sprintf("SELECT DISTINCT strain_id FROM measurements WHERE %s;", valsIn("characteristic_id", opt.Ids, &vals, &count))
+
+		if err := DBH.Select(&relatedStrainIds, q, vals...); err != nil {
+			return nil, err
+		}
+	}
+
+	return &ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
+}
+
+func strainsFromCharacteristicId(id int64, genus string, claims *Claims) (*Strains, error) {
+	opt := ListOptions{
+		Genus: genus,
+		Ids:   []int64{id},
+	}
+
+	strains_opt, err := strainOptsFromCharacteristics(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	strains, err := listStrains(*strains_opt, claims)
+	if err != nil {
+		return nil, err
+	}
+
+	return strains, nil
+}
+
+func getCharacteristic(id int64, claims *Claims) (*Characteristic, error) {
 	var characteristic Characteristic
 	q := `SELECT c.*, array_agg(m.id) AS measurements,
 			array_agg(st.id) AS strains, ct.characteristic_type_name
@@ -112,9 +228,12 @@ func (c CharacteristicService) get(id int64, dummy string, claims *Claims) (enti
 			GROUP BY c.id, ct.characteristic_type_name;`
 	if err := DBH.SelectOne(&characteristic, q, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrCharacteristicNotFoundJSON
+			return nil, ErrCharacteristicNotFound
 		}
-		return nil, newJSONError(err, http.StatusInternalServerError)
+		return nil, err
 	}
+
+	characteristic.CanEdit = canEdit(claims, characteristic.CreatedBy)
+
 	return &characteristic, nil
 }
