@@ -35,7 +35,6 @@ func (s *StrainBase) PreUpdate(e modl.SqlExecutor) error {
 
 type StrainService struct{}
 
-// StrainBase is what the DB expects to see for inserts/updates
 type StrainBase struct {
 	Id                  int64      `db:"id" json:"id"`
 	SpeciesId           int64      `db:"species_id" json:"species"`
@@ -59,7 +58,7 @@ type Strain struct {
 	Measurements      NullSliceInt64 `db:"measurements" json:"measurements"`
 	TotalMeasurements int64          `db:"total_measurements" json:"totalMeasurements"`
 	SortOrder         int64          `db:"sort_order" json:"sortOrder"`
-	CanEdit           bool           `db:"can_edit" json:"canEdit"`
+	CanEdit           bool           `db:"-" json:"canEdit"`
 }
 
 type Strains []*Strain

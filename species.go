@@ -35,7 +35,6 @@ func (s *SpeciesBase) PreUpdate(e modl.SqlExecutor) error {
 
 type SpeciesService struct{}
 
-// SpeciesBase is what the DB expects to see for inserts/updates
 type SpeciesBase struct {
 	Id                  int64      `db:"id" json:"id"`
 	GenusID             int64      `db:"genus_id" json:"-"`

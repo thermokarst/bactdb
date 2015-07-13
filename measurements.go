@@ -40,7 +40,6 @@ type MeasurementBase struct {
 	UpdatedBy             int64       `db:"updated_by" json:"updatedBy"`
 }
 
-// Measurement & MeasurementJSON(s) are what ember expects to see
 type Measurement struct {
 	*MeasurementBase
 	TextMeasurementType NullString `db:"text_measurement_type_name" json:"textMeasurementType"`
