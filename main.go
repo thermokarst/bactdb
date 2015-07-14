@@ -126,13 +126,36 @@ func cmdMigrateDb(c *cli.Context) {
 		log.Fatal("Error initializing migrations: ", err)
 	}
 
+	users := make(Users, 0)
+
 	if c.Bool("drop") {
+		// Back up users table
+		if err := DBH.Select(&users, `SELECT * FROM users;`); err != nil {
+			log.Fatal("Couldn't back up identity tables: ", err)
+		}
+		log.Printf("%+v Users", len(users))
+
+		// Drop tables
 		if err = migrator.RollbackAll(); err != nil && err != gomigrate.NoActiveMigrations {
 			log.Fatal("Error rolling back migrations: ", err)
 		}
 	}
+
 	// Run migrations
 	if err = migrator.Migrate(); err != nil {
 		log.Fatal("Error applying migrations: ", err)
+	}
+
+	// If we dropped, restore the user records
+	if c.Bool("drop") {
+		// Stick users back into DB
+		if len(users) > 0 {
+			// varargs don't seem to work here, loop instead
+			for _, user := range users {
+				if err := DBH.Insert(user); err != nil {
+					log.Fatal("Couldn't restore user: ", err)
+				}
+			}
+		}
 	}
 }
