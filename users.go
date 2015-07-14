@@ -185,7 +185,7 @@ func (u UserService) create(e *entity, dummy string, claims *Claims) *appError {
 	ct := currentTime()
 	user.CreatedAt = ct
 	user.UpdatedAt = ct
-	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
