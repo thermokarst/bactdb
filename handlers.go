@@ -83,7 +83,7 @@ func Handler() http.Handler {
 	s := m.PathPrefix("/{genus}").Subrouter()
 
 	s.Handle("/users", errorHandler(handleCreater(userService))).Methods("POST")
-	s.Handle("/users/verify/{Nonce}", http.HandlerFunc(handleUserVerify)).Methods("GET")
+	s.Handle("/users/verify/{Nonce}", errorHandler(handleUserVerify)).Methods("GET")
 
 	type r struct {
 		f errorHandler

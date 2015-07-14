@@ -270,7 +270,7 @@ func dbGetUserByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
-func handleUserVerify(w http.ResponseWriter, r *http.Request) {
+func handleUserVerify(w http.ResponseWriter, r *http.Request) *appError {
 	nonce := mux.Vars(r)["Nonce"]
 	q := `SELECT user_id, referer FROM verification WHERE nonce=$1;`
 
@@ -280,22 +280,16 @@ func handleUserVerify(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := DBH.SelectOne(&ver, q, nonce); err != nil {
 		log.Print(err)
-		fmt.Fprintln(w, "Invalid URL")
-		return
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	failURL := fmt.Sprintf("%s/users/new/fail", ver.Referer)
-	successURL := fmt.Sprintf("%s/users/new/success", ver.Referer)
-
 	if ver.User_id == 0 {
-		http.Redirect(w, r, failURL, http.StatusMovedPermanently)
-		return
+		return newJSONError(errors.New("No user found"), http.StatusInternalServerError)
 	}
 
 	var user User
 	if err := DBH.Get(&user, ver.User_id); err != nil {
-		http.Redirect(w, r, failURL, http.StatusMovedPermanently)
-		return
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 
 	user.UpdatedAt = currentTime()
@@ -303,19 +297,17 @@ func handleUserVerify(w http.ResponseWriter, r *http.Request) {
 
 	count, err := DBH.Update(&user)
 	if err != nil {
-		http.Redirect(w, r, failURL, http.StatusMovedPermanently)
-		return
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
-		http.Redirect(w, r, failURL, http.StatusMovedPermanently)
-		return
+		return newJSONError(errors.New("Count 0"), http.StatusInternalServerError)
 	}
 
 	q = `DELETE FROM verification WHERE user_id=$1;`
 	_, err = DBH.Exec(q, user.Id)
 	if err != nil {
-		http.Redirect(w, r, failURL, http.StatusMovedPermanently)
-		return
+		return newJSONError(err, http.StatusInternalServerError)
 	}
-	http.Redirect(w, r, successURL, http.StatusMovedPermanently)
+	fmt.Fprintln(w, `{"msg":"All set! Please log in."}`)
+	return nil
 }
