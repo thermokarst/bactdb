@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+
+	"github.com/jmoiron/modl"
 )
 
 var (
@@ -15,6 +17,18 @@ var (
 
 func init() {
 	DB.AddTableWithName(MeasurementBase{}, "measurements").SetKeys(true, "Id")
+}
+
+func (m *MeasurementBase) PreInsert(e modl.SqlExecutor) error {
+	ct := currentTime()
+	m.CreatedAt = ct
+	m.UpdatedAt = ct
+	return nil
+}
+
+func (m *MeasurementBase) PreUpdate(e modl.SqlExecutor) error {
+	m.UpdatedAt = currentTime()
+	return nil
 }
 
 type MeasurementService struct{}
@@ -45,41 +59,76 @@ type Measurement struct {
 	TextMeasurementType NullString `db:"text_measurement_type_name" json:"textMeasurementType"`
 	UnitType            NullString `db:"unit_type_name" json:"unitType"`
 	TestMethod          NullString `db:"test_method_name" json:"testMethod"`
+	CanEdit             bool       `db:"-" json:"canEdit"`
 }
 
 type Measurements []*Measurement
 
-type MeasurementJSON struct {
+type MeasurementMeta struct {
+	CanAdd bool `json:"canAdd"`
+}
+
+type MeasurementPayload struct {
 	Measurement *Measurement `json:"measurement"`
 }
 
-type MeasurementsJSON struct {
+// TODO: Add related models
+type MeasurementsPayload struct {
 	Measurements *Measurements `json:"measurements"`
 }
 
-func (m *Measurement) marshal() ([]byte, error) {
-	return json.Marshal(&MeasurementJSON{Measurement: m})
+func (m *MeasurementPayload) marshal() ([]byte, error) {
+	return json.Marshal(m)
 }
 
-func (m *Measurements) marshal() ([]byte, error) {
-	return json.Marshal(&MeasurementsJSON{Measurements: m})
+func (m *MeasurementsPayload) marshal() ([]byte, error) {
+	return json.Marshal(m)
+}
+
+type MeasurementListOptions struct {
+	ListOptions
+	Strains         []int64 `schema:"strain_ids"`
+	Characteristics []int64 `schema:"characteristic_ids"`
 }
 
 func (m MeasurementService) list(val *url.Values, claims *Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON
 	}
-	var opt struct {
-		ListOptions
-		Strains         []int64 `schema:"strain[]"`
-		Characteristics []int64 `schema:"characteristic[]"`
-	}
+	var opt MeasurementListOptions
 	if err := schemaDecoder.Decode(&opt, *val); err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
+	measurements, err := listMeasurements(opt, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	payload := MeasurementsPayload{
+		Measurements: measurements,
+	}
+
+	return &payload, nil
+}
+
+func (m MeasurementService) get(id int64, genus string, claims *Claims) (entity, *appError) {
+	measurement, err := getMeasurement(id, genus, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	payload := MeasurementPayload{
+		Measurement: measurement,
+	}
+
+	return &payload, nil
+}
+
+func listMeasurements(opt MeasurementListOptions, claims *Claims) (*Measurements, error) {
 	var vals []interface{}
-	sql := `SELECT m.*, t.text_measurement_name AS text_measurement_type_name,
+
+	q := `SELECT m.*, t.text_measurement_name AS text_measurement_type_name,
 		u.symbol AS unit_type_name, te.name AS test_method_name
 		FROM measurements m
 		INNER JOIN strains st ON st.id=m.strain_id
@@ -97,54 +146,56 @@ func (m MeasurementService) list(val *url.Values, claims *Claims) (entity, *appE
 
 	if strainIds || charIds || ids {
 		var paramsCounter int64 = 2
-		sql += "\nWHERE ("
+		q += "\nWHERE ("
 
 		// Filter by strains
 		if strainIds {
-			sStr := valsIn("st.id", opt.Strains, &vals, &paramsCounter)
-			sql += sStr
+			q += valsIn("st.id", opt.Strains, &vals, &paramsCounter)
 		}
 
 		if strainIds && (charIds || ids) {
-			sql += " AND "
+			q += " AND "
 		}
 
 		// Filter by characteristics
 		if charIds {
-			sChar := valsIn("c.id", opt.Characteristics, &vals, &paramsCounter)
-			sql += sChar
+			q += valsIn("c.id", opt.Characteristics, &vals, &paramsCounter)
 		}
 
 		if charIds && ids {
-			sql += " AND "
+			q += " AND "
 		}
 
 		// Get specific records
 		if ids {
-			sId := valsIn("m.id", opt.Ids, &vals, &paramsCounter)
-			sql += sId
+			q += valsIn("m.id", opt.Ids, &vals, &paramsCounter)
 		}
-		sql += ")"
+		q += ")"
 	}
-
-	sql += ";"
+	q += ";"
 
 	measurements := make(Measurements, 0)
-	err := DBH.Select(&measurements, sql, vals...)
+	err := DBH.Select(&measurements, q, vals...)
 	if err != nil {
-		return nil, newJSONError(err, http.StatusInternalServerError)
+		return nil, err
 	}
+
+	for _, m := range measurements {
+		m.CanEdit = canEdit(claims, m.CreatedBy)
+	}
+
 	return &measurements, nil
 }
 
-func (m MeasurementService) get(id int64, genus string, claims *Claims) (entity, *appError) {
+func getMeasurement(id int64, genus string, claims *Claims) (*Measurement, error) {
 	var measurement Measurement
+
 	q := `SELECT m.*, t.text_measurement_name AS text_measurement_type_name,
 		u.symbol AS unit_type_name, te.name AS test_method_name
 		FROM measurements m
 		INNER JOIN strains st ON st.id=m.strain_id
 		INNER JOIN species sp ON sp.id=st.species_id
-		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=$1
+		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
 		LEFT OUTER JOIN characteristics c ON c.id=m.characteristic_id
 		LEFT OUTER JOIN text_measurement_types t ON t.id=m.text_measurement_type_id
 		LEFT OUTER JOIN unit_types u ON u.id=m.unit_type_id
@@ -152,9 +203,12 @@ func (m MeasurementService) get(id int64, genus string, claims *Claims) (entity,
 		WHERE m.id=$2;`
 	if err := DBH.SelectOne(&measurement, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrMeasurementNotFoundJSON
+			return nil, ErrMeasurementNotFound
 		}
-		return nil, newJSONError(err, http.StatusInternalServerError)
+		return nil, err
 	}
+
+	measurement.CanEdit = canEdit(claims, measurement.CreatedBy)
+
 	return &measurement, nil
 }
