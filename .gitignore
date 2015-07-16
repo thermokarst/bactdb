@@ -24,5 +24,4 @@ _testmain.go
 *.prof
 
 # Application specific
-gin-bin
-
+.env
