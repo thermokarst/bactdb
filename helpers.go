@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-	"unicode"
 
 	"github.com/gorilla/context"
 	"github.com/lib/pq"
@@ -71,26 +70,6 @@ func currentTime() NullTime {
 			Valid: true,
 		},
 	}
-}
-
-// http://stackoverflow.com/a/25840157/313548
-func verifyPassword(s string) (sevenOrMore, number, upper bool) {
-	letters := 0
-	for _, s := range s {
-		switch {
-		case unicode.IsNumber(s):
-			number = true
-		case unicode.IsUpper(s):
-			upper = true
-			letters++
-		case unicode.IsLetter(s) || s == ' ':
-			letters++
-		default:
-			// returns false, false, false, false
-		}
-	}
-	sevenOrMore = letters >= 7
-	return
 }
 
 func generateNonce() (string, error) {

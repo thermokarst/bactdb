@@ -106,16 +106,9 @@ func (u *User) validate() error {
 		validationError = true
 	}
 
-	if u.Password == "" {
-		uv.Password = append(uv.Password, MustProvideAValue)
+	if len(u.Password) < 8 {
+		uv.Password = append(uv.Password, "Password must be at least 8 characters")
 		validationError = true
-	} else {
-		sevenOrMore, number, upper := verifyPassword(u.Password)
-		if !sevenOrMore || !number || !upper {
-			uv.Password = append(uv.Password, "Password must be at least 8 characters"+
-				" long, and have at least one number and one uppercase letter")
-			validationError = true
-		}
 	}
 
 	if validationError {
