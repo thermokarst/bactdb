@@ -304,3 +304,45 @@ func handleUserVerify(w http.ResponseWriter, r *http.Request) *appError {
 	fmt.Fprintln(w, `{"msg":"All set! Please log in."}`)
 	return nil
 }
+
+func handleUserLockout(w http.ResponseWriter, r *http.Request) *appError {
+	email := r.FormValue("email")
+	if email == "" {
+		return newJSONError(errors.New("missing email"), http.StatusInternalServerError)
+	}
+	token, err := j.CreateToken(email)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+	origin := r.Header.Get("Origin")
+	hostUrl, err := url.Parse(origin)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+	hostUrl.Path += "/users/lockoutauthenticate"
+	params := url.Values{}
+	params.Add("token", token)
+	hostUrl.RawQuery = params.Encode()
+
+	// Send out email
+	mg, ok := mgAccts[origin]
+	if ok {
+		sender := fmt.Sprintf("%s Admin <admin@%s>", mg.Domain(), mg.Domain())
+		recipient := fmt.Sprintf("%s", email)
+		subject := fmt.Sprintf("Password Reset Request - %s", mg.Domain())
+		message := fmt.Sprintf("You are receiving this message because this email "+
+			"address was used in an account lockout request at %s. Please visit "+
+			"this URL to complete the process: %s. If you did not request help "+
+			"with a lockout, please disregard this message.",
+			mg.Domain(), hostUrl.String())
+		m := mailgun.NewMessage(sender, subject, message, recipient)
+		_, _, err := mg.Send(m)
+		if err != nil {
+			log.Printf("%+v\n", err)
+			return newJSONError(err, http.StatusInternalServerError)
+		}
+	}
+
+	fmt.Fprintln(w, `{}`)
+	return nil
+}

@@ -17,6 +17,11 @@ import (
 	"github.com/thermokarst/jwt"
 )
 
+var (
+	config *jwt.Config
+	j      *jwt.Middleware
+)
+
 type Claims struct {
 	Name string
 	Iss  string
@@ -59,13 +64,14 @@ func Handler() http.Handler {
 		return nil
 	}
 
-	config := &jwt.Config{
+	config = &jwt.Config{
 		Secret: os.Getenv("SECRET"),
 		Auth:   dbAuthenticate,
 		Claims: claimsFunc,
 	}
 
-	j, err := jwt.New(config)
+	var err error
+	j, err = jwt.New(config)
 	if err != nil {
 		panic(err)
 	}
@@ -77,13 +83,14 @@ func Handler() http.Handler {
 	characteristicService := CharacteristicService{}
 	measurementService := MeasurementService{}
 
-	m.Handle("/authenticate", tokenHandler(j.GenerateToken())).Methods("POST")
+	m.Handle("/authenticate", tokenHandler(j.Authenticate())).Methods("POST")
 
 	// Everything past here is lumped under a genus
 	s := m.PathPrefix("/{genus}").Subrouter()
 
 	s.Handle("/users", errorHandler(handleCreater(userService))).Methods("POST")
 	s.Handle("/users/verify/{Nonce}", errorHandler(handleUserVerify)).Methods("GET")
+	s.Handle("/users/lockout", errorHandler(handleUserLockout)).Methods("POST")
 
 	type r struct {
 		f errorHandler
