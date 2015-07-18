@@ -92,6 +92,8 @@ func Handler() http.Handler {
 	s.Handle("/users/verify/{Nonce}", errorHandler(handleUserVerify)).Methods("GET")
 	s.Handle("/users/lockout", errorHandler(handleUserLockout)).Methods("POST")
 
+	s.Handle("/compare", j.Secure(errorHandler(handleCompare), verifyClaims)).Methods("GET")
+
 	type r struct {
 		f errorHandler
 		m string

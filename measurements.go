@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -62,6 +63,19 @@ type Measurement struct {
 	CanEdit             bool       `db:"-" json:"canEdit"`
 }
 
+func (m *Measurement) Value() string {
+	if m.TextMeasurementType.Valid {
+		return m.TextMeasurementType.String
+	}
+	if m.TxtValue.Valid {
+		return m.TxtValue.String
+	}
+	if m.NumValue.Valid {
+		return fmt.Sprintf("%f", m.NumValue.Float64)
+	}
+	return ""
+}
+
 type Measurements []*Measurement
 
 type MeasurementMeta struct {
@@ -72,9 +86,10 @@ type MeasurementPayload struct {
 	Measurement *Measurement `json:"measurement"`
 }
 
-// TODO: Add related models
 type MeasurementsPayload struct {
-	Measurements *Measurements `json:"measurements"`
+	Strains         *Strains         `json:"strains"`
+	Characteristics *Characteristics `json:"characteristics"`
+	Measurements    *Measurements    `json:"measurements"`
 }
 
 func (m *MeasurementPayload) marshal() ([]byte, error) {
@@ -105,8 +120,30 @@ func (m MeasurementService) list(val *url.Values, claims *Claims) (entity, *appE
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
+	char_opts, err := characteristicOptsFromMeasurements(opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	characteristics, err := listCharacteristics(*char_opts, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	strain_opts, err := strainOptsFromMeasurements(opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	strains, err := listStrains(*strain_opts, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
 	payload := MeasurementsPayload{
-		Measurements: measurements,
+		Characteristics: characteristics,
+		Strains:         strains,
+		Measurements:    measurements,
 	}
 
 	return &payload, nil
@@ -211,4 +248,12 @@ func getMeasurement(id int64, genus string, claims *Claims) (*Measurement, error
 	measurement.CanEdit = canEdit(claims, measurement.CreatedBy)
 
 	return &measurement, nil
+}
+
+func characteristicOptsFromMeasurements(opt MeasurementListOptions) (*ListOptions, error) {
+	return &ListOptions{Genus: opt.Genus, Ids: opt.Characteristics}, nil
+}
+
+func strainOptsFromMeasurements(opt MeasurementListOptions) (*ListOptions, error) {
+	return &ListOptions{Genus: opt.Genus, Ids: opt.Strains}, nil
 }
