@@ -154,10 +154,8 @@ func (t *NullTime) UnmarshalJSON(b []byte) error {
 	var err error
 	json.Unmarshal(b, &x)
 	switch x.(type) {
-	case time.Time:
+	case string:
 		err = json.Unmarshal(b, &t.Time)
-	case map[string]interface{}:
-		err = json.Unmarshal(b, &t.NullTime)
 	}
 	t.Valid = true
 	return err
