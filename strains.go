@@ -40,7 +40,7 @@ type StrainBase struct {
 	SpeciesId           int64      `db:"species_id" json:"species"`
 	StrainName          string     `db:"strain_name" json:"strainName"`
 	TypeStrain          bool       `db:"type_strain" json:"typeStrain"`
-	AccessionNumbers    string     `db:"accession_numbers" json:"accessionNumbers"`
+	AccessionNumbers    NullString `db:"accession_numbers" json:"accessionNumbers"`
 	Genbank             NullString `db:"genbank" json:"genbank"`
 	WholeGenomeSequence NullString `db:"whole_genome_sequence" json:"wholeGenomeSequence"`
 	IsolatedFrom        NullString `db:"isolated_from" json:"isolatedFrom"`
