@@ -93,6 +93,14 @@ func (s StrainService) unmarshal(b []byte) (entity, error) {
 	return &sj, err
 }
 
+func (s StrainBase) SpeciesName() string {
+	var species SpeciesBase
+	if err := DBH.Get(&species, s.SpeciesId); err != nil {
+		return ""
+	}
+	return species.SpeciesName
+}
+
 func (s StrainService) list(val *url.Values, claims *Claims) (entity, *appError) {
 	if val == nil {
 		return nil, ErrMustProvideOptionsJSON

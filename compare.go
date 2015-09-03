@@ -80,7 +80,7 @@ func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
 		// maps to translate ids
 		strains := make(map[string]string)
 		for _, strain := range *measurementsPayload.Strains {
-			strains[fmt.Sprintf("%d", strain.Id)] = strain.StrainName
+			strains[fmt.Sprintf("%d", strain.Id)] = fmt.Sprintf("%s (%s)", strain.SpeciesName(), strain.StrainName)
 		}
 		characteristics := make(map[string]string)
 		for _, characteristic := range *measurementsPayload.Characteristics {
@@ -91,7 +91,7 @@ func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
 		wr := csv.NewWriter(b)
 
 		// Write header row
-		r := []string{""}
+		r := []string{"Characteristic"}
 		for _, strain_id := range strain_ids {
 			r = append(r, strains[strain_id])
 		}
