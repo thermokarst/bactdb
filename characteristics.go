@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	ErrCharacteristicNotFound     = errors.New("Characteristic not found")
-	ErrCharacteristicNotFoundJSON = newJSONError(ErrCharacteristicNotFound, http.StatusNotFound)
+	ErrCharacteristicNotFound   = errors.New("Characteristic not found")
+	ErrCharacteristicNotUpdated = errors.New("Characteristic not updated")
 )
 
 func init() {
@@ -62,11 +62,10 @@ type CharacteristicMeta struct {
 }
 
 type CharacteristicPayload struct {
-	Characteristic *Characteristic     `json:"characteristic"`
-	Measurements   *Measurements       `json:"measurements"`
-	Strains        *Strains            `json:"strains"`
-	Species        *ManySpecies        `json:"species"`
-	Meta           *CharacteristicMeta `json:"meta"`
+	Characteristic *Characteristic `json:"characteristic"`
+	Measurements   *Measurements   `json:"measurements"`
+	Strains        *Strains        `json:"strains"`
+	Species        *ManySpecies    `json:"species"`
 }
 
 type CharacteristicsPayload struct {
@@ -83,6 +82,12 @@ func (c *CharacteristicPayload) marshal() ([]byte, error) {
 
 func (c *CharacteristicsPayload) marshal() ([]byte, error) {
 	return json.Marshal(c)
+}
+
+func (c CharacteristicService) unmarshal(b []byte) (entity, error) {
+	var cj CharacteristicPayload
+	err := json.Unmarshal(b, &cj)
+	return &cj, err
 }
 
 func (c CharacteristicService) list(val *url.Values, claims *Claims) (entity, *appError) {
@@ -160,12 +165,54 @@ func (c CharacteristicService) get(id int64, genus string, claims *Claims) (enti
 		Measurements:   nil,
 		Strains:        strains,
 		Species:        species,
-		Meta: &CharacteristicMeta{
-			CanAdd: canAdd(claims),
-		},
 	}
 
 	return &payload, nil
+}
+
+func (c CharacteristicService) update(id int64, e *entity, genus string, claims *Claims) *appError {
+	payload := (*e).(*CharacteristicPayload)
+	payload.Characteristic.UpdatedBy = claims.Sub
+	payload.Characteristic.Id = id
+
+	// First, handle Characteristic Type
+	id, err := insertOrGetCharacteristicType(payload.Characteristic.CharacteristicType, claims)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	payload.Characteristic.CanEdit = canEdit(claims, payload.Characteristic.CreatedBy)
+
+	payload.Characteristic.CharacteristicTypeId = id
+	count, err := DBH.Update(payload.Characteristic.CharacteristicBase)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+	if count != 1 {
+		return newJSONError(ErrCharacteristicNotUpdated, http.StatusBadRequest)
+	}
+
+	strains, strain_opts, err := strainsFromCharacteristicId(id, genus, claims)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	species_opt, err := speciesOptsFromStrains(*strain_opts)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	species, err := listSpecies(*species_opt, claims)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	payload.Strains = strains
+	// TODO: tack on measurements
+	payload.Measurements = nil
+	payload.Species = species
+
+	return nil
 }
 
 func listCharacteristics(opt ListOptions, claims *Claims) (*Characteristics, error) {
@@ -260,4 +307,30 @@ func getCharacteristic(id int64, claims *Claims) (*Characteristic, error) {
 	characteristic.CanEdit = canEdit(claims, characteristic.CreatedBy)
 
 	return &characteristic, nil
+}
+
+func insertOrGetCharacteristicType(val string, claims *Claims) (int64, error) {
+	var id int64
+	q := `SELECT id FROM characteristic_types WHERE characteristic_type_name=$1;`
+	if err := DBH.SelectOne(&id, q, val); err != nil {
+		if err == sql.ErrNoRows {
+			i := `INSERT INTO characteristic_types
+				(characteristic_type_name, created_at, updated_at, created_by, updated_by)
+				VALUES ($1, $2, $3, $4, $5) RETURNING id;`
+			ct := currentTime()
+			var result sql.Result
+			var insertErr error
+			stmt, err := DB.Db.Prepare(i)
+			if result, insertErr = stmt.Exec(val, ct, ct, claims.Sub, claims.Sub); insertErr != nil {
+				return 0, insertErr
+			}
+			id, err = result.LastInsertId()
+			if err != nil {
+				return 0, err
+			}
+		} else {
+			return 0, err
+		}
+	}
+	return id, nil
 }

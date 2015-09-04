@@ -115,6 +115,7 @@ func Handler() http.Handler {
 		r{handleUpdater(strainService), "PUT", "/strains/{Id:.+}"},
 		r{handleLister(characteristicService), "GET", "/characteristics"},
 		r{handleGetter(characteristicService), "GET", "/characteristics/{Id:.+}"},
+		r{handleUpdater(characteristicService), "PUT", "/characteristics/{Id:.+}"},
 		r{handleLister(measurementService), "GET", "/measurements"},
 		r{handleGetter(measurementService), "GET", "/measurements/{Id:.+}"},
 	}
