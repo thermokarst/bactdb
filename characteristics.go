@@ -62,10 +62,11 @@ type CharacteristicMeta struct {
 }
 
 type CharacteristicPayload struct {
-	Characteristic *Characteristic `json:"characteristic"`
-	Measurements   *Measurements   `json:"measurements"`
-	Strains        *Strains        `json:"strains"`
-	Species        *ManySpecies    `json:"species"`
+	Characteristic *Characteristic     `json:"characteristic"`
+	Measurements   *Measurements       `json:"measurements"`
+	Strains        *Strains            `json:"strains"`
+	Species        *ManySpecies        `json:"species"`
+	Meta           *CharacteristicMeta `json:"meta"`
 }
 
 type CharacteristicsPayload struct {
@@ -228,18 +229,45 @@ func (c CharacteristicService) update(id int64, e *entity, genus string, claims 
 	return nil
 }
 
+func (c CharacteristicService) create(e *entity, genus string, claims *Claims) *appError {
+	payload := (*e).(*CharacteristicPayload)
+	payload.Characteristic.CreatedBy = claims.Sub
+	payload.Characteristic.UpdatedBy = claims.Sub
+
+	id, err := insertOrGetCharacteristicType(payload.Characteristic.CharacteristicType, claims)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+	payload.Characteristic.CharacteristicTypeId = id
+
+	err = DBH.Insert(payload.Characteristic.CharacteristicBase)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	characteristic, err := getCharacteristic(payload.Characteristic.Id, genus, claims)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	payload.Characteristic = characteristic
+	payload.Meta = &CharacteristicMeta{
+		CanAdd: canAdd(claims),
+	}
+	return nil
+}
+
 func listCharacteristics(opt ListOptions, claims *Claims) (*Characteristics, error) {
 	var vals []interface{}
 
-	q := `SELECT c.*, array_agg(m.id) AS measurements,
-			array_agg(st.id) AS strains,
-			ct.characteristic_type_name
-			FROM characteristics c
-			INNER JOIN characteristic_types ct ON ct.id=c.characteristic_type_id
-			LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id
-			LEFT OUTER JOIN strains st ON st.id=m.strain_id
+	q := `SELECT c.*, ct.characteristic_type_name,
+			array_agg(DISTINCT st.id) AS strains, array_agg(DISTINCT m.id) AS measurements
+			FROM strains st
 			INNER JOIN species sp ON sp.id=st.species_id
-			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)`
+			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
+			INNER JOIN measurements m ON m.strain_id=st.id
+			RIGHT OUTER JOIN characteristics c ON c.id=m.characteristic_id
+			INNER JOIN characteristic_types ct ON ct.id=c.characteristic_type_id`
 	vals = append(vals, opt.Genus)
 
 	if len(opt.Ids) != 0 {
@@ -357,16 +385,16 @@ func measurementsFromCharacteristicId(id int64, genus string, claims *Claims) (*
 
 func getCharacteristic(id int64, genus string, claims *Claims) (*Characteristic, error) {
 	var characteristic Characteristic
-	q := `SELECT c.*, array_agg(m.id) AS measurements,
-			array_agg(st.id) AS strains, ct.characteristic_type_name
-			FROM characteristics c
-			INNER JOIN characteristic_types ct ON ct.id=c.characteristic_type_id
-			LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id
-			LEFT OUTER JOIN strains st ON st.id=m.strain_id
-			INNER JOIN species sp ON sp.id=st.species_id
-			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
-			WHERE c.id=$2
-			GROUP BY c.id, ct.characteristic_type_name;`
+	q := `SELECT c.*, ct.characteristic_type_name,
+		array_agg(DISTINCT st.id) AS strains, array_agg(DISTINCT m.id) AS measurements
+		FROM strains st
+		INNER JOIN species sp ON sp.id=st.species_id
+		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
+		INNER JOIN measurements m ON m.strain_id=st.id
+		RIGHT OUTER JOIN characteristics c ON c.id=m.characteristic_id
+		INNER JOIN characteristic_types ct ON ct.id=c.characteristic_type_id
+		WHERE c.id=$2
+		GROUP BY c.id, ct.characteristic_type_name;`
 	if err := DBH.SelectOne(&characteristic, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrCharacteristicNotFound

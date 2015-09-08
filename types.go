@@ -176,8 +176,8 @@ func (i *NullSliceInt64) Scan(src interface{}) error {
 func strToIntSlice(s string) []int64 {
 	r := strings.Trim(s, "{}")
 	a := []int64(nil)
-	if r != "NULL" {
-		for _, t := range strings.Split(r, ",") {
+	for _, t := range strings.Split(r, ",") {
+		if t != "NULL" {
 			i, _ := strconv.ParseInt(t, 10, 64)
 			a = append(a, i)
 		}

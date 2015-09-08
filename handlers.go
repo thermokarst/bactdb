@@ -114,6 +114,7 @@ func Handler() http.Handler {
 		r{handleGetter(strainService), "GET", "/strains/{Id:.+}"},
 		r{handleUpdater(strainService), "PUT", "/strains/{Id:.+}"},
 		r{handleLister(characteristicService), "GET", "/characteristics"},
+		r{handleCreater(characteristicService), "POST", "/characteristics"},
 		r{handleGetter(characteristicService), "GET", "/characteristics/{Id:.+}"},
 		r{handleUpdater(characteristicService), "PUT", "/characteristics/{Id:.+}"},
 		r{handleLister(measurementService), "GET", "/measurements"},
