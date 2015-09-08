@@ -124,10 +124,19 @@ func (c CharacteristicService) list(val *url.Values, claims *Claims) (entity, *a
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	// TODO: tack on measurements
+	measurements_opt, err := measurementOptsFromCharacteristics(opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	measurements, err := listMeasurements(*measurements_opt, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
 	payload := CharacteristicsPayload{
 		Characteristics: characteristics,
-		Measurements:    nil,
+		Measurements:    measurements,
 		Strains:         strains,
 		Species:         species,
 		Meta: &CharacteristicMeta{
@@ -139,7 +148,7 @@ func (c CharacteristicService) list(val *url.Values, claims *Claims) (entity, *a
 }
 
 func (c CharacteristicService) get(id int64, genus string, claims *Claims) (entity, *appError) {
-	characteristic, err := getCharacteristic(id, claims)
+	characteristic, err := getCharacteristic(id, genus, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
@@ -159,10 +168,14 @@ func (c CharacteristicService) get(id int64, genus string, claims *Claims) (enti
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	// TODO: tack on measurements
+	measurements, _, err := measurementsFromCharacteristicId(id, genus, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
 	payload := CharacteristicPayload{
 		Characteristic: characteristic,
-		Measurements:   nil,
+		Measurements:   measurements,
 		Strains:        strains,
 		Species:        species,
 	}
@@ -219,14 +232,18 @@ func listCharacteristics(opt ListOptions, claims *Claims) (*Characteristics, err
 	var vals []interface{}
 
 	q := `SELECT c.*, array_agg(m.id) AS measurements,
-			array_agg(st.id) AS strains, ct.characteristic_type_name
+			array_agg(st.id) AS strains,
+			ct.characteristic_type_name
 			FROM characteristics c
 			INNER JOIN characteristic_types ct ON ct.id=c.characteristic_type_id
 			LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id
-			LEFT OUTER JOIN strains st ON st.id=m.strain_id`
+			LEFT OUTER JOIN strains st ON st.id=m.strain_id
+			INNER JOIN species sp ON sp.id=st.species_id
+			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)`
+	vals = append(vals, opt.Genus)
 
 	if len(opt.Ids) != 0 {
-		var counter int64 = 1
+		var counter int64 = 2
 		w := valsIn("c.id", opt.Ids, &vals, &counter)
 
 		q += fmt.Sprintf(" WHERE %s", w)
@@ -249,16 +266,21 @@ func listCharacteristics(opt ListOptions, claims *Claims) (*Characteristics, err
 
 func strainOptsFromCharacteristics(opt ListOptions) (*ListOptions, error) {
 	relatedStrainIds := make([]int64, 0)
-
+	baseQ := `SELECT DISTINCT m.strain_id
+		FROM measurements m
+		INNER JOIN strains st ON st.id=m.strain_id
+		INNER JOIN species sp ON sp.id=st.species_id
+		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)`
 	if opt.Ids == nil {
-		q := `SELECT DISTINCT strain_id FROM measurements;`
-		if err := DBH.Select(&relatedStrainIds, q); err != nil {
+		q := fmt.Sprintf("%s;", baseQ)
+		if err := DBH.Select(&relatedStrainIds, q, opt.Genus); err != nil {
 			return nil, err
 		}
 	} else {
 		var vals []interface{}
-		var count int64 = 1
-		q := fmt.Sprintf("SELECT DISTINCT strain_id FROM measurements WHERE %s;", valsIn("characteristic_id", opt.Ids, &vals, &count))
+		var count int64 = 2
+		vals = append(vals, opt.Genus)
+		q := fmt.Sprintf("%s WHERE %s ", baseQ, valsIn("m.characteristic_id", opt.Ids, &vals, &count))
 
 		if err := DBH.Select(&relatedStrainIds, q, vals...); err != nil {
 			return nil, err
@@ -266,6 +288,33 @@ func strainOptsFromCharacteristics(opt ListOptions) (*ListOptions, error) {
 	}
 
 	return &ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
+}
+
+func measurementOptsFromCharacteristics(opt ListOptions) (*MeasurementListOptions, error) {
+	relatedMeasurementIds := make([]int64, 0)
+	baseQ := `SELECT m.id
+		FROM measurements m
+		INNER JOIN strains st ON st.id=m.strain_id
+		INNER JOIN species sp ON sp.id=st.species_id
+		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)`
+
+	if opt.Ids == nil {
+		q := fmt.Sprintf("%s;", baseQ)
+		if err := DBH.Select(&relatedMeasurementIds, q, opt.Genus); err != nil {
+			return nil, err
+		}
+	} else {
+		var vals []interface{}
+		var count int64 = 2
+		vals = append(vals, opt.Genus)
+		q := fmt.Sprintf("%s WHERE %s;", baseQ, valsIn("characteristic_id", opt.Ids, &vals, &count))
+
+		if err := DBH.Select(&relatedMeasurementIds, q, vals...); err != nil {
+			return nil, err
+		}
+	}
+
+	return &MeasurementListOptions{ListOptions: ListOptions{Genus: opt.Genus, Ids: relatedMeasurementIds}, Strains: nil, Characteristics: nil}, nil
 }
 
 func strainsFromCharacteristicId(id int64, genus string, claims *Claims) (*Strains, *ListOptions, error) {
@@ -287,7 +336,26 @@ func strainsFromCharacteristicId(id int64, genus string, claims *Claims) (*Strai
 	return strains, strains_opt, nil
 }
 
-func getCharacteristic(id int64, claims *Claims) (*Characteristic, error) {
+func measurementsFromCharacteristicId(id int64, genus string, claims *Claims) (*Measurements, *MeasurementListOptions, error) {
+	opt := ListOptions{
+		Genus: genus,
+		Ids:   []int64{id},
+	}
+
+	measurement_opt, err := measurementOptsFromCharacteristics(opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	measurements, err := listMeasurements(*measurement_opt, claims)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return measurements, measurement_opt, nil
+}
+
+func getCharacteristic(id int64, genus string, claims *Claims) (*Characteristic, error) {
 	var characteristic Characteristic
 	q := `SELECT c.*, array_agg(m.id) AS measurements,
 			array_agg(st.id) AS strains, ct.characteristic_type_name
@@ -295,9 +363,11 @@ func getCharacteristic(id int64, claims *Claims) (*Characteristic, error) {
 			INNER JOIN characteristic_types ct ON ct.id=c.characteristic_type_id
 			LEFT OUTER JOIN measurements m ON m.characteristic_id=c.id
 			LEFT OUTER JOIN strains st ON st.id=m.strain_id
-			WHERE c.id=$1
+			INNER JOIN species sp ON sp.id=st.species_id
+			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
+			WHERE c.id=$2
 			GROUP BY c.id, ct.characteristic_type_name;`
-	if err := DBH.SelectOne(&characteristic, q, id); err != nil {
+	if err := DBH.SelectOne(&characteristic, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrCharacteristicNotFound
 		}

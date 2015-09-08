@@ -287,7 +287,7 @@ func getStrain(id int64, genus string, claims *Claims) (*Strain, error) {
 func speciesOptsFromStrains(opt ListOptions) (*ListOptions, error) {
 	relatedSpeciesIds := make([]int64, 0)
 
-	if opt.Ids == nil {
+	if opt.Ids == nil || len(opt.Ids) == 0 {
 		q := `SELECT DISTINCT st.species_id
 			FROM strains st
 			INNER JOIN species sp ON sp.id=st.species_id
