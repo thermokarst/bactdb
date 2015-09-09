@@ -56,6 +56,7 @@ type StrainBase struct {
 type Strain struct {
 	*StrainBase
 	Measurements      NullSliceInt64 `db:"measurements" json:"measurements"`
+	Characteristics   NullSliceInt64 `db:"characteristics" json:"characteristics"`
 	TotalMeasurements int64          `db:"total_measurements" json:"totalMeasurements"`
 	SortOrder         int64          `db:"sort_order" json:"sortOrder"`
 	CanEdit           bool           `db:"-" json:"canEdit"`
@@ -68,15 +69,19 @@ type StrainMeta struct {
 }
 
 type StrainPayload struct {
-	Strain  *Strain      `json:"strain"`
-	Species *ManySpecies `json:"species"`
-	Meta    *StrainMeta  `json:"meta"`
+	Strain          *Strain          `json:"strain"`
+	Species         *ManySpecies     `json:"species"`
+	Characteristics *Characteristics `json:"characteristics"`
+	Measurements    *Measurements    `json:"measurements"`
+	Meta            *StrainMeta      `json:"meta"`
 }
 
 type StrainsPayload struct {
-	Strains *Strains     `json:"strains"`
-	Species *ManySpecies `json:"species"`
-	Meta    *StrainMeta  `json:"meta"`
+	Strains         *Strains         `json:"strains"`
+	Species         *ManySpecies     `json:"species"`
+	Characteristics *Characteristics `json:"characteristics"`
+	Measurements    *Measurements    `json:"measurements"`
+	Meta            *StrainMeta      `json:"meta"`
 }
 
 func (s *StrainPayload) marshal() ([]byte, error) {
@@ -125,9 +130,44 @@ func (s StrainService) list(val *url.Values, claims *Claims) (entity, *appError)
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
+	characteristics_opt, err := characteristicsOptsFromStrains(opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	characteristics, err := listCharacteristics(*characteristics_opt, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	characteristic_ids := []int64{}
+	for _, c := range *characteristics {
+		characteristic_ids = append(characteristic_ids, c.Id)
+	}
+
+	strain_ids := []int64{}
+	for _, s := range *strains {
+		strain_ids = append(strain_ids, s.Id)
+	}
+
+	measurement_opt := MeasurementListOptions{
+		ListOptions: ListOptions{
+			Genus: opt.Genus,
+		},
+		Strains:         strain_ids,
+		Characteristics: characteristic_ids,
+	}
+
+	measurements, err := listMeasurements(measurement_opt, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
 	payload := StrainsPayload{
-		Strains: strains,
-		Species: species,
+		Strains:         strains,
+		Species:         species,
+		Measurements:    measurements,
+		Characteristics: characteristics,
 		Meta: &StrainMeta{
 			CanAdd: canAdd(claims),
 		},
@@ -147,11 +187,42 @@ func (s StrainService) get(id int64, genus string, claims *Claims) (entity, *app
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
+	opt := ListOptions{Genus: genus, Ids: []int64{id}}
+	characteristics_opt, err := characteristicsOptsFromStrains(opt)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	characteristics, err := listCharacteristics(*characteristics_opt, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
+	characteristic_ids := []int64{}
+	for _, c := range *characteristics {
+		characteristic_ids = append(characteristic_ids, c.Id)
+	}
+
+	measurement_opt := MeasurementListOptions{
+		ListOptions: ListOptions{
+			Genus: genus,
+		},
+		Strains:         []int64{id},
+		Characteristics: characteristic_ids,
+	}
+
+	measurements, err := listMeasurements(measurement_opt, claims)
+	if err != nil {
+		return nil, newJSONError(err, http.StatusInternalServerError)
+	}
+
 	var many_species ManySpecies = []*Species{species}
 
 	payload := StrainPayload{
-		Strain:  strain,
-		Species: &many_species,
+		Strain:          strain,
+		Species:         &many_species,
+		Characteristics: characteristics,
+		Measurements:    measurements,
 		Meta: &StrainMeta{
 			CanAdd: canAdd(claims),
 		},
@@ -227,7 +298,9 @@ func (s StrainService) create(e *entity, genus string, claims *Claims) *appError
 func listStrains(opt ListOptions, claims *Claims) (*Strains, error) {
 	var vals []interface{}
 
-	q := `SELECT st.*, array_agg(m.id) AS measurements, COUNT(m) AS total_measurements,
+	q := `SELECT st.*, array_agg(m.id) AS measurements,
+		array_agg(DISTINCT m.characteristic_id) AS characteristics,
+		COUNT(m) AS total_measurements,
 		rank() OVER (ORDER BY sp.species_name ASC, st.type_strain ASC, st.strain_name ASC) AS sort_order
 		FROM strains st
 		INNER JOIN species sp ON sp.id=st.species_id
@@ -264,14 +337,15 @@ func listStrains(opt ListOptions, claims *Claims) (*Strains, error) {
 
 func getStrain(id int64, genus string, claims *Claims) (*Strain, error) {
 	var strain Strain
-	q := `SELECT st.*, array_agg(m.id) AS measurements,
+	q := `SELECT st.*, array_agg(DISTINCT m.id) AS measurements,
+		array_agg(DISTINCT m.characteristic_id) AS characteristics,
 		COUNT(m) AS total_measurements, 0 AS sort_order
 		FROM strains st
 		INNER JOIN species sp ON sp.id=st.species_id
 		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
-		LEFT OUTER JOIN measurements m ON m.strain_id=st.id
+		INNER JOIN measurements m ON m.strain_id=st.id
 		WHERE st.id=$2
-		GROUP BY st.id, st.species_id;`
+		GROUP BY st.id;`
 	if err := DBH.SelectOne(&strain, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrStrainNotFound
@@ -305,4 +379,28 @@ func speciesOptsFromStrains(opt ListOptions) (*ListOptions, error) {
 	}
 
 	return &ListOptions{Genus: opt.Genus, Ids: relatedSpeciesIds}, nil
+}
+
+func characteristicsOptsFromStrains(opt ListOptions) (*ListOptions, error) {
+	relatedCharacteristicsIds := make([]int64, 0)
+
+	if opt.Ids == nil || len(opt.Ids) == 0 {
+		q := `SELECT DISTINCT m.characteristic_id
+				FROM measurements m
+				INNER JOIN strains st ON st.id=m.strain_id
+				INNER JOIN species sp ON sp.id=st.species_id
+				INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1);`
+		if err := DBH.Select(&relatedCharacteristicsIds, q, opt.Genus); err != nil {
+			return nil, err
+		}
+	} else {
+		var vals []interface{}
+		var count int64 = 1
+		q := fmt.Sprintf("SELECT DISTINCT characteristic_id FROM measurements WHERE %s;", valsIn("strain_id", opt.Ids, &vals, &count))
+		if err := DBH.Select(&relatedCharacteristicsIds, q, vals...); err != nil {
+			return nil, err
+		}
+	}
+
+	return &ListOptions{Genus: opt.Genus, Ids: relatedCharacteristicsIds}, nil
 }

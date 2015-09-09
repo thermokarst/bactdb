@@ -277,9 +277,10 @@ func listCharacteristics(opt ListOptions, claims *Claims) (*Characteristics, err
 		q += fmt.Sprintf(" WHERE %s", w)
 	}
 
-	q += " GROUP BY c.id, ct.characteristic_type_name;"
+	q += ` GROUP BY c.id, ct.characteristic_type_name
+			ORDER BY ct.characteristic_type_name, c.sort_order ASC;`
 
-	characteristics := make(Characteristics, 0)
+	var characteristics Characteristics
 	err := DBH.Select(&characteristics, q, vals...)
 	if err != nil {
 		return nil, err
