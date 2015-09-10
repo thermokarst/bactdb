@@ -10,11 +10,10 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/gorilla/mux"
-	"github.com/lib/pq"
-	"github.com/mailgun/mailgun-go"
-
-	"golang.org/x/crypto/bcrypt"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/mux"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/lib/pq"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/mailgun/mailgun-go"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/golang.org/x/crypto/bcrypt"
 )
 
 var (

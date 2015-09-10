@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lib/pq/oid"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/lib/pq/oid"
 )
 
 func TestScanTimestamp(t *testing.T) {

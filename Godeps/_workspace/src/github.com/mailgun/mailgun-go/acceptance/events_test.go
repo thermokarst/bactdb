@@ -4,7 +4,7 @@ package acceptance
 
 import (
 	"fmt"
-	"github.com/mailgun/mailgun-go"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/mailgun/mailgun-go"
 	"os"
 	"testing"
 	"text/tabwriter"

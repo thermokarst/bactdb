@@ -8,13 +8,13 @@ import (
 	"os"
 	"sync"
 
-	"github.com/DavidHuie/gomigrate"
-	"github.com/codegangsta/cli"
-	"github.com/gorilla/schema"
-	"github.com/jmoiron/modl"
-	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
-	"github.com/mailgun/mailgun-go"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/DavidHuie/gomigrate"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/schema"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/modl"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/sqlx"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/lib/pq"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/mailgun/mailgun-go"
 )
 
 var (

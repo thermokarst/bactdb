@@ -3,7 +3,7 @@ package mailgun
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mbanzon/simplehttp"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/mbanzon/simplehttp"
 	"strconv"
 )
 

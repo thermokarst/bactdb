@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/jmoiron/modl"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/modl"
 )
 
 var (

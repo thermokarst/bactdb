@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lib/pq"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/lib/pq"
 )
 
 type NullBool struct {

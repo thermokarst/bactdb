@@ -23,9 +23,9 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx/reflectx"
-	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/sqlx/reflectx"
+	_ "github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/lib/pq"
 )
 
 /* compile time checks that Db, Tx, Stmt (qStmt) implement expected interfaces */

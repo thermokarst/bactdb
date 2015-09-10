@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codegangsta/cli"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/codegangsta/cli"
 )
 
 var boolFlagTests = []struct {

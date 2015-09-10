@@ -1,7 +1,7 @@
 package mailgun
 
 import (
-	"github.com/mbanzon/simplehttp"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/mbanzon/simplehttp"
 )
 
 // GetWebhooks returns the complete set of webhooks configured for your domain.

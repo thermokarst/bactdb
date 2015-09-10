@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/jmoiron/sqlx/reflectx"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/sqlx/reflectx"
 )
 
 // Although the NameMapper is convenient, in practice it should not

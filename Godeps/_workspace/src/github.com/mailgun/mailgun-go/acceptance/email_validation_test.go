@@ -3,7 +3,7 @@
 package acceptance
 
 import (
-	"github.com/mailgun/mailgun-go"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/mailgun/mailgun-go"
 	"testing"
 )
 

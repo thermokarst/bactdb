@@ -2,7 +2,7 @@ package mailgun
 
 import (
 	"fmt"
-	"github.com/mbanzon/simplehttp"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/mbanzon/simplehttp"
 	"time"
 )
 

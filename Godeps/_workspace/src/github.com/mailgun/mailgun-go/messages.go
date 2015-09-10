@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/mbanzon/simplehttp"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/mbanzon/simplehttp"
 )
 
 // MaxNumberOfRecipients represents the largest batch of recipients that Mailgun can support in a single API call.

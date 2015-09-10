@@ -12,9 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/context"
-	"github.com/gorilla/mux"
-	"github.com/thermokarst/jwt"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/context"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/mux"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/nytimes/gziphandler"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/thermokarst/jwt"
 )
 
 var (
@@ -125,7 +126,7 @@ func Handler() http.Handler {
 		s.Handle(route.p, j.Secure(errorHandler(route.f), verifyClaims)).Methods(route.m)
 	}
 
-	return jsonHandler(corsHandler(m))
+	return jsonHandler(gziphandler.GzipHandler(corsHandler(m)))
 }
 
 func handleGetter(g getter) errorHandler {

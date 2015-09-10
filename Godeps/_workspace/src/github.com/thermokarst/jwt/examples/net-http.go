@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/thermokarst/jwt"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/thermokarst/jwt"
 )
 
 func protectMe(w http.ResponseWriter, r *http.Request) {

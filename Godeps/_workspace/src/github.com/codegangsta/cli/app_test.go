@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/codegangsta/cli"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/codegangsta/cli"
 )
 
 func ExampleApp() {

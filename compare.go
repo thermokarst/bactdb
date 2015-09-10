@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/mux"
 )
 
 func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
