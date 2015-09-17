@@ -33,6 +33,20 @@ type Claims struct {
 	Ref  string
 }
 
+func verifyClaims(claims []byte, r *http.Request) error {
+	currentTime := time.Now()
+	var c Claims
+	err := json.Unmarshal(claims, &c)
+	if err != nil {
+		return err
+	}
+	if currentTime.After(time.Unix(c.Exp, 0)) {
+		return errors.New("this token has expired")
+	}
+	context.Set(r, "claims", c)
+	return nil
+}
+
 func Handler() http.Handler {
 	claimsFunc := func(email string) (map[string]interface{}, error) {
 		currentTime := time.Now()
@@ -46,23 +60,9 @@ func Handler() http.Handler {
 			"sub":  user.Id,
 			"role": user.Role,
 			"iat":  currentTime.Unix(),
-			"exp":  currentTime.Add(time.Minute * 60 * 24).Unix(),
+			"exp":  currentTime.Add(time.Minute * 60).Unix(),
 			"ref":  "",
 		}, nil
-	}
-
-	verifyClaims := func(claims []byte, r *http.Request) error {
-		currentTime := time.Now()
-		var c Claims
-		err := json.Unmarshal(claims, &c)
-		if err != nil {
-			return err
-		}
-		if currentTime.After(time.Unix(c.Exp, 0)) {
-			return errors.New("this token has expired")
-		}
-		context.Set(r, "claims", c)
-		return nil
 	}
 
 	config = &jwt.Config{
@@ -85,6 +85,7 @@ func Handler() http.Handler {
 	measurementService := MeasurementService{}
 
 	m.Handle("/authenticate", tokenHandler(j.Authenticate())).Methods("POST")
+	m.Handle("/refresh", j.Secure(errorHandler(tokenRefresh(j)), verifyClaims)).Methods("POST")
 
 	// Everything past here is lumped under a genus
 	s := m.PathPrefix("/{genus}").Subrouter()
@@ -306,4 +307,26 @@ func (fn errorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(err.Status)
 		fmt.Fprintln(w, err.Error.Error())
 	}
+}
+
+func tokenRefresh(j *jwt.Middleware) errorHandler {
+	t := func(w http.ResponseWriter, r *http.Request) *appError {
+		claims := getClaims(r)
+		user, err := dbGetUserById(claims.Sub)
+		if err != nil {
+			return newJSONError(err, http.StatusInternalServerError)
+		}
+		token, err := j.CreateToken(user.Email)
+		if err != nil {
+			return newJSONError(err, http.StatusInternalServerError)
+		}
+		data, _ := json.Marshal(struct {
+			Token string `json:"token"`
+		}{
+			Token: token,
+		})
+		w.Write(data)
+		return nil
+	}
+	return t
 }

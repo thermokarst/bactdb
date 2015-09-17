@@ -138,20 +138,11 @@ func (u UserService) list(val *url.Values, claims *Claims) (entity, *appError) {
 }
 
 func (u UserService) get(id int64, dummy string, claims *Claims) (entity, *appError) {
-	var user User
-	q := `SELECT id, email, 'password' AS password, name, role,
-		created_at, updated_at, deleted_at
-		FROM users
-		WHERE id=$1
-		AND verified IS TRUE
-		AND deleted_at IS NULL;`
-	if err := DBH.SelectOne(&user, q, id); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrUserNotFoundJSON
-		}
+	user, err := dbGetUserById(id)
+	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
-	return &user, nil
+	return user, nil
 }
 
 func (u UserService) update(id int64, e *entity, dummy string, claims *Claims) *appError {
@@ -243,6 +234,23 @@ func dbAuthenticate(email string, password string) error {
 		return ErrInvalidEmailOrPassword
 	}
 	return nil
+}
+
+func dbGetUserById(id int64) (*User, error) {
+	var user User
+	q := `SELECT id, email, 'password' AS password, name, role,
+		created_at, updated_at, deleted_at
+		FROM users
+		WHERE id=$1
+		AND verified IS TRUE
+		AND deleted_at IS NULL;`
+	if err := DBH.SelectOne(&user, q, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return &user, nil
 }
 
 // for thermokarst/jwt: setting user in claims bundle
