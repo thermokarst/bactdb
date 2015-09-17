@@ -120,6 +120,7 @@ func Handler() http.Handler {
 		r{handleUpdater(characteristicService), "PUT", "/characteristics/{Id:.+}"},
 		r{handleLister(measurementService), "GET", "/measurements"},
 		r{handleGetter(measurementService), "GET", "/measurements/{Id:.+}"},
+		r{handleUpdater(measurementService), "PUT", "/measurements/{Id:.+}"},
 	}
 
 	for _, route := range routes {

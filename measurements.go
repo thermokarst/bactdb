@@ -34,17 +34,17 @@ func (m *MeasurementBase) PreUpdate(e modl.SqlExecutor) error {
 
 type MeasurementService struct{}
 
-// There are three types of supported measurements: fixed-test, free-text,
-// & numerical. The table has a constraint that will allow one or the other
-// for a particular combination of strain & characteristic, but not both.
+// There are three types of supported measurements: fixed-text, free-text,
+// & numerical. The table has a constraint that will allow at most one
+// for a particular combination of strain & characteristic.
 // MeasurementBase is what the DB expects to see for inserts/updates
 type MeasurementBase struct {
 	Id                    int64       `json:"id,omitempty"`
 	StrainId              int64       `db:"strain_id" json:"strain"`
 	CharacteristicId      int64       `db:"characteristic_id" json:"characteristic"`
 	TextMeasurementTypeId NullInt64   `db:"text_measurement_type_id" json:"-"`
-	TxtValue              NullString  `db:"txt_value" json:"txtValue"`
-	NumValue              NullFloat64 `db:"num_value" json:"numValue"`
+	TxtValue              NullString  `db:"txt_value" json:"-"`
+	NumValue              NullFloat64 `db:"num_value" json:"-"`
 	ConfidenceInterval    NullFloat64 `db:"confidence_interval" json:"confidenceInterval"`
 	UnitTypeId            NullInt64   `db:"unit_type_id" json:"-"`
 	Notes                 NullString  `db:"notes" json:"notes"`
@@ -57,10 +57,56 @@ type MeasurementBase struct {
 
 type Measurement struct {
 	*MeasurementBase
-	TextMeasurementType NullString `db:"text_measurement_type_name" json:"textMeasurementType"`
+	TextMeasurementType NullString `db:"text_measurement_type_name" json:"-"`
 	UnitType            NullString `db:"unit_type_name" json:"unitType"`
 	TestMethod          NullString `db:"test_method_name" json:"testMethod"`
 	CanEdit             bool       `db:"-" json:"canEdit"`
+}
+
+type FakeMeasurement Measurement
+
+func (m *Measurement) MarshalJSON() ([]byte, error) {
+	fm := FakeMeasurement(*m)
+	return json.Marshal(struct {
+		*FakeMeasurement
+		Value string `json:"value"`
+	}{
+		FakeMeasurement: &fm,
+		Value:           m.Value(),
+	})
+}
+
+func (m *Measurement) UnmarshalJSON(b []byte) error {
+	var measurement struct {
+		FakeMeasurement
+		Value interface{} `json:"value"`
+	}
+	if err := json.Unmarshal(b, &measurement); err != nil {
+		return err
+	}
+
+	switch v := measurement.Value.(type) {
+	case string:
+		// Test if actually a lookup
+		id, err := getTextMeasurementTypeId(v)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				measurement.TxtValue = NullString{sql.NullString{String: v, Valid: true}}
+			} else {
+				return err
+			}
+		} else {
+			measurement.TextMeasurementTypeId = NullInt64{sql.NullInt64{Int64: id, Valid: true}}
+		}
+	case int64:
+		measurement.NumValue = NullFloat64{sql.NullFloat64{Float64: float64(v), Valid: true}}
+	case float64:
+		measurement.NumValue = NullFloat64{sql.NullFloat64{Float64: v, Valid: true}}
+	}
+
+	*m = Measurement(measurement.FakeMeasurement)
+
+	return nil
 }
 
 func (m *Measurement) Value() string {
@@ -98,6 +144,12 @@ func (m *MeasurementPayload) marshal() ([]byte, error) {
 
 func (m *MeasurementsPayload) marshal() ([]byte, error) {
 	return json.Marshal(m)
+}
+
+func (s MeasurementService) unmarshal(b []byte) (entity, error) {
+	var mj MeasurementPayload
+	err := json.Unmarshal(b, &mj)
+	return &mj, err
 }
 
 type MeasurementListOptions struct {
@@ -160,6 +212,38 @@ func (m MeasurementService) get(id int64, genus string, claims *Claims) (entity,
 	}
 
 	return &payload, nil
+}
+
+func (s MeasurementService) update(id int64, e *entity, genus string, claims *Claims) *appError {
+	payload := (*e).(*MeasurementPayload)
+	payload.Measurement.UpdatedBy = claims.Sub
+	payload.Measurement.Id = id
+
+	if payload.Measurement.TextMeasurementType.Valid {
+		id, err := getTextMeasurementTypeId(payload.Measurement.TextMeasurementType.String)
+		if err != nil {
+			return newJSONError(err, http.StatusInternalServerError)
+		}
+		payload.Measurement.TextMeasurementTypeId.Int64 = id
+		payload.Measurement.TextMeasurementTypeId.Valid = true
+	}
+
+	count, err := DBH.Update(payload.Measurement.MeasurementBase)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+	if count != 1 {
+		return newJSONError(ErrStrainNotUpdated, http.StatusBadRequest)
+	}
+
+	measurement, err := getMeasurement(id, genus, claims)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	payload.Measurement = measurement
+
+	return nil
 }
 
 func listMeasurements(opt MeasurementListOptions, claims *Claims) (*Measurements, error) {
@@ -256,4 +340,14 @@ func characteristicOptsFromMeasurements(opt MeasurementListOptions) (*ListOption
 
 func strainOptsFromMeasurements(opt MeasurementListOptions) (*ListOptions, error) {
 	return &ListOptions{Genus: opt.Genus, Ids: opt.Strains}, nil
+}
+
+func getTextMeasurementTypeId(val string) (int64, error) {
+	var id int64
+	q := `SELECT id FROM text_measurement_types WHERE text_measurement_name=$1;`
+
+	if err := DBH.SelectOne(&id, q, val); err != nil {
+		return 0, err
+	}
+	return id, nil
 }
