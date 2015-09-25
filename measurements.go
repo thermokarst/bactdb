@@ -246,6 +246,15 @@ func (s MeasurementService) update(id int64, e *entity, genus string, claims *Cl
 	return nil
 }
 
+func (m MeasurementService) delete(id int64, genus string, claims *Claims) *appError {
+	q := `DELETE FROM measurements WHERE id=$1;`
+	_, err := DBH.Exec(q, id)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+	return nil
+}
+
 func listMeasurements(opt MeasurementListOptions, claims *Claims) (*Measurements, error) {
 	var vals []interface{}
 

@@ -23,3 +23,6 @@ type creater interface {
 	create(*entity, string, *Claims) *appError
 	unmarshal([]byte) (entity, error)
 }
+type deleter interface {
+	delete(int64, string, *Claims) *appError
+}

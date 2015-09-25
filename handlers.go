@@ -122,6 +122,7 @@ func Handler() http.Handler {
 		r{handleLister(measurementService), "GET", "/measurements"},
 		r{handleGetter(measurementService), "GET", "/measurements/{Id:.+}"},
 		r{handleUpdater(measurementService), "PUT", "/measurements/{Id:.+}"},
+		r{handleDeleter(measurementService), "DELETE", "/measurements/{Id:.+}"},
 	}
 
 	for _, route := range routes {
@@ -231,6 +232,24 @@ func handleCreater(c creater) errorHandler {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
+		return nil
+	}
+}
+
+func handleDeleter(d deleter) errorHandler {
+	return func(w http.ResponseWriter, r *http.Request) *appError {
+		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+		if err != nil {
+			return newJSONError(err, http.StatusInternalServerError)
+		}
+
+		claims := getClaims(r)
+
+		appErr := d.delete(id, mux.Vars(r)["genus"], &claims)
+		if appErr != nil {
+			return appErr
+		}
+
 		return nil
 	}
 }
