@@ -343,7 +343,7 @@ func getStrain(id int64, genus string, claims *Claims) (*Strain, error) {
 		FROM strains st
 		INNER JOIN species sp ON sp.id=st.species_id
 		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)
-		INNER JOIN measurements m ON m.strain_id=st.id
+		LEFT OUTER JOIN measurements m ON m.strain_id=st.id
 		WHERE st.id=$2
 		GROUP BY st.id;`
 	if err := DBH.SelectOne(&strain, q, genus, id); err != nil {

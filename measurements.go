@@ -255,6 +255,19 @@ func (m MeasurementService) delete(id int64, genus string, claims *Claims) *appE
 	return nil
 }
 
+func (m MeasurementService) create(e *entity, genus string, claims *Claims) *appError {
+	payload := (*e).(*MeasurementPayload)
+	payload.Measurement.CreatedBy = claims.Sub
+	payload.Measurement.UpdatedBy = claims.Sub
+
+	if err := DBH.Insert(payload.Measurement.MeasurementBase); err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	return nil
+
+}
+
 func listMeasurements(opt MeasurementListOptions, claims *Claims) (*Measurements, error) {
 	var vals []interface{}
 
