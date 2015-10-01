@@ -27,12 +27,12 @@ var (
 )
 
 func init() {
-	DB.AddTableWithName(User{}, "users").SetKeys(true, "Id")
+	DB.AddTableWithName(UserBase{}, "users").SetKeys(true, "Id")
 }
 
 type UserService struct{}
 
-type User struct {
+type UserBase struct {
 	Id        int64    `json:"id,omitempty"`
 	Email     string   `db:"email" json:"email"`
 	Password  string   `db:"password" json:"password,omitempty"`
@@ -42,6 +42,11 @@ type User struct {
 	CreatedAt NullTime `db:"created_at" json:"createdAt"`
 	UpdatedAt NullTime `db:"updated_at" json:"updatedAt"`
 	DeletedAt NullTime `db:"deleted_at" json:"deletedAt"`
+}
+
+type User struct {
+	*UserBase
+	CanEdit bool `db:"-" json:"canEdit"`
 }
 
 type UserValidation struct {
@@ -71,8 +76,17 @@ type UsersJSON struct {
 	Users *Users `json:"users"`
 }
 
-func (u *User) marshal() ([]byte, error) {
-	return json.Marshal(&UserJSON{User: u})
+type UserMeta struct {
+	CanAdd bool `json:"canAdd"`
+}
+
+type UserPayload struct {
+	User *User     `json:"user"`
+	Meta *UserMeta `json:"meta"`
+}
+
+func (u *UserPayload) marshal() ([]byte, error) {
+	return json.Marshal(u)
 }
 
 func (u *Users) marshal() ([]byte, error) {
@@ -80,9 +94,9 @@ func (u *Users) marshal() ([]byte, error) {
 }
 
 func (u UserService) unmarshal(b []byte) (entity, error) {
-	var uj UserJSON
+	var uj UserPayload
 	err := json.Unmarshal(b, &uj)
-	return uj.User, err
+	return &uj, err
 }
 
 func (u *User) validate() error {
@@ -139,29 +153,53 @@ func (u UserService) list(val *url.Values, claims *Claims) (entity, *appError) {
 
 func (u UserService) get(id int64, dummy string, claims *Claims) (entity, *appError) {
 	user, err := dbGetUserById(id)
+	user.Password = ""
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
-	return user, nil
+
+	user.CanEdit = claims.Role == "A" || id == claims.Sub
+
+	payload := UserPayload{
+		User: user,
+		Meta: &UserMeta{
+			CanAdd: claims.Role == "A",
+		},
+	}
+	return &payload, nil
 }
 
 func (u UserService) update(id int64, e *entity, dummy string, claims *Claims) *appError {
-	user := (*e).(*User)
-	user.UpdatedAt = currentTime()
+	user := (*e).(*UserPayload).User
+
+	original_user, err := dbGetUserById(id)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
 	user.Id = id
+	user.Password = original_user.Password
+	user.Verified = original_user.Verified
+	user.UpdatedAt = currentTime()
+
+	if err := user.validate(); err != nil {
+		return &appError{Error: err, Status: StatusUnprocessableEntity}
+	}
 
 	count, err := DBH.Update(user)
+	user.Password = ""
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
 		return ErrUserNotUpdatedJSON
 	}
+
 	return nil
 }
 
 func (u UserService) create(e *entity, dummy string, claims *Claims) *appError {
-	user := (*e).(*User)
+	user := (*e).(*UserPayload).User
 	if err := user.validate(); err != nil {
 		return &appError{Error: err, Status: StatusUnprocessableEntity}
 	}
@@ -238,8 +276,7 @@ func dbAuthenticate(email string, password string) error {
 
 func dbGetUserById(id int64) (*User, error) {
 	var user User
-	q := `SELECT id, email, 'password' AS password, name, role,
-		created_at, updated_at, deleted_at
+	q := `SELECT *
 		FROM users
 		WHERE id=$1
 		AND verified IS TRUE

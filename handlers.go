@@ -336,6 +336,7 @@ func tokenRefresh(j *jwt.Middleware) errorHandler {
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
+		user.Password = ""
 		token, err := j.CreateToken(user.Email)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
