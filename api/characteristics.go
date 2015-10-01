@@ -14,7 +14,7 @@ import (
 type CharacteristicService struct{}
 
 func (c CharacteristicService) Unmarshal(b []byte) (types.Entity, error) {
-	var cj payloads.CharacteristicPayload
+	var cj payloads.Characteristic
 	err := json.Unmarshal(b, &cj)
 	return &cj, err
 }
@@ -63,7 +63,7 @@ func (c CharacteristicService) List(val *url.Values, claims *types.Claims) (type
 		return nil, types.NewJSONError(err, http.StatusInternalServerError)
 	}
 
-	payload := payloads.CharacteristicsPayload{
+	payload := payloads.Characteristics{
 		Characteristics: characteristics,
 		Measurements:    measurements,
 		Strains:         strains,
@@ -102,7 +102,7 @@ func (c CharacteristicService) Get(id int64, genus string, claims *types.Claims)
 		return nil, types.NewJSONError(err, http.StatusInternalServerError)
 	}
 
-	payload := payloads.CharacteristicPayload{
+	payload := payloads.Characteristic{
 		Characteristic: characteristic,
 		Measurements:   measurements,
 		Strains:        strains,
@@ -113,7 +113,7 @@ func (c CharacteristicService) Get(id int64, genus string, claims *types.Claims)
 }
 
 func (c CharacteristicService) Update(id int64, e *types.Entity, genus string, claims *types.Claims) *types.AppError {
-	payload := (*e).(*payloads.CharacteristicPayload)
+	payload := (*e).(*payloads.Characteristic)
 	payload.Characteristic.UpdatedBy = claims.Sub
 	payload.Characteristic.Id = id
 
@@ -160,7 +160,7 @@ func (c CharacteristicService) Update(id int64, e *types.Entity, genus string, c
 }
 
 func (c CharacteristicService) Create(e *types.Entity, genus string, claims *types.Claims) *types.AppError {
-	payload := (*e).(*payloads.CharacteristicPayload)
+	payload := (*e).(*payloads.Characteristic)
 	payload.Characteristic.CreatedBy = claims.Sub
 	payload.Characteristic.UpdatedBy = claims.Sub
 

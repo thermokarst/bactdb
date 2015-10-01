@@ -30,7 +30,7 @@ var (
 type UserService struct{}
 
 func (u UserService) Unmarshal(b []byte) (types.Entity, error) {
-	var uj payloads.UserPayload
+	var uj payloads.User
 	err := json.Unmarshal(b, &uj)
 	return &uj, err
 }
@@ -66,7 +66,7 @@ func (u UserService) Get(id int64, dummy string, claims *types.Claims) (types.En
 
 	user.CanEdit = claims.Role == "A" || id == claims.Sub
 
-	payload := payloads.UserPayload{
+	payload := payloads.User{
 		User: user,
 		Meta: &models.UserMeta{
 			CanAdd: claims.Role == "A",
@@ -76,7 +76,7 @@ func (u UserService) Get(id int64, dummy string, claims *types.Claims) (types.En
 }
 
 func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *types.Claims) *types.AppError {
-	user := (*e).(*payloads.UserPayload).User
+	user := (*e).(*payloads.User).User
 
 	original_user, err := models.DbGetUserById(id)
 	if err != nil {
@@ -106,7 +106,7 @@ func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *typ
 }
 
 func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims) *types.AppError {
-	user := (*e).(*payloads.UserPayload).User
+	user := (*e).(*payloads.User).User
 	if err := user.Validate(); err != nil {
 		return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
 	}

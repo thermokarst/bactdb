@@ -6,7 +6,7 @@ import (
 	"github.com/thermokarst/bactdb/models"
 )
 
-type StrainPayload struct {
+type Strain struct {
 	Strain          *models.Strain          `json:"strain"`
 	Species         *models.ManySpecies     `json:"species"`
 	Characteristics *models.Characteristics `json:"characteristics"`
@@ -14,7 +14,7 @@ type StrainPayload struct {
 	Meta            *models.StrainMeta      `json:"meta"`
 }
 
-type StrainsPayload struct {
+type Strains struct {
 	Strains         *models.Strains         `json:"strains"`
 	Species         *models.ManySpecies     `json:"species"`
 	Characteristics *models.Characteristics `json:"characteristics"`
@@ -22,10 +22,10 @@ type StrainsPayload struct {
 	Meta            *models.StrainMeta      `json:"meta"`
 }
 
-func (s *StrainPayload) Marshal() ([]byte, error) {
+func (s *Strain) Marshal() ([]byte, error) {
 	return json.Marshal(s)
 }
 
-func (s *StrainsPayload) Marshal() ([]byte, error) {
+func (s *Strains) Marshal() ([]byte, error) {
 	return json.Marshal(s)
 }

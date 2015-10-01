@@ -14,7 +14,7 @@ import (
 type MeasurementService struct{}
 
 func (s MeasurementService) Unmarshal(b []byte) (types.Entity, error) {
-	var mj payloads.MeasurementPayload
+	var mj payloads.Measurement
 	err := json.Unmarshal(b, &mj)
 	return &mj, err
 }
@@ -53,7 +53,7 @@ func (m MeasurementService) List(val *url.Values, claims *types.Claims) (types.E
 		return nil, types.NewJSONError(err, http.StatusInternalServerError)
 	}
 
-	payload := payloads.MeasurementsPayload{
+	payload := payloads.Measurements{
 		Characteristics: characteristics,
 		Strains:         strains,
 		Measurements:    measurements,
@@ -68,7 +68,7 @@ func (m MeasurementService) Get(id int64, genus string, claims *types.Claims) (t
 		return nil, types.NewJSONError(err, http.StatusInternalServerError)
 	}
 
-	payload := payloads.MeasurementPayload{
+	payload := payloads.Measurement{
 		Measurement: measurement,
 	}
 
@@ -76,7 +76,7 @@ func (m MeasurementService) Get(id int64, genus string, claims *types.Claims) (t
 }
 
 func (s MeasurementService) Update(id int64, e *types.Entity, genus string, claims *types.Claims) *types.AppError {
-	payload := (*e).(*payloads.MeasurementPayload)
+	payload := (*e).(*payloads.Measurement)
 	payload.Measurement.UpdatedBy = claims.Sub
 	payload.Measurement.Id = id
 
@@ -120,7 +120,7 @@ func (m MeasurementService) Delete(id int64, genus string, claims *types.Claims)
 }
 
 func (m MeasurementService) Create(e *types.Entity, genus string, claims *types.Claims) *types.AppError {
-	payload := (*e).(*payloads.MeasurementPayload)
+	payload := (*e).(*payloads.Measurement)
 	payload.Measurement.CreatedBy = claims.Sub
 	payload.Measurement.UpdatedBy = claims.Sub
 

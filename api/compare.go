@@ -40,7 +40,7 @@ func HandleCompare(w http.ResponseWriter, r *http.Request) *types.AppError {
 	if appErr != nil {
 		return appErr
 	}
-	measurementsPayload := (measurementsEntity).(*payloads.MeasurementsPayload)
+	measurementsPayload := (measurementsEntity).(*payloads.Measurements)
 
 	// Assemble matrix
 	characteristic_ids := strings.Split(opt.Get("characteristic_ids"), ",")

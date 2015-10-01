@@ -6,11 +6,11 @@ import (
 	"github.com/thermokarst/bactdb/models"
 )
 
-type UserPayload struct {
+type User struct {
 	User *models.User     `json:"user"`
 	Meta *models.UserMeta `json:"meta"`
 }
 
-func (u *UserPayload) Marshal() ([]byte, error) {
+func (u *User) Marshal() ([]byte, error) {
 	return json.Marshal(u)
 }

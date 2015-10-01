@@ -14,7 +14,7 @@ import (
 type SpeciesService struct{}
 
 func (s SpeciesService) Unmarshal(b []byte) (types.Entity, error) {
-	var sj payloads.SpeciesPayload
+	var sj payloads.Species
 	err := json.Unmarshal(b, &sj)
 	return &sj, err
 }
@@ -43,7 +43,7 @@ func (s SpeciesService) List(val *url.Values, claims *types.Claims) (types.Entit
 		return nil, types.NewJSONError(err, http.StatusInternalServerError)
 	}
 
-	payload := payloads.ManySpeciesPayload{
+	payload := payloads.ManySpecies{
 		Species: species,
 		Strains: strains,
 		Meta: &models.SpeciesMeta{
@@ -65,7 +65,7 @@ func (s SpeciesService) Get(id int64, genus string, claims *types.Claims) (types
 		return nil, types.NewJSONError(err, http.StatusInternalServerError)
 	}
 
-	payload := payloads.SpeciesPayload{
+	payload := payloads.Species{
 		Species: species,
 		Strains: strains,
 		Meta: &models.SpeciesMeta{
@@ -77,7 +77,7 @@ func (s SpeciesService) Get(id int64, genus string, claims *types.Claims) (types
 }
 
 func (s SpeciesService) Update(id int64, e *types.Entity, genus string, claims *types.Claims) *types.AppError {
-	payload := (*e).(*payloads.SpeciesPayload)
+	payload := (*e).(*payloads.Species)
 	payload.Species.UpdatedBy = claims.Sub
 	payload.Species.Id = id
 
@@ -118,7 +118,7 @@ func (s SpeciesService) Update(id int64, e *types.Entity, genus string, claims *
 }
 
 func (s SpeciesService) Create(e *types.Entity, genus string, claims *types.Claims) *types.AppError {
-	payload := (*e).(*payloads.SpeciesPayload)
+	payload := (*e).(*payloads.Species)
 	payload.Species.CreatedBy = claims.Sub
 	payload.Species.UpdatedBy = claims.Sub
 
