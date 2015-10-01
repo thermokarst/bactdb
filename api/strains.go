@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/thermokarst/bactdb/errors"
 	"github.com/thermokarst/bactdb/helpers"
 	"github.com/thermokarst/bactdb/models"
 	"github.com/thermokarst/bactdb/payloads"
@@ -21,36 +22,36 @@ func (s StrainService) Unmarshal(b []byte) (types.Entity, error) {
 
 func (s StrainService) List(val *url.Values, claims *types.Claims) (types.Entity, *types.AppError) {
 	if val == nil {
-		return nil, helpers.ErrMustProvideOptionsJSON
+		return nil, NewJSONError(errors.MustProvideOptions, http.StatusInternalServerError)
 	}
 	var opt helpers.ListOptions
 	if err := helpers.SchemaDecoder.Decode(&opt, *val); err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	strains, err := models.ListStrains(opt, claims)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	species_opt, err := models.SpeciesOptsFromStrains(opt)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	species, err := models.ListSpecies(*species_opt, claims)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	characteristics_opt, err := models.CharacteristicsOptsFromStrains(opt)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	characteristics, err := models.ListCharacteristics(*characteristics_opt, claims)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	characteristic_ids := []int64{}
@@ -73,7 +74,7 @@ func (s StrainService) List(val *url.Values, claims *types.Claims) (types.Entity
 
 	measurements, err := models.ListMeasurements(measurement_opt, claims)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	payload := payloads.Strains{
@@ -92,23 +93,23 @@ func (s StrainService) List(val *url.Values, claims *types.Claims) (types.Entity
 func (s StrainService) Get(id int64, genus string, claims *types.Claims) (types.Entity, *types.AppError) {
 	strain, err := models.GetStrain(id, genus, claims)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	species, err := models.GetSpecies(strain.SpeciesId, genus, claims)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	opt := helpers.ListOptions{Genus: genus, Ids: []int64{id}}
 	characteristics_opt, err := models.CharacteristicsOptsFromStrains(opt)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	characteristics, err := models.ListCharacteristics(*characteristics_opt, claims)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	characteristic_ids := []int64{}
@@ -126,7 +127,7 @@ func (s StrainService) Get(id int64, genus string, claims *types.Claims) (types.
 
 	measurements, err := models.ListMeasurements(measurement_opt, claims)
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	var many_species models.ManySpecies = []*models.Species{species}
@@ -152,21 +153,21 @@ func (s StrainService) Update(id int64, e *types.Entity, genus string, claims *t
 	// TODO: fix this
 	count, err := models.DBH.Update(payload.Strain.StrainBase)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
 		// TODO: fix this
-		return types.NewJSONError(models.ErrStrainNotUpdated, http.StatusBadRequest)
+		return NewJSONError(errors.StrainNotUpdated, http.StatusBadRequest)
 	}
 
 	strain, err := models.GetStrain(id, genus, claims)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	species, err := models.GetSpecies(strain.SpeciesId, genus, claims)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	var many_species models.ManySpecies = []*models.Species{species}
@@ -187,17 +188,17 @@ func (s StrainService) Create(e *types.Entity, genus string, claims *types.Claim
 
 	// TODO: fix this
 	if err := models.DBH.Insert(payload.Strain.StrainBase); err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	strain, err := models.GetStrain(payload.Strain.Id, genus, claims)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	species, err := models.GetSpecies(strain.SpeciesId, genus, claims)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	var many_species models.ManySpecies = []*models.Species{species}

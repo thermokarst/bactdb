@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -18,6 +17,7 @@ import (
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/thermokarst/jwt"
 	"github.com/thermokarst/bactdb/api"
 	"github.com/thermokarst/bactdb/auth"
+	"github.com/thermokarst/bactdb/errors"
 	"github.com/thermokarst/bactdb/helpers"
 	"github.com/thermokarst/bactdb/models"
 	"github.com/thermokarst/bactdb/types"
@@ -32,7 +32,7 @@ func verifyClaims(claims []byte, r *http.Request) error {
 		return err
 	}
 	if currentTime.After(time.Unix(c.Exp, 0)) {
-		return errors.New("this token has expired")
+		return errors.ExpiredToken
 	}
 	context.Set(r, "claims", c)
 	return nil
@@ -99,7 +99,7 @@ func handleGetter(g api.Getter) errorHandler {
 	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
 		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 
 		claims := helpers.GetClaims(r)
@@ -111,7 +111,7 @@ func handleGetter(g api.Getter) errorHandler {
 
 		data, err := e.Marshal()
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
 		return nil
@@ -131,7 +131,7 @@ func handleLister(l api.Lister) errorHandler {
 		}
 		data, err := es.Marshal()
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
 		return nil
@@ -142,17 +142,17 @@ func handleUpdater(u api.Updater) errorHandler {
 	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
 		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 
 		e, err := u.Unmarshal(bodyBytes)
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 
 		claims := helpers.GetClaims(r)
@@ -164,7 +164,7 @@ func handleUpdater(u api.Updater) errorHandler {
 
 		data, err := e.Marshal()
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
 		return nil
@@ -175,12 +175,12 @@ func handleCreater(c api.Creater) errorHandler {
 	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 
 		e, err := c.Unmarshal(bodyBytes)
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 
 		claims := helpers.GetClaims(r)
@@ -192,7 +192,7 @@ func handleCreater(c api.Creater) errorHandler {
 
 		data, err := e.Marshal()
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
 		return nil
@@ -203,7 +203,7 @@ func handleDeleter(d api.Deleter) errorHandler {
 	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
 		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 
 		claims := helpers.GetClaims(r)
@@ -296,12 +296,12 @@ func tokenRefresh(j *jwt.Middleware) errorHandler {
 		claims := helpers.GetClaims(r)
 		user, err := models.DbGetUserById(claims.Sub)
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 		user.Password = ""
 		token, err := auth.Middleware.CreateToken(user.Email)
 		if err != nil {
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 		data, _ := json.Marshal(struct {
 			Token string `json:"token"`

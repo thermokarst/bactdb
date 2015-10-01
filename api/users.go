@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/mailgun/mailgun-go"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/golang.org/x/crypto/bcrypt"
 	"github.com/thermokarst/bactdb/auth"
+	"github.com/thermokarst/bactdb/errors"
 	"github.com/thermokarst/bactdb/helpers"
 	"github.com/thermokarst/bactdb/models"
 	"github.com/thermokarst/bactdb/payloads"
@@ -20,11 +20,7 @@ import (
 )
 
 var (
-	// TODO: fix this
-	ErrUserNotFoundJSON      = types.NewJSONError(models.ErrUserNotFound, http.StatusNotFound)
-	ErrUserNotUpdatedJSON    = types.NewJSONError(models.ErrUserNotUpdated, http.StatusBadRequest)
-	ErrEmailAddressTakenJSON = types.NewJSONError(models.ErrEmailAddressTaken, http.StatusBadRequest)
-	MgAccts                  = make(map[string]mailgun.Mailgun)
+	MgAccts = make(map[string]mailgun.Mailgun)
 )
 
 type UserService struct{}
@@ -37,11 +33,11 @@ func (u UserService) Unmarshal(b []byte) (types.Entity, error) {
 
 func (u UserService) List(val *url.Values, claims *types.Claims) (types.Entity, *types.AppError) {
 	if val == nil {
-		return nil, helpers.ErrMustProvideOptionsJSON
+		return nil, NewJSONError(errors.MustProvideOptions, http.StatusInternalServerError)
 	}
 	var opt helpers.ListOptions
 	if err := helpers.SchemaDecoder.Decode(&opt, *val); err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	// TODO: fix this
@@ -52,7 +48,7 @@ func (u UserService) List(val *url.Values, claims *types.Claims) (types.Entity, 
 		WHERE verified IS TRUE
 		AND deleted_at IS NULL;`
 	if err := models.DBH.Select(&users, sql); err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 	return &users, nil
 }
@@ -61,7 +57,7 @@ func (u UserService) Get(id int64, dummy string, claims *types.Claims) (types.En
 	user, err := models.DbGetUserById(id)
 	user.Password = ""
 	if err != nil {
-		return nil, types.NewJSONError(err, http.StatusInternalServerError)
+		return nil, NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	user.CanEdit = claims.Role == "A" || id == claims.Sub
@@ -80,7 +76,7 @@ func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *typ
 
 	original_user, err := models.DbGetUserById(id)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	user.Id = id
@@ -96,10 +92,10 @@ func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *typ
 	count, err := models.DBH.Update(user)
 	user.Password = ""
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
-		return ErrUserNotUpdatedJSON
+		return NewJSONError(errors.UserNotUpdated, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -115,7 +111,7 @@ func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims)
 	user.UpdatedAt = ct
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 	user.Password = string(hash)
 	user.Role = "R"
@@ -125,10 +121,10 @@ func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims)
 	if err := models.DBH.Insert(user); err != nil {
 		if err, ok := err.(*pq.Error); ok {
 			if err.Code == "23505" {
-				return ErrEmailAddressTakenJSON
+				return NewJSONError(errors.EmailAddressTaken, http.StatusInternalServerError)
 			}
 		}
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	user.Password = "password" // don't want to send the hashed PW back to the client
@@ -137,12 +133,12 @@ func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims)
 	// TODO: move helpers.GenerateNonce
 	nonce, err := helpers.GenerateNonce()
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 	// TODO: fix this
 	_, err = models.DBH.Exec(q, user.Id, nonce, claims.Ref, ct)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	// Send out confirmation email
@@ -161,7 +157,7 @@ func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims)
 		_, _, err := mg.Send(m)
 		if err != nil {
 			log.Printf("%+v\n", err)
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 	}
 
@@ -179,16 +175,16 @@ func HandleUserVerify(w http.ResponseWriter, r *http.Request) *types.AppError {
 	}
 	if err := models.DBH.SelectOne(&ver, q, nonce); err != nil {
 		log.Print(err)
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	if ver.User_id == 0 {
-		return types.NewJSONError(errors.New("No user found"), http.StatusInternalServerError)
+		return NewJSONError(errors.UserNotFound, http.StatusInternalServerError)
 	}
 
 	var user models.User
 	if err := models.DBH.Get(&user, ver.User_id); err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 
 	user.UpdatedAt = helpers.CurrentTime()
@@ -196,16 +192,16 @@ func HandleUserVerify(w http.ResponseWriter, r *http.Request) *types.AppError {
 
 	count, err := models.DBH.Update(&user)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
-		return types.NewJSONError(errors.New("Count 0"), http.StatusInternalServerError)
+		return NewJSONError(errors.UserNotUpdated, http.StatusInternalServerError)
 	}
 
 	q = `DELETE FROM verification WHERE user_id=$1;`
 	_, err = models.DBH.Exec(q, user.Id)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 	fmt.Fprintln(w, `{"msg":"All set! Please log in."}`)
 	return nil
@@ -214,16 +210,16 @@ func HandleUserVerify(w http.ResponseWriter, r *http.Request) *types.AppError {
 func HandleUserLockout(w http.ResponseWriter, r *http.Request) *types.AppError {
 	email := r.FormValue("email")
 	if email == "" {
-		return types.NewJSONError(errors.New("missing email"), http.StatusInternalServerError)
+		return NewJSONError(errors.UserMissingEmail, http.StatusInternalServerError)
 	}
 	token, err := auth.Middleware.CreateToken(email)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 	origin := r.Header.Get("Origin")
 	hostUrl, err := url.Parse(origin)
 	if err != nil {
-		return types.NewJSONError(err, http.StatusInternalServerError)
+		return NewJSONError(err, http.StatusInternalServerError)
 	}
 	hostUrl.Path += "/users/lockoutauthenticate"
 	params := url.Values{}
@@ -246,7 +242,7 @@ func HandleUserLockout(w http.ResponseWriter, r *http.Request) *types.AppError {
 		_, _, err := mg.Send(m)
 		if err != nil {
 			log.Printf("%+v\n", err)
-			return types.NewJSONError(err, http.StatusInternalServerError)
+			return NewJSONError(err, http.StatusInternalServerError)
 		}
 	}
 

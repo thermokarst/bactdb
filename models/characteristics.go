@@ -2,17 +2,12 @@ package models
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/modl"
+	"github.com/thermokarst/bactdb/errors"
 	"github.com/thermokarst/bactdb/helpers"
 	"github.com/thermokarst/bactdb/types"
-)
-
-var (
-	ErrCharacteristicNotFound   = errors.New("Characteristic not found")
-	ErrCharacteristicNotUpdated = errors.New("Characteristic not updated")
 )
 
 func init() {
@@ -199,7 +194,7 @@ func GetCharacteristic(id int64, genus string, claims *types.Claims) (*Character
 		GROUP BY c.id, ct.characteristic_type_name;`
 	if err := DBH.SelectOne(&characteristic, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrCharacteristicNotFound
+			return nil, errors.CharacteristicNotFound
 		}
 		return nil, err
 	}

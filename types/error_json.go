@@ -19,10 +19,3 @@ type AppError struct {
 	Error  error
 	Status int
 }
-
-func NewJSONError(err error, status int) *AppError {
-	return &AppError{
-		Error:  ErrorJSON{Err: err},
-		Status: status,
-	}
-}

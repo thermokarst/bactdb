@@ -3,18 +3,12 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/modl"
+	"github.com/thermokarst/bactdb/errors"
 	"github.com/thermokarst/bactdb/helpers"
 	"github.com/thermokarst/bactdb/types"
-)
-
-var (
-	ErrMeasurementNotFound     = errors.New("Measurement not found")
-	ErrMeasurementNotFoundJSON = types.NewJSONError(ErrMeasurementNotFound, http.StatusNotFound)
 )
 
 func init() {
@@ -205,7 +199,7 @@ func GetMeasurement(id int64, genus string, claims *types.Claims) (*Measurement,
 		WHERE m.id=$2;`
 	if err := DBH.SelectOne(&measurement, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrMeasurementNotFound
+			return nil, errors.MeasurementNotFound
 		}
 		return nil, err
 	}

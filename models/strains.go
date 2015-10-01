@@ -2,18 +2,13 @@ package models
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/modl"
+	"github.com/thermokarst/bactdb/errors"
 	"github.com/thermokarst/bactdb/helpers"
 	"github.com/thermokarst/bactdb/types"
-)
-
-var (
-	ErrStrainNotFound   = errors.New("Strain not found")
-	ErrStrainNotUpdated = errors.New("Strain not updated")
 )
 
 func init() {
@@ -126,7 +121,7 @@ func GetStrain(id int64, genus string, claims *types.Claims) (*Strain, error) {
 		GROUP BY st.id;`
 	if err := DBH.SelectOne(&strain, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrStrainNotFound
+			return nil, errors.StrainNotFound
 		}
 		return nil, err
 	}

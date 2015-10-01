@@ -1,9 +1,10 @@
 package types
 
 import (
-	"errors"
 	"strconv"
 	"strings"
+
+	"github.com/thermokarst/bactdb/errors"
 )
 
 type NullSliceInt64 []int64
@@ -11,7 +12,7 @@ type NullSliceInt64 []int64
 func (i *NullSliceInt64) Scan(src interface{}) error {
 	asBytes, ok := src.([]byte)
 	if !ok {
-		return errors.New("Scan source was not []byte")
+		return errors.SourceNotByteSlice
 	}
 	asString := string(asBytes)
 	(*i) = strToIntSlice(asString)

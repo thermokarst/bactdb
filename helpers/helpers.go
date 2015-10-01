@@ -3,7 +3,6 @@ package helpers
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -15,8 +14,6 @@ import (
 )
 
 var (
-	ErrMustProvideOptions     = errors.New("Must provide necessary options")
-	ErrMustProvideOptionsJSON = types.NewJSONError(ErrMustProvideOptions, http.StatusBadRequest)
 	StatusUnprocessableEntity = 422
 	MustProvideAValue         = "Must provide a value"
 	SchemaDecoder             = schema.NewDecoder()

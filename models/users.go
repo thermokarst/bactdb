@@ -3,19 +3,12 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"regexp"
 
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/golang.org/x/crypto/bcrypt"
+	"github.com/thermokarst/bactdb/errors"
 	"github.com/thermokarst/bactdb/helpers"
 	"github.com/thermokarst/bactdb/types"
-)
-
-var (
-	ErrUserNotFound           = errors.New("User not found")
-	ErrUserNotUpdated         = errors.New("User not updated")
-	ErrInvalidEmailOrPassword = errors.New("Invalid email or password")
-	ErrEmailAddressTaken      = errors.New("Email address already registered")
 )
 
 func init() {
@@ -114,10 +107,10 @@ func DbAuthenticate(email string, password string) error {
 		AND verified IS TRUE
 		AND deleted_at IS NULL;`
 	if err := DBH.SelectOne(&user, q, email); err != nil {
-		return ErrInvalidEmailOrPassword
+		return errors.InvalidEmailOrPassword
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return ErrInvalidEmailOrPassword
+		return errors.InvalidEmailOrPassword
 	}
 	return nil
 }
@@ -131,7 +124,7 @@ func DbGetUserById(id int64) (*User, error) {
 		AND deleted_at IS NULL;`
 	if err := DBH.SelectOne(&user, q, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrUserNotFound
+			return nil, errors.UserNotFound
 		}
 		return nil, err
 	}
@@ -148,7 +141,7 @@ func DbGetUserByEmail(email string) (*User, error) {
 		AND deleted_at IS NULL;`
 	if err := DBH.SelectOne(&user, q, email); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrUserNotFound
+			return nil, errors.UserNotFound
 		}
 		return nil, err
 	}
