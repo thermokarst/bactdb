@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"bytes"
@@ -11,9 +11,12 @@ import (
 	"time"
 
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/mux"
+	"github.com/thermokarst/bactdb/helpers"
+	"github.com/thermokarst/bactdb/payloads"
+	"github.com/thermokarst/bactdb/types"
 )
 
-func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
+func HandleCompare(w http.ResponseWriter, r *http.Request) *types.AppError {
 	// types
 	type Comparisions map[string]map[string]string
 	type ComparisionsJSON [][]string
@@ -23,7 +26,7 @@ func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
 	if mimeType == "" {
 		mimeType = "json"
 	}
-	claims := getClaims(r)
+	claims := helpers.GetClaims(r)
 	var header string
 	var data []byte
 
@@ -33,11 +36,11 @@ func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
 	opt.Del("mimeType")
 	opt.Del("token")
 	opt.Add("Genus", mux.Vars(r)["genus"])
-	measurementsEntity, appErr := measService.list(&opt, &claims)
+	measurementsEntity, appErr := measService.List(&opt, &claims)
 	if appErr != nil {
 		return appErr
 	}
-	measurementsPayload := (measurementsEntity).(*MeasurementsPayload)
+	measurementsPayload := (measurementsEntity).(*payloads.MeasurementsPayload)
 
 	// Assemble matrix
 	characteristic_ids := strings.Split(opt.Get("characteristic_ids"), ",")

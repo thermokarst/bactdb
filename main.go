@@ -10,18 +10,12 @@ import (
 
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/DavidHuie/gomigrate"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/codegangsta/cli"
-	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/schema"
-	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/modl"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/sqlx"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/lib/pq"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/mailgun/mailgun-go"
-)
-
-var (
-	DB                             = &modl.DbMap{Dialect: modl.PostgresDialect{}}
-	DBH           modl.SqlExecutor = DB
-	schemaDecoder                  = schema.NewDecoder()
-	mgAccts                        = make(map[string]mailgun.Mailgun)
+	"github.com/thermokarst/bactdb/api"
+	"github.com/thermokarst/bactdb/handlers"
+	"github.com/thermokarst/bactdb/models"
 )
 
 func main() {
@@ -37,12 +31,12 @@ func main() {
 		} else {
 			connection += " sslmode=disable"
 		}
-		DB.Dbx, err = sqlx.Open("postgres", connection)
+		models.DB.Dbx, err = sqlx.Open("postgres", connection)
 		if err != nil {
 			log.Fatal("Error connecting to PostgreSQL database (using PG* environment variables): ", err)
 		}
-		DB.TraceOn("[modl]", log.New(os.Stdout, "bactdb:", log.Lmicroseconds))
-		DB.Db = DB.Dbx.DB
+		models.DB.TraceOn("[modl]", log.New(os.Stdout, "bactdb:", log.Lmicroseconds))
+		models.DB.Db = models.DB.Dbx.DB
 	})
 
 	app := cli.NewApp()
@@ -100,7 +94,7 @@ func cmdServe(c *cli.Context) {
 	log.Printf("Mailgun: %+v", accounts)
 
 	for _, a := range accounts {
-		mgAccts[a.Ref] = mailgun.NewMailgun(a.Domain, a.Private, a.Public)
+		api.MgAccts[a.Ref] = mailgun.NewMailgun(a.Domain, a.Private, a.Public)
 	}
 
 	addr := os.Getenv("PORT")
@@ -110,7 +104,7 @@ func cmdServe(c *cli.Context) {
 	httpAddr := fmt.Sprintf(":%v", addr)
 
 	m := http.NewServeMux()
-	m.Handle("/api/", http.StripPrefix("/api", Handler()))
+	m.Handle("/api/", http.StripPrefix("/api", handlers.Handler()))
 
 	log.Print("Listening on ", httpAddr)
 	err = http.ListenAndServe(httpAddr, m)
@@ -121,16 +115,17 @@ func cmdServe(c *cli.Context) {
 
 func cmdMigrateDb(c *cli.Context) {
 	migrationsPath := c.String("migration_path")
-	migrator, err := gomigrate.NewMigrator(DB.Dbx.DB, gomigrate.Postgres{}, migrationsPath)
+	migrator, err := gomigrate.NewMigrator(models.DB.Dbx.DB, gomigrate.Postgres{}, migrationsPath)
 	if err != nil {
 		log.Fatal("Error initializing migrations: ", err)
 	}
 
-	users := make(Users, 0)
+	users := make(models.Users, 0)
 
 	if c.Bool("drop") {
 		// Back up users table
-		if err := DBH.Select(&users, `SELECT * FROM users;`); err != nil {
+		// TODO: look into this
+		if err := models.DBH.Select(&users, `SELECT * FROM users;`); err != nil {
 			log.Fatal("Couldn't back up identity tables: ", err)
 		}
 		log.Printf("%+v Users", len(users))
@@ -152,7 +147,8 @@ func cmdMigrateDb(c *cli.Context) {
 		if len(users) > 0 {
 			// varargs don't seem to work here, loop instead
 			for _, user := range users {
-				if err := DBH.Insert(user); err != nil {
+				// TODO: look into this
+				if err := models.DBH.Insert(user); err != nil {
 					log.Fatal("Couldn't restore user: ", err)
 				}
 			}

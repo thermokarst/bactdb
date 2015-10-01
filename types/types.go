@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"bytes"
@@ -198,13 +198,13 @@ func (ej ErrorJSON) Error() string {
 	return string(e)
 }
 
-type appError struct {
+type AppError struct {
 	Error  error
 	Status int
 }
 
-func newJSONError(err error, status int) *appError {
-	return &appError{
+func NewJSONError(err error, status int) *AppError {
+	return &AppError{
 		Error:  ErrorJSON{Err: err},
 		Status: status,
 	}

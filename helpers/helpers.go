@@ -1,4 +1,4 @@
-package main
+package helpers
 
 import (
 	"crypto/rand"
@@ -8,15 +8,18 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/schema"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/context"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/lib/pq"
+	"github.com/thermokarst/bactdb/types"
 )
 
 var (
 	ErrMustProvideOptions     = errors.New("Must provide necessary options")
-	ErrMustProvideOptionsJSON = newJSONError(ErrMustProvideOptions, http.StatusBadRequest)
+	ErrMustProvideOptionsJSON = types.NewJSONError(ErrMustProvideOptions, http.StatusBadRequest)
 	StatusUnprocessableEntity = 422
 	MustProvideAValue         = "Must provide a value"
+	SchemaDecoder             = schema.NewDecoder()
 )
 
 // ListOptions specifies general pagination options for fetching a list of results
@@ -45,10 +48,16 @@ func (o ListOptions) PerPageOrDefault() int64 {
 	return o.PerPage
 }
 
+type MeasurementListOptions struct {
+	ListOptions
+	Strains         []int64 `schema:"strain_ids"`
+	Characteristics []int64 `schema:"characteristic_ids"`
+}
+
 // DefaultPerPage is the default number of items to return in a paginated result set
 const DefaultPerPage = 10
 
-func valsIn(attribute string, values []int64, vals *[]interface{}, counter *int64) string {
+func ValsIn(attribute string, values []int64, vals *[]interface{}, counter *int64) string {
 	if len(values) == 1 {
 		return fmt.Sprintf("%v=%v", attribute, values[0])
 	}
@@ -63,8 +72,8 @@ func valsIn(attribute string, values []int64, vals *[]interface{}, counter *int6
 	return m
 }
 
-func currentTime() NullTime {
-	return NullTime{
+func CurrentTime() types.NullTime {
+	return types.NullTime{
 		pq.NullTime{
 			Time:  time.Now(),
 			Valid: true,
@@ -72,7 +81,8 @@ func currentTime() NullTime {
 	}
 }
 
-func generateNonce() (string, error) {
+// TODO: move this
+func GenerateNonce() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -81,11 +91,11 @@ func generateNonce() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-func getClaims(r *http.Request) Claims {
+func GetClaims(r *http.Request) types.Claims {
 	con := context.Get(r, "claims")
-	var claims Claims
+	var claims types.Claims
 	if con != nil {
-		claims = con.(Claims)
+		claims = con.(types.Claims)
 	}
 	origin := r.Header.Get("Origin")
 	if origin != "" {
@@ -94,10 +104,10 @@ func getClaims(r *http.Request) Claims {
 	return claims
 }
 
-func canAdd(claims *Claims) bool {
+func CanAdd(claims *types.Claims) bool {
 	return claims.Role == "A" || claims.Role == "W"
 }
 
-func canEdit(claims *Claims, author int64) bool {
+func CanEdit(claims *types.Claims, author int64) bool {
 	return claims.Sub == author || claims.Role == "A"
 }
