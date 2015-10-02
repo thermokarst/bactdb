@@ -1,5 +1,6 @@
 package types
 
+// Claims represent an authenticated user's session.
 type Claims struct {
 	Name string
 	Iss  string

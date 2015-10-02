@@ -18,7 +18,7 @@ import (
 	"github.com/thermokarst/bactdb/models"
 )
 
-func main() {
+func init() {
 	var connectOnce sync.Once
 	connectOnce.Do(func() {
 		var err error
@@ -38,7 +38,9 @@ func main() {
 		models.DB.TraceOn("[modl]", log.New(os.Stdout, "bactdb:", log.Lmicroseconds))
 		models.DB.Db = models.DB.Dbx.DB
 	})
+}
 
+func main() {
 	app := cli.NewApp()
 	app.Name = "bactdb"
 	app.Usage = "a database for bacteria"
@@ -148,7 +150,7 @@ func cmdMigrateDb(c *cli.Context) {
 			// varargs don't seem to work here, loop instead
 			for _, user := range users {
 				// TODO: look into this
-				if err := models.DBH.Insert(user); err != nil {
+				if err := models.DBH.Insert(user.UserBase); err != nil {
 					log.Fatal("Couldn't restore user: ", err)
 				}
 			}

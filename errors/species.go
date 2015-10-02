@@ -3,6 +3,8 @@ package errors
 import "errors"
 
 var (
-	SpeciesNotFound   = errors.New("Species not found")
-	SpeciesNotUpdated = errors.New("Species not updated")
+	// ErrSpeciesNotFound when not found.
+	ErrSpeciesNotFound = errors.New("Species not found")
+	// ErrSpeciesNotUpdated when not updated.
+	ErrSpeciesNotUpdated = errors.New("Species not updated")
 )

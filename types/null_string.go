@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 )
 
+// NullString wraps sql.NullString so that the JSON serialization can be overridden.
 type NullString struct {
 	sql.NullString
 }
 
+// MarshalJSON makes NullString a json.Marshaller.
 func (s *NullString) MarshalJSON() ([]byte, error) {
 	if !s.Valid {
 		return []byte("null"), nil
@@ -17,6 +19,7 @@ func (s *NullString) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String)
 }
 
+// UnmarshalJSON makes NullString a json.Unmarshaller.
 func (s *NullString) UnmarshalJSON(b []byte) error {
 	if bytes.Equal(b, []byte("null")) {
 		s.String = ""

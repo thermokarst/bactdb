@@ -12,9 +12,10 @@ import (
 )
 
 func init() {
-	DB.AddTableWithName(SpeciesBase{}, "species").SetKeys(true, "Id")
+	DB.AddTableWithName(SpeciesBase{}, "species").SetKeys(true, "ID")
 }
 
+// PreInsert is a modl hook.
 func (s *SpeciesBase) PreInsert(e modl.SqlExecutor) error {
 	ct := helpers.CurrentTime()
 	s.CreatedAt = ct
@@ -22,13 +23,15 @@ func (s *SpeciesBase) PreInsert(e modl.SqlExecutor) error {
 	return nil
 }
 
+// PreUpdate is a modl hook.
 func (s *SpeciesBase) PreUpdate(e modl.SqlExecutor) error {
 	s.UpdatedAt = helpers.CurrentTime()
 	return nil
 }
 
+// SpeciesBase is what the DB expects for write operations.
 type SpeciesBase struct {
-	Id                  int64            `db:"id" json:"id"`
+	ID                  int64            `db:"id" json:"id"`
 	GenusID             int64            `db:"genus_id" json:"-"`
 	SubspeciesSpeciesID types.NullInt64  `db:"subspecies_species_id" json:"-"`
 	SpeciesName         string           `db:"species_name" json:"speciesName"`
@@ -42,6 +45,8 @@ type SpeciesBase struct {
 	DeletedBy           types.NullInt64  `db:"deleted_by" json:"deletedBy"`
 }
 
+// Species is what the DB expects for read operations, and is what the API expects
+// to return to the requester.
 type Species struct {
 	*SpeciesBase
 	GenusName    string               `db:"genus_name" json:"genusName"`
@@ -51,57 +56,64 @@ type Species struct {
 	CanEdit      bool                 `db:"-" json:"canEdit"`
 }
 
+// ManySpecies is multiple species entities.
 type ManySpecies []*Species
 
+// SpeciesMeta stashes some metadata related to the entity.
 type SpeciesMeta struct {
 	CanAdd bool `json:"canAdd"`
 }
 
-func GenusIdFromName(genus_name string) (int64, error) {
-	var genus_id struct{ Id int64 }
+// GenusIDFromName looks up the genus' ID.
+func GenusIDFromName(genusName string) (int64, error) {
+	var genusID struct{ ID int64 }
 	q := `SELECT id FROM genera WHERE LOWER(genus_name) = LOWER($1);`
-	if err := DBH.SelectOne(&genus_id, q, genus_name); err != nil {
+	if err := DBH.SelectOne(&genusID, q, genusName); err != nil {
 		return 0, err
 	}
-	return genus_id.Id, nil
+	return genusID.ID, nil
 }
 
+// StrainOptsFromSpecies returns the options for finding all related strains for
+// a set of species.
 func StrainOptsFromSpecies(opt helpers.ListOptions) (*helpers.ListOptions, error) {
-	relatedStrainIds := make([]int64, 0)
+	var relatedStrainIDs []int64
 
-	if opt.Ids == nil {
+	if opt.IDs == nil {
 		q := `SELECT DISTINCT st.id
 			FROM strains st
 			INNER JOIN species sp ON sp.id=st.species_id
 			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1);`
-		if err := DBH.Select(&relatedStrainIds, q, opt.Genus); err != nil {
+		if err := DBH.Select(&relatedStrainIDs, q, opt.Genus); err != nil {
 			return nil, err
 		}
 	} else {
 		var vals []interface{}
 		var count int64 = 1
-		q := fmt.Sprintf("SELECT DISTINCT id FROM strains WHERE %s;", helpers.ValsIn("species_id", opt.Ids, &vals, &count))
+		q := fmt.Sprintf("SELECT DISTINCT id FROM strains WHERE %s;", helpers.ValsIn("species_id", opt.IDs, &vals, &count))
 
-		if err := DBH.Select(&relatedStrainIds, q, vals...); err != nil {
+		if err := DBH.Select(&relatedStrainIDs, q, vals...); err != nil {
 			return nil, err
 		}
 	}
 
-	return &helpers.ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
+	return &helpers.ListOptions{Genus: opt.Genus, IDs: relatedStrainIDs}, nil
 }
 
-func StrainsFromSpeciesId(id int64, genus string, claims *types.Claims) (*Strains, error) {
+// StrainsFromSpeciesID returns the options for finding all related strains for a
+// particular species.
+func StrainsFromSpeciesID(id int64, genus string, claims *types.Claims) (*Strains, error) {
 	opt := helpers.ListOptions{
 		Genus: genus,
-		Ids:   []int64{id},
+		IDs:   []int64{id},
 	}
 
-	strains_opt, err := StrainOptsFromSpecies(opt)
+	strainsOpt, err := StrainOptsFromSpecies(opt)
 	if err != nil {
 		return nil, err
 	}
 
-	strains, err := ListStrains(*strains_opt, claims)
+	strains, err := ListStrains(*strainsOpt, claims)
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +121,7 @@ func StrainsFromSpeciesId(id int64, genus string, claims *types.Claims) (*Strain
 	return strains, nil
 }
 
+// ListSpecies returns all species
 func ListSpecies(opt helpers.ListOptions, claims *types.Claims) (*ManySpecies, error) {
 	var vals []interface{}
 
@@ -120,10 +133,10 @@ func ListSpecies(opt helpers.ListOptions, claims *types.Claims) (*ManySpecies, e
 			LEFT OUTER JOIN strains st ON st.species_id=sp.id`
 	vals = append(vals, opt.Genus)
 
-	if len(opt.Ids) != 0 {
+	if len(opt.IDs) != 0 {
 		var conds []string
 		s := "sp.id IN ("
-		for i, id := range opt.Ids {
+		for i, id := range opt.IDs {
 			s = s + fmt.Sprintf("$%v,", i+2) // start param index at 2
 			vals = append(vals, id)
 		}
@@ -147,6 +160,7 @@ func ListSpecies(opt helpers.ListOptions, claims *types.Claims) (*ManySpecies, e
 	return &species, nil
 }
 
+// GetSpecies returns a particular species.
 func GetSpecies(id int64, genus string, claims *types.Claims) (*Species, error) {
 	var species Species
 	q := `SELECT sp.*, g.genus_name, array_agg(st.id) AS strains,
@@ -158,7 +172,7 @@ func GetSpecies(id int64, genus string, claims *types.Claims) (*Species, error) 
 		GROUP BY sp.id, g.genus_name;`
 	if err := DBH.SelectOne(&species, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.SpeciesNotFound
+			return nil, errors.ErrSpeciesNotFound
 		}
 		return nil, err
 	}

@@ -3,6 +3,8 @@ package errors
 import "errors"
 
 var (
-	CharacteristicNotFound   = errors.New("Characteristic not found")
-	CharacteristicNotUpdated = errors.New("Characteristic not updated")
+	// ErrCharacteristicNotFound when not found.
+	ErrCharacteristicNotFound = errors.New("Characteristic not found")
+	// ErrCharacteristicNotUpdated when not updated.
+	ErrCharacteristicNotUpdated = errors.New("Characteristic not updated")
 )

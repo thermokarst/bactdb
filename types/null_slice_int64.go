@@ -7,12 +7,14 @@ import (
 	"github.com/thermokarst/bactdb/errors"
 )
 
+// NullSliceInt64 allows bactdb to read Postgres array types.
 type NullSliceInt64 []int64
 
+// Scan makes NullSliceInt64 a sql.Scanner.
 func (i *NullSliceInt64) Scan(src interface{}) error {
 	asBytes, ok := src.([]byte)
 	if !ok {
-		return errors.SourceNotByteSlice
+		return errors.ErrSourceNotByteSlice
 	}
 	asString := string(asBytes)
 	(*i) = strToIntSlice(asString)

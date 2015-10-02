@@ -6,17 +6,20 @@ import (
 	"encoding/json"
 )
 
+// NullBool wraps sql.NullBool so that the JSON serialization can be overridden.
 type NullBool struct {
 	sql.NullBool
 }
 
-func (b *NullBool) MarshalJSON() ([]byte, error) {
-	if !b.Valid {
+// MarshalJSON makes NullBool a json.Marshaller.
+func (n *NullBool) MarshalJSON() ([]byte, error) {
+	if !n.Valid {
 		return []byte("null"), nil
 	}
-	return json.Marshal(b.Bool)
+	return json.Marshal(n.Bool)
 }
 
+// UnmarshalJSON makes NullBool a json.Unmarshaller.
 func (n *NullBool) UnmarshalJSON(b []byte) error {
 	if bytes.Equal(b, []byte("null")) {
 		n.Bool = false

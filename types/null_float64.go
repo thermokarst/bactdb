@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 )
 
+// NullFloat64 wraps sql.NullBool so that the JSON serialization can be overridden.
 type NullFloat64 struct {
 	sql.NullFloat64
 }
 
+// MarshalJSON makes NullFloat64 a json.Marshaller.
 func (f *NullFloat64) MarshalJSON() ([]byte, error) {
 	if !f.Valid {
 		return []byte("null"), nil
@@ -17,6 +19,7 @@ func (f *NullFloat64) MarshalJSON() ([]byte, error) {
 	return json.Marshal(f.Float64)
 }
 
+// UnmarshalJSON makes NullFloat64 a json.Unmarshaller.
 func (f *NullFloat64) UnmarshalJSON(b []byte) error {
 	if bytes.Equal(b, []byte("null")) {
 		f.Float64 = 0

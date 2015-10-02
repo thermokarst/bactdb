@@ -9,8 +9,10 @@ import (
 )
 
 var (
+	// Middleware is for JWT
 	Middleware *jwt.Middleware
-	Config     *jwt.Config = &jwt.Config{
+	// Config handles JWT middleware configuration
+	Config = &jwt.Config{
 		Secret: os.Getenv("SECRET"),
 		Auth:   models.DbAuthenticate,
 		Claims: claimsFunc,
@@ -27,7 +29,7 @@ func claimsFunc(email string) (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"name": user.Name,
 		"iss":  "bactdb",
-		"sub":  user.Id,
+		"sub":  user.ID,
 		"role": user.Role,
 		"iat":  currentTime.Unix(),
 		"exp":  currentTime.Add(time.Minute * 60).Unix(),

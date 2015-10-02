@@ -3,6 +3,8 @@ package errors
 import "errors"
 
 var (
-	StrainNotFound   = errors.New("Strain not found")
-	StrainNotUpdated = errors.New("Strain not updated")
+	// ErrStrainNotFound when not found.
+	ErrStrainNotFound = errors.New("Strain not found")
+	// ErrStrainNotUpdated when not updated.
+	ErrStrainNotUpdated = errors.New("Strain not updated")
 )

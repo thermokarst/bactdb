@@ -32,12 +32,13 @@ func verifyClaims(claims []byte, r *http.Request) error {
 		return err
 	}
 	if currentTime.After(time.Unix(c.Exp, 0)) {
-		return errors.ExpiredToken
+		return errors.ErrExpiredToken
 	}
 	context.Set(r, "claims", c)
 	return nil
 }
 
+// Handler is the root HTTP handler for bactdb.
 func Handler() http.Handler {
 	m := mux.NewRouter()
 	userService := api.UserService{}
@@ -67,25 +68,25 @@ func Handler() http.Handler {
 	// Everything past this point requires a valid token
 	routes := []r{
 		r{handleLister(userService), "GET", "/users"},
-		r{handleGetter(userService), "GET", "/users/{Id:.+}"},
-		r{handleUpdater(userService), "PUT", "/users/{Id:.+}"},
+		r{handleGetter(userService), "GET", "/users/{ID:.+}"},
+		r{handleUpdater(userService), "PUT", "/users/{ID:.+}"},
 		r{handleLister(speciesService), "GET", "/species"},
 		r{handleCreater(speciesService), "POST", "/species"},
-		r{handleGetter(speciesService), "GET", "/species/{Id:.+}"},
-		r{handleUpdater(speciesService), "PUT", "/species/{Id:.+}"},
+		r{handleGetter(speciesService), "GET", "/species/{ID:.+}"},
+		r{handleUpdater(speciesService), "PUT", "/species/{ID:.+}"},
 		r{handleLister(strainService), "GET", "/strains"},
 		r{handleCreater(strainService), "POST", "/strains"},
-		r{handleGetter(strainService), "GET", "/strains/{Id:.+}"},
-		r{handleUpdater(strainService), "PUT", "/strains/{Id:.+}"},
+		r{handleGetter(strainService), "GET", "/strains/{ID:.+}"},
+		r{handleUpdater(strainService), "PUT", "/strains/{ID:.+}"},
 		r{handleLister(characteristicService), "GET", "/characteristics"},
 		r{handleCreater(characteristicService), "POST", "/characteristics"},
-		r{handleGetter(characteristicService), "GET", "/characteristics/{Id:.+}"},
-		r{handleUpdater(characteristicService), "PUT", "/characteristics/{Id:.+}"},
+		r{handleGetter(characteristicService), "GET", "/characteristics/{ID:.+}"},
+		r{handleUpdater(characteristicService), "PUT", "/characteristics/{ID:.+}"},
 		r{handleLister(measurementService), "GET", "/measurements"},
 		r{handleCreater(measurementService), "POST", "/measurements"},
-		r{handleGetter(measurementService), "GET", "/measurements/{Id:.+}"},
-		r{handleUpdater(measurementService), "PUT", "/measurements/{Id:.+}"},
-		r{handleDeleter(measurementService), "DELETE", "/measurements/{Id:.+}"},
+		r{handleGetter(measurementService), "GET", "/measurements/{ID:.+}"},
+		r{handleUpdater(measurementService), "PUT", "/measurements/{ID:.+}"},
+		r{handleDeleter(measurementService), "DELETE", "/measurements/{ID:.+}"},
 	}
 
 	for _, route := range routes {
@@ -97,9 +98,9 @@ func Handler() http.Handler {
 
 func handleGetter(g api.Getter) errorHandler {
 	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
-		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+		id, err := strconv.ParseInt(mux.Vars(r)["ID"], 10, 0)
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		claims := helpers.GetClaims(r)
@@ -111,7 +112,7 @@ func handleGetter(g api.Getter) errorHandler {
 
 		data, err := e.Marshal()
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
 		return nil
@@ -131,7 +132,7 @@ func handleLister(l api.Lister) errorHandler {
 		}
 		data, err := es.Marshal()
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
 		return nil
@@ -140,19 +141,19 @@ func handleLister(l api.Lister) errorHandler {
 
 func handleUpdater(u api.Updater) errorHandler {
 	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
-		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+		id, err := strconv.ParseInt(mux.Vars(r)["ID"], 10, 0)
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		e, err := u.Unmarshal(bodyBytes)
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		claims := helpers.GetClaims(r)
@@ -164,7 +165,7 @@ func handleUpdater(u api.Updater) errorHandler {
 
 		data, err := e.Marshal()
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
 		return nil
@@ -175,12 +176,12 @@ func handleCreater(c api.Creater) errorHandler {
 	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		e, err := c.Unmarshal(bodyBytes)
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		claims := helpers.GetClaims(r)
@@ -192,7 +193,7 @@ func handleCreater(c api.Creater) errorHandler {
 
 		data, err := e.Marshal()
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 		w.Write(data)
 		return nil
@@ -201,9 +202,9 @@ func handleCreater(c api.Creater) errorHandler {
 
 func handleDeleter(d api.Deleter) errorHandler {
 	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
-		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+		id, err := strconv.ParseInt(mux.Vars(r)["ID"], 10, 0)
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 
 		claims := helpers.GetClaims(r)
@@ -294,14 +295,14 @@ func (fn errorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func tokenRefresh(j *jwt.Middleware) errorHandler {
 	t := func(w http.ResponseWriter, r *http.Request) *types.AppError {
 		claims := helpers.GetClaims(r)
-		user, err := models.DbGetUserById(claims.Sub)
+		user, err := models.DbGetUserByID(claims.Sub)
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 		user.Password = ""
 		token, err := auth.Middleware.CreateToken(user.Email)
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
 		data, _ := json.Marshal(struct {
 			Token string `json:"token"`

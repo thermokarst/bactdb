@@ -12,46 +12,49 @@ import (
 	"github.com/thermokarst/bactdb/types"
 )
 
+// MeasurementService provides for CRUD operations.
 type MeasurementService struct{}
 
-func (s MeasurementService) Unmarshal(b []byte) (types.Entity, error) {
+// Unmarshal satisfies interface Updater and interface Creater.
+func (m MeasurementService) Unmarshal(b []byte) (types.Entity, error) {
 	var mj payloads.Measurement
 	err := json.Unmarshal(b, &mj)
 	return &mj, err
 }
 
+// List lists all measurements.
 func (m MeasurementService) List(val *url.Values, claims *types.Claims) (types.Entity, *types.AppError) {
 	if val == nil {
-		return nil, NewJSONError(errors.MustProvideOptions, http.StatusInternalServerError)
+		return nil, newJSONError(errors.ErrMustProvideOptions, http.StatusInternalServerError)
 	}
 	var opt helpers.MeasurementListOptions
 	if err := helpers.SchemaDecoder.Decode(&opt, *val); err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	measurements, err := models.ListMeasurements(opt, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	char_opts, err := models.CharacteristicOptsFromMeasurements(opt)
+	charOpts, err := models.CharacteristicOptsFromMeasurements(opt)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	characteristics, err := models.ListCharacteristics(*char_opts, claims)
+	characteristics, err := models.ListCharacteristics(*charOpts, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strain_opts, err := models.StrainOptsFromMeasurements(opt)
+	strainOpts, err := models.StrainOptsFromMeasurements(opt)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains, err := models.ListStrains(*strain_opts, claims)
+	strains, err := models.ListStrains(*strainOpts, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	payload := payloads.Measurements{
@@ -63,10 +66,11 @@ func (m MeasurementService) List(val *url.Values, claims *types.Claims) (types.E
 	return &payload, nil
 }
 
+// Get retrieves a single measurement.
 func (m MeasurementService) Get(id int64, genus string, claims *types.Claims) (types.Entity, *types.AppError) {
 	measurement, err := models.GetMeasurement(id, genus, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	payload := payloads.Measurement{
@@ -76,33 +80,34 @@ func (m MeasurementService) Get(id int64, genus string, claims *types.Claims) (t
 	return &payload, nil
 }
 
-func (s MeasurementService) Update(id int64, e *types.Entity, genus string, claims *types.Claims) *types.AppError {
+// Update modifies a single measurement.
+func (m MeasurementService) Update(id int64, e *types.Entity, genus string, claims *types.Claims) *types.AppError {
 	payload := (*e).(*payloads.Measurement)
 	payload.Measurement.UpdatedBy = claims.Sub
-	payload.Measurement.Id = id
+	payload.Measurement.ID = id
 
 	if payload.Measurement.TextMeasurementType.Valid {
-		id, err := models.GetTextMeasurementTypeId(payload.Measurement.TextMeasurementType.String)
+		id, err := models.GetTextMeasurementTypeID(payload.Measurement.TextMeasurementType.String)
 		if err != nil {
-			return NewJSONError(err, http.StatusInternalServerError)
+			return newJSONError(err, http.StatusInternalServerError)
 		}
-		payload.Measurement.TextMeasurementTypeId.Int64 = id
-		payload.Measurement.TextMeasurementTypeId.Valid = true
+		payload.Measurement.TextMeasurementTypeID.Int64 = id
+		payload.Measurement.TextMeasurementTypeID.Valid = true
 	}
 
 	// TODO: fix this
 	count, err := models.DBH.Update(payload.Measurement.MeasurementBase)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
 		// TODO: fix this
-		return NewJSONError(errors.StrainNotUpdated, http.StatusBadRequest)
+		return newJSONError(errors.ErrStrainNotUpdated, http.StatusBadRequest)
 	}
 
 	measurement, err := models.GetMeasurement(id, genus, claims)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 
 	payload.Measurement = measurement
@@ -110,16 +115,18 @@ func (s MeasurementService) Update(id int64, e *types.Entity, genus string, clai
 	return nil
 }
 
+// Delete deletes a single measurement.
 func (m MeasurementService) Delete(id int64, genus string, claims *types.Claims) *types.AppError {
 	q := `DELETE FROM measurements WHERE id=$1;`
 	// TODO: fix this
 	_, err := models.DBH.Exec(q, id)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	return nil
 }
 
+// Create initializes a new measurement.
 func (m MeasurementService) Create(e *types.Entity, genus string, claims *types.Claims) *types.AppError {
 	payload := (*e).(*payloads.Measurement)
 	payload.Measurement.CreatedBy = claims.Sub
@@ -127,7 +134,7 @@ func (m MeasurementService) Create(e *types.Entity, genus string, claims *types.
 
 	// TODO: fix this
 	if err := models.DBH.Insert(payload.Measurement.MeasurementBase); err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 
 	return nil

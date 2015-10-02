@@ -12,9 +12,10 @@ import (
 )
 
 func init() {
-	DB.AddTableWithName(StrainBase{}, "strains").SetKeys(true, "Id")
+	DB.AddTableWithName(StrainBase{}, "strains").SetKeys(true, "ID")
 }
 
+// PreInsert is a modl hook.
 func (s *StrainBase) PreInsert(e modl.SqlExecutor) error {
 	ct := helpers.CurrentTime()
 	s.CreatedAt = ct
@@ -22,14 +23,16 @@ func (s *StrainBase) PreInsert(e modl.SqlExecutor) error {
 	return nil
 }
 
+// PreUpdate is a modl hook.
 func (s *StrainBase) PreUpdate(e modl.SqlExecutor) error {
 	s.UpdatedAt = helpers.CurrentTime()
 	return nil
 }
 
+// StrainBase is what the DB expects for write operations.
 type StrainBase struct {
-	Id                  int64            `db:"id" json:"id"`
-	SpeciesId           int64            `db:"species_id" json:"species"`
+	ID                  int64            `db:"id" json:"id"`
+	SpeciesID           int64            `db:"species_id" json:"species"`
 	StrainName          string           `db:"strain_name" json:"strainName"`
 	TypeStrain          bool             `db:"type_strain" json:"typeStrain"`
 	AccessionNumbers    types.NullString `db:"accession_numbers" json:"accessionNumbers"`
@@ -45,6 +48,8 @@ type StrainBase struct {
 	DeletedBy           types.NullInt64  `db:"deleted_by" json:"deletedBy"`
 }
 
+// Strain is what the DB expects for read operations, and is what the API expects
+// to return to the requester.
 type Strain struct {
 	*StrainBase
 	Measurements      types.NullSliceInt64 `db:"measurements" json:"measurements"`
@@ -54,20 +59,24 @@ type Strain struct {
 	CanEdit           bool                 `db:"-" json:"canEdit"`
 }
 
+// Strains are multiple strain entities.
 type Strains []*Strain
 
+// StrainMeta stashes some metadata related to the entity.
 type StrainMeta struct {
 	CanAdd bool `json:"canAdd"`
 }
 
+// SpeciesName returns a strain's species name.
 func (s StrainBase) SpeciesName() string {
 	var species SpeciesBase
-	if err := DBH.Get(&species, s.SpeciesId); err != nil {
+	if err := DBH.Get(&species, s.SpeciesID); err != nil {
 		return ""
 	}
 	return species.SpeciesName
 }
 
+// ListStrains returns all strains.
 func ListStrains(opt helpers.ListOptions, claims *types.Claims) (*Strains, error) {
 	var vals []interface{}
 
@@ -81,10 +90,10 @@ func ListStrains(opt helpers.ListOptions, claims *types.Claims) (*Strains, error
 		LEFT OUTER JOIN measurements m ON m.strain_id=st.id`
 	vals = append(vals, opt.Genus)
 
-	if len(opt.Ids) != 0 {
+	if len(opt.IDs) != 0 {
 		var conds []string
 		s := "st.id IN ("
-		for i, id := range opt.Ids {
+		for i, id := range opt.IDs {
 			s = s + fmt.Sprintf("$%v,", i+2) // start param index at 2
 			vals = append(vals, id)
 		}
@@ -108,6 +117,7 @@ func ListStrains(opt helpers.ListOptions, claims *types.Claims) (*Strains, error
 	return &strains, nil
 }
 
+// GetStrain returns a particular strain.
 func GetStrain(id int64, genus string, claims *types.Claims) (*Strain, error) {
 	var strain Strain
 	q := `SELECT st.*, array_agg(DISTINCT m.id) AS measurements,
@@ -121,7 +131,7 @@ func GetStrain(id int64, genus string, claims *types.Claims) (*Strain, error) {
 		GROUP BY st.id;`
 	if err := DBH.SelectOne(&strain, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.StrainNotFound
+			return nil, errors.ErrStrainNotFound
 		}
 		return nil, err
 	}
@@ -131,49 +141,53 @@ func GetStrain(id int64, genus string, claims *types.Claims) (*Strain, error) {
 	return &strain, nil
 }
 
+// SpeciesOptsFromStrains returns the options for finding all related species for a
+// set of strains.
 func SpeciesOptsFromStrains(opt helpers.ListOptions) (*helpers.ListOptions, error) {
-	relatedSpeciesIds := make([]int64, 0)
+	var relatedSpeciesIDs []int64
 
-	if opt.Ids == nil || len(opt.Ids) == 0 {
+	if opt.IDs == nil || len(opt.IDs) == 0 {
 		q := `SELECT DISTINCT st.species_id
 			FROM strains st
 			INNER JOIN species sp ON sp.id=st.species_id
 			INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1);`
-		if err := DBH.Select(&relatedSpeciesIds, q, opt.Genus); err != nil {
+		if err := DBH.Select(&relatedSpeciesIDs, q, opt.Genus); err != nil {
 			return nil, err
 		}
 	} else {
 		var vals []interface{}
 		var count int64 = 1
-		q := fmt.Sprintf("SELECT DISTINCT species_id FROM strains WHERE %s;", helpers.ValsIn("id", opt.Ids, &vals, &count))
-		if err := DBH.Select(&relatedSpeciesIds, q, vals...); err != nil {
+		q := fmt.Sprintf("SELECT DISTINCT species_id FROM strains WHERE %s;", helpers.ValsIn("id", opt.IDs, &vals, &count))
+		if err := DBH.Select(&relatedSpeciesIDs, q, vals...); err != nil {
 			return nil, err
 		}
 	}
 
-	return &helpers.ListOptions{Genus: opt.Genus, Ids: relatedSpeciesIds}, nil
+	return &helpers.ListOptions{Genus: opt.Genus, IDs: relatedSpeciesIDs}, nil
 }
 
+// CharacteristicsOptsFromStrains returns the options for finding all related
+// characteristics for a set of strains.
 func CharacteristicsOptsFromStrains(opt helpers.ListOptions) (*helpers.ListOptions, error) {
-	relatedCharacteristicsIds := make([]int64, 0)
+	var relatedCharacteristicsIDs []int64
 
-	if opt.Ids == nil || len(opt.Ids) == 0 {
+	if opt.IDs == nil || len(opt.IDs) == 0 {
 		q := `SELECT DISTINCT m.characteristic_id
 				FROM measurements m
 				INNER JOIN strains st ON st.id=m.strain_id
 				INNER JOIN species sp ON sp.id=st.species_id
 				INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1);`
-		if err := DBH.Select(&relatedCharacteristicsIds, q, opt.Genus); err != nil {
+		if err := DBH.Select(&relatedCharacteristicsIDs, q, opt.Genus); err != nil {
 			return nil, err
 		}
 	} else {
 		var vals []interface{}
 		var count int64 = 1
-		q := fmt.Sprintf("SELECT DISTINCT characteristic_id FROM measurements WHERE %s;", helpers.ValsIn("strain_id", opt.Ids, &vals, &count))
-		if err := DBH.Select(&relatedCharacteristicsIds, q, vals...); err != nil {
+		q := fmt.Sprintf("SELECT DISTINCT characteristic_id FROM measurements WHERE %s;", helpers.ValsIn("strain_id", opt.IDs, &vals, &count))
+		if err := DBH.Select(&relatedCharacteristicsIDs, q, vals...); err != nil {
 			return nil, err
 		}
 	}
 
-	return &helpers.ListOptions{Genus: opt.Genus, Ids: relatedCharacteristicsIds}, nil
+	return &helpers.ListOptions{Genus: opt.Genus, IDs: relatedCharacteristicsIDs}, nil
 }

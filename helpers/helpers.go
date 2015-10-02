@@ -14,46 +14,30 @@ import (
 )
 
 var (
+	// StatusUnprocessableEntity is the HTTP status when Unprocessable Entity.
 	StatusUnprocessableEntity = 422
-	MustProvideAValue         = "Must provide a value"
-	SchemaDecoder             = schema.NewDecoder()
+	// MustProvideAValue when value required.
+	MustProvideAValue = "Must provide a value"
+	// SchemaDecoder for decoding schemas.
+	SchemaDecoder = schema.NewDecoder()
 )
 
 // ListOptions specifies general pagination options for fetching a list of results
 type ListOptions struct {
 	PerPage int64   `url:",omitempty" json:",omitempty"`
 	Page    int64   `url:",omitempty" json:",omitempty"`
-	Ids     []int64 `url:",omitempty" json:",omitempty" schema:"ids[]"`
+	IDs     []int64 `url:",omitempty" json:",omitempty" schema:"ids[]"`
 	Genus   string
 }
 
-func (o ListOptions) PageOrDefault() int64 {
-	if o.Page <= 0 {
-		return 1
-	}
-	return o.Page
-}
-
-func (o ListOptions) Offset() int64 {
-	return (o.PageOrDefault() - 1) * o.PerPageOrDefault()
-}
-
-func (o ListOptions) PerPageOrDefault() int64 {
-	if o.PerPage <= 0 {
-		return DefaultPerPage
-	}
-	return o.PerPage
-}
-
+// MeasurementListOptions is an extension of ListOptions.
 type MeasurementListOptions struct {
 	ListOptions
 	Strains         []int64 `schema:"strain_ids"`
 	Characteristics []int64 `schema:"characteristic_ids"`
 }
 
-// DefaultPerPage is the default number of items to return in a paginated result set
-const DefaultPerPage = 10
-
+// ValsIn emits X IN (A, B, C) SQL statements
 func ValsIn(attribute string, values []int64, vals *[]interface{}, counter *int64) string {
 	if len(values) == 1 {
 		return fmt.Sprintf("%v=%v", attribute, values[0])
@@ -69,6 +53,7 @@ func ValsIn(attribute string, values []int64, vals *[]interface{}, counter *int6
 	return m
 }
 
+// CurrentTime returns current time
 func CurrentTime() types.NullTime {
 	return types.NullTime{
 		pq.NullTime{
@@ -78,8 +63,9 @@ func CurrentTime() types.NullTime {
 	}
 }
 
-// TODO: move this
+// GenerateNonce generates a nonce
 func GenerateNonce() (string, error) {
+	// TODO: move this
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -88,6 +74,7 @@ func GenerateNonce() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
+// GetClaims gets request claims from Authorization header
 func GetClaims(r *http.Request) types.Claims {
 	con := context.Get(r, "claims")
 	var claims types.Claims
@@ -101,10 +88,12 @@ func GetClaims(r *http.Request) types.Claims {
 	return claims
 }
 
+// CanAdd is an authorization helper for adding new entities
 func CanAdd(claims *types.Claims) bool {
 	return claims.Role == "A" || claims.Role == "W"
 }
 
+// CanEdit is an authorization helper for editing entities
 func CanEdit(claims *types.Claims, author int64) bool {
 	return claims.Sub == author || claims.Role == "A"
 }

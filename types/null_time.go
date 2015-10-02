@@ -8,10 +8,12 @@ import (
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/lib/pq"
 )
 
+// NullTime wraps pq.NullTime so that the JSON serialization can be overridden.
 type NullTime struct {
 	pq.NullTime
 }
 
+// MarshalJSON makes NullTime a json.Marshaller.
 func (t *NullTime) MarshalJSON() ([]byte, error) {
 	if !t.Valid {
 		return []byte("null"), nil
@@ -19,6 +21,7 @@ func (t *NullTime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.Time)
 }
 
+// UnmarshalJSON makes NullTime a json.Unmarshaller.
 func (t *NullTime) UnmarshalJSON(b []byte) error {
 	if bytes.Equal(b, []byte("null")) {
 		var nt time.Time

@@ -11,9 +11,10 @@ import (
 )
 
 func init() {
-	DB.AddTableWithName(CharacteristicBase{}, "characteristics").SetKeys(true, "Id")
+	DB.AddTableWithName(CharacteristicBase{}, "characteristics").SetKeys(true, "ID")
 }
 
+// PreInsert is a modl hook
 func (c *CharacteristicBase) PreInsert(e modl.SqlExecutor) error {
 	ct := helpers.CurrentTime()
 	c.CreatedAt = ct
@@ -21,15 +22,17 @@ func (c *CharacteristicBase) PreInsert(e modl.SqlExecutor) error {
 	return nil
 }
 
+// PreUpdate is a modl hook
 func (c *CharacteristicBase) PreUpdate(e modl.SqlExecutor) error {
 	c.UpdatedAt = helpers.CurrentTime()
 	return nil
 }
 
+// CharacteristicBase is what the DB expects for write operations
 type CharacteristicBase struct {
-	Id                   int64           `json:"id,omitempty"`
+	ID                   int64           `json:"id,omitempty"`
 	CharacteristicName   string          `db:"characteristic_name" json:"characteristicName"`
-	CharacteristicTypeId int64           `db:"characteristic_type_id" json:"-"`
+	CharacteristicTypeID int64           `db:"characteristic_type_id" json:"-"`
 	SortOrder            types.NullInt64 `db:"sort_order" json:"sortOrder"`
 	CreatedAt            types.NullTime  `db:"created_at" json:"createdAt"`
 	UpdatedAt            types.NullTime  `db:"updated_at" json:"updatedAt"`
@@ -39,6 +42,8 @@ type CharacteristicBase struct {
 	DeletedBy            types.NullInt64 `db:"deleted_by" json:"deletedBy"`
 }
 
+// Characteristic is what the DB expects for read operations, and is what the API
+// expects to return to the requester.
 type Characteristic struct {
 	*CharacteristicBase
 	Measurements       types.NullSliceInt64 `db:"measurements" json:"measurements"`
@@ -47,12 +52,15 @@ type Characteristic struct {
 	CanEdit            bool                 `db:"-" json:"canEdit"`
 }
 
+// Characteristics are multiple characteristic entities
 type Characteristics []*Characteristic
 
+// CharacteristicMeta stashes some metadata related to the entity
 type CharacteristicMeta struct {
 	CanAdd bool `json:"canAdd"`
 }
 
+// ListCharacteristics returns all characteristics
 func ListCharacteristics(opt helpers.ListOptions, claims *types.Claims) (*Characteristics, error) {
 	var vals []interface{}
 
@@ -66,9 +74,9 @@ func ListCharacteristics(opt helpers.ListOptions, claims *types.Claims) (*Charac
 			INNER JOIN characteristic_types ct ON ct.id=c.characteristic_type_id`
 	vals = append(vals, opt.Genus)
 
-	if len(opt.Ids) != 0 {
+	if len(opt.IDs) != 0 {
 		var counter int64 = 2
-		w := helpers.ValsIn("c.id", opt.Ids, &vals, &counter)
+		w := helpers.ValsIn("c.id", opt.IDs, &vals, &counter)
 
 		q += fmt.Sprintf(" WHERE %s", w)
 	}
@@ -89,97 +97,106 @@ func ListCharacteristics(opt helpers.ListOptions, claims *types.Claims) (*Charac
 	return &characteristics, nil
 }
 
+// StrainOptsFromCharacteristics returns the options for finding all related strains
+// for a set of characteristics.
 func StrainOptsFromCharacteristics(opt helpers.ListOptions) (*helpers.ListOptions, error) {
-	relatedStrainIds := make([]int64, 0)
+	var relatedStrainIDs []int64
 	baseQ := `SELECT DISTINCT m.strain_id
 		FROM measurements m
 		INNER JOIN strains st ON st.id=m.strain_id
 		INNER JOIN species sp ON sp.id=st.species_id
 		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)`
-	if opt.Ids == nil {
+	if opt.IDs == nil {
 		q := fmt.Sprintf("%s;", baseQ)
-		if err := DBH.Select(&relatedStrainIds, q, opt.Genus); err != nil {
+		if err := DBH.Select(&relatedStrainIDs, q, opt.Genus); err != nil {
 			return nil, err
 		}
 	} else {
 		var vals []interface{}
 		var count int64 = 2
 		vals = append(vals, opt.Genus)
-		q := fmt.Sprintf("%s WHERE %s ", baseQ, helpers.ValsIn("m.characteristic_id", opt.Ids, &vals, &count))
+		q := fmt.Sprintf("%s WHERE %s ", baseQ, helpers.ValsIn("m.characteristic_id", opt.IDs, &vals, &count))
 
-		if err := DBH.Select(&relatedStrainIds, q, vals...); err != nil {
+		if err := DBH.Select(&relatedStrainIDs, q, vals...); err != nil {
 			return nil, err
 		}
 	}
 
-	return &helpers.ListOptions{Genus: opt.Genus, Ids: relatedStrainIds}, nil
+	return &helpers.ListOptions{Genus: opt.Genus, IDs: relatedStrainIDs}, nil
 }
 
+// MeasurementOptsFromCharacteristics returns the options for finding all related
+// measurements for a set of characteristics.
 func MeasurementOptsFromCharacteristics(opt helpers.ListOptions) (*helpers.MeasurementListOptions, error) {
-	relatedMeasurementIds := make([]int64, 0)
+	var relatedMeasurementIDs []int64
 	baseQ := `SELECT m.id
 		FROM measurements m
 		INNER JOIN strains st ON st.id=m.strain_id
 		INNER JOIN species sp ON sp.id=st.species_id
 		INNER JOIN genera g ON g.id=sp.genus_id AND LOWER(g.genus_name)=LOWER($1)`
 
-	if opt.Ids == nil {
+	if opt.IDs == nil {
 		q := fmt.Sprintf("%s;", baseQ)
-		if err := DBH.Select(&relatedMeasurementIds, q, opt.Genus); err != nil {
+		if err := DBH.Select(&relatedMeasurementIDs, q, opt.Genus); err != nil {
 			return nil, err
 		}
 	} else {
 		var vals []interface{}
 		var count int64 = 2
 		vals = append(vals, opt.Genus)
-		q := fmt.Sprintf("%s WHERE %s;", baseQ, helpers.ValsIn("characteristic_id", opt.Ids, &vals, &count))
+		q := fmt.Sprintf("%s WHERE %s;", baseQ, helpers.ValsIn("characteristic_id", opt.IDs, &vals, &count))
 
-		if err := DBH.Select(&relatedMeasurementIds, q, vals...); err != nil {
+		if err := DBH.Select(&relatedMeasurementIDs, q, vals...); err != nil {
 			return nil, err
 		}
 	}
 
-	return &helpers.MeasurementListOptions{ListOptions: helpers.ListOptions{Genus: opt.Genus, Ids: relatedMeasurementIds}, Strains: nil, Characteristics: nil}, nil
+	return &helpers.MeasurementListOptions{ListOptions: helpers.ListOptions{Genus: opt.Genus, IDs: relatedMeasurementIDs}, Strains: nil, Characteristics: nil}, nil
 }
 
-func StrainsFromCharacteristicId(id int64, genus string, claims *types.Claims) (*Strains, *helpers.ListOptions, error) {
+// StrainsFromCharacteristicID returns a set of strains (as well as the options for
+// finding those strains) for a particular characteristic.
+func StrainsFromCharacteristicID(id int64, genus string, claims *types.Claims) (*Strains, *helpers.ListOptions, error) {
 	opt := helpers.ListOptions{
 		Genus: genus,
-		Ids:   []int64{id},
+		IDs:   []int64{id},
 	}
 
-	strains_opt, err := StrainOptsFromCharacteristics(opt)
+	strainsOpt, err := StrainOptsFromCharacteristics(opt)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	strains, err := ListStrains(*strains_opt, claims)
+	strains, err := ListStrains(*strainsOpt, claims)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return strains, strains_opt, nil
+	return strains, strainsOpt, nil
 }
 
-func MeasurementsFromCharacteristicId(id int64, genus string, claims *types.Claims) (*Measurements, *helpers.MeasurementListOptions, error) {
+// MeasurementsFromCharacteristicID returns a set of measurements (as well as the
+// options for finding those measurements) for a particular characteristic.
+func MeasurementsFromCharacteristicID(id int64, genus string, claims *types.Claims) (*Measurements, *helpers.MeasurementListOptions, error) {
 	opt := helpers.ListOptions{
 		Genus: genus,
-		Ids:   []int64{id},
+		IDs:   []int64{id},
 	}
 
-	measurement_opt, err := MeasurementOptsFromCharacteristics(opt)
+	measurementOpt, err := MeasurementOptsFromCharacteristics(opt)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	measurements, err := ListMeasurements(*measurement_opt, claims)
+	measurements, err := ListMeasurements(*measurementOpt, claims)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return measurements, measurement_opt, nil
+	return measurements, measurementOpt, nil
 }
 
+// GetCharacteristic returns a particular characteristic.
 func GetCharacteristic(id int64, genus string, claims *types.Claims) (*Characteristic, error) {
 	var characteristic Characteristic
 	q := `SELECT c.*, ct.characteristic_type_name,
@@ -194,7 +211,7 @@ func GetCharacteristic(id int64, genus string, claims *types.Claims) (*Character
 		GROUP BY c.id, ct.characteristic_type_name;`
 	if err := DBH.SelectOne(&characteristic, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.CharacteristicNotFound
+			return nil, errors.ErrCharacteristicNotFound
 		}
 		return nil, err
 	}
@@ -204,6 +221,8 @@ func GetCharacteristic(id int64, genus string, claims *types.Claims) (*Character
 	return &characteristic, nil
 }
 
+// InsertOrGetCharacteristicType performs an UPSERT operation on the database
+// for a characteristic type.
 func InsertOrGetCharacteristicType(val string, claims *types.Claims) (int64, error) {
 	var id int64
 	q := `SELECT id FROM characteristic_types WHERE characteristic_type_name=$1;`

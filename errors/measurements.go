@@ -3,5 +3,6 @@ package errors
 import "errors"
 
 var (
-	MeasurementNotFound = errors.New("Measurement not found")
+	// ErrMeasurementNotFound when not found.
+	ErrMeasurementNotFound = errors.New("Measurement not found")
 )

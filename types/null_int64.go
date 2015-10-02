@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 )
 
+//NullInt64 wraps sql.NullInt64 so that the JSON serialization can be overridden.
 type NullInt64 struct {
 	sql.NullInt64
 }
 
+// MarshalJSON makes NullInt64 a json.Marshaller.
 func (i *NullInt64) MarshalJSON() ([]byte, error) {
 	if !i.Valid {
 		return []byte("null"), nil
@@ -17,6 +19,7 @@ func (i *NullInt64) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.Int64)
 }
 
+// UnmarshalJSON makes NullInt64 a json.Unmarshaller.
 func (i *NullInt64) UnmarshalJSON(b []byte) error {
 	if bytes.Equal(b, []byte("null")) {
 		i.Int64 = 0

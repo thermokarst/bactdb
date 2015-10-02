@@ -12,9 +12,10 @@ import (
 )
 
 func init() {
-	DB.AddTableWithName(MeasurementBase{}, "measurements").SetKeys(true, "Id")
+	DB.AddTableWithName(MeasurementBase{}, "measurements").SetKeys(true, "ID")
 }
 
+// PreInsert is a modl hook.
 func (m *MeasurementBase) PreInsert(e modl.SqlExecutor) error {
 	ct := helpers.CurrentTime()
 	m.CreatedAt = ct
@@ -22,32 +23,35 @@ func (m *MeasurementBase) PreInsert(e modl.SqlExecutor) error {
 	return nil
 }
 
+// PreUpdate is a modl hook.
 func (m *MeasurementBase) PreUpdate(e modl.SqlExecutor) error {
 	m.UpdatedAt = helpers.CurrentTime()
 	return nil
 }
 
+// MeasurementBase is what the DB expects for write operations
 // There are three types of supported measurements: fixed-text, free-text,
 // & numerical. The table has a constraint that will allow at most one
 // for a particular combination of strain & characteristic.
-// MeasurementBase is what the DB expects to see for inserts/updates
 type MeasurementBase struct {
-	Id                    int64             `json:"id,omitempty"`
-	StrainId              int64             `db:"strain_id" json:"strain"`
-	CharacteristicId      int64             `db:"characteristic_id" json:"characteristic"`
-	TextMeasurementTypeId types.NullInt64   `db:"text_measurement_type_id" json:"-"`
+	ID                    int64             `json:"id,omitempty"`
+	StrainID              int64             `db:"strain_id" json:"strain"`
+	CharacteristicID      int64             `db:"characteristic_id" json:"characteristic"`
+	TextMeasurementTypeID types.NullInt64   `db:"text_measurement_type_id" json:"-"`
 	TxtValue              types.NullString  `db:"txt_value" json:"-"`
 	NumValue              types.NullFloat64 `db:"num_value" json:"-"`
 	ConfidenceInterval    types.NullFloat64 `db:"confidence_interval" json:"confidenceInterval"`
-	UnitTypeId            types.NullInt64   `db:"unit_type_id" json:"-"`
+	UnitTypeID            types.NullInt64   `db:"unit_type_id" json:"-"`
 	Notes                 types.NullString  `db:"notes" json:"notes"`
-	TestMethodId          types.NullInt64   `db:"test_method_id" json:"-"`
+	TestMethodID          types.NullInt64   `db:"test_method_id" json:"-"`
 	CreatedAt             types.NullTime    `db:"created_at" json:"createdAt"`
 	UpdatedAt             types.NullTime    `db:"updated_at" json:"updatedAt"`
 	CreatedBy             int64             `db:"created_by" json:"createdBy"`
 	UpdatedBy             int64             `db:"updated_by" json:"updatedBy"`
 }
 
+// Measurement is what the DB expects for read operations, and is what the API
+// expects to return to the requester.
 type Measurement struct {
 	*MeasurementBase
 	TextMeasurementType types.NullString `db:"text_measurement_type_name" json:"-"`
@@ -56,8 +60,10 @@ type Measurement struct {
 	CanEdit             bool             `db:"-" json:"canEdit"`
 }
 
+// FakeMeasurement is a dummy struct to prevent infinite-loop/stack overflow on serialization.
 type FakeMeasurement Measurement
 
+// MarshalJSON is custom JSON serialization to handle multi-type "Value".
 func (m *Measurement) MarshalJSON() ([]byte, error) {
 	fm := FakeMeasurement(*m)
 	return json.Marshal(struct {
@@ -69,6 +75,7 @@ func (m *Measurement) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// UnmarshalJSON is custom JSON deserialization to handle multi-type "Value"
 func (m *Measurement) UnmarshalJSON(b []byte) error {
 	var measurement struct {
 		FakeMeasurement
@@ -81,7 +88,7 @@ func (m *Measurement) UnmarshalJSON(b []byte) error {
 	switch v := measurement.Value.(type) {
 	case string:
 		// Test if actually a lookup
-		id, err := GetTextMeasurementTypeId(v)
+		id, err := GetTextMeasurementTypeID(v)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				measurement.TxtValue = types.NullString{sql.NullString{String: v, Valid: true}}
@@ -89,7 +96,7 @@ func (m *Measurement) UnmarshalJSON(b []byte) error {
 				return err
 			}
 		} else {
-			measurement.TextMeasurementTypeId = types.NullInt64{sql.NullInt64{Int64: id, Valid: true}}
+			measurement.TextMeasurementTypeID = types.NullInt64{sql.NullInt64{Int64: id, Valid: true}}
 		}
 	case int64:
 		measurement.NumValue = types.NullFloat64{sql.NullFloat64{Float64: float64(v), Valid: true}}
@@ -102,6 +109,7 @@ func (m *Measurement) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Value returns the value of the measurement
 func (m *Measurement) Value() string {
 	if m.TextMeasurementType.Valid {
 		return m.TextMeasurementType.String
@@ -115,12 +123,15 @@ func (m *Measurement) Value() string {
 	return ""
 }
 
+// Measurements are multiple measurement entities
 type Measurements []*Measurement
 
+// MeasurementMeta stashes some metadata related to the entity
 type MeasurementMeta struct {
 	CanAdd bool `json:"canAdd"`
 }
 
+// ListMeasurements returns all measurements
 func ListMeasurements(opt helpers.MeasurementListOptions, claims *types.Claims) (*Measurements, error) {
 	var vals []interface{}
 
@@ -136,35 +147,35 @@ func ListMeasurements(opt helpers.MeasurementListOptions, claims *types.Claims) 
 		LEFT OUTER JOIN test_methods te ON te.id=m.test_method_id`
 	vals = append(vals, opt.Genus)
 
-	strainIds := len(opt.Strains) != 0
-	charIds := len(opt.Characteristics) != 0
-	ids := len(opt.Ids) != 0
+	strainIDs := len(opt.Strains) != 0
+	charIDs := len(opt.Characteristics) != 0
+	ids := len(opt.IDs) != 0
 
-	if strainIds || charIds || ids {
+	if strainIDs || charIDs || ids {
 		var paramsCounter int64 = 2
 		q += "\nWHERE ("
 
 		// Filter by strains
-		if strainIds {
+		if strainIDs {
 			q += helpers.ValsIn("st.id", opt.Strains, &vals, &paramsCounter)
 		}
 
-		if strainIds && (charIds || ids) {
+		if strainIDs && (charIDs || ids) {
 			q += " AND "
 		}
 
 		// Filter by characteristics
-		if charIds {
+		if charIDs {
 			q += helpers.ValsIn("c.id", opt.Characteristics, &vals, &paramsCounter)
 		}
 
-		if charIds && ids {
+		if charIDs && ids {
 			q += " AND "
 		}
 
 		// Get specific records
 		if ids {
-			q += helpers.ValsIn("m.id", opt.Ids, &vals, &paramsCounter)
+			q += helpers.ValsIn("m.id", opt.IDs, &vals, &paramsCounter)
 		}
 		q += ")"
 	}
@@ -183,6 +194,7 @@ func ListMeasurements(opt helpers.MeasurementListOptions, claims *types.Claims) 
 	return &measurements, nil
 }
 
+// GetMeasurement returns a particular measurement.
 func GetMeasurement(id int64, genus string, claims *types.Claims) (*Measurement, error) {
 	var measurement Measurement
 
@@ -199,7 +211,7 @@ func GetMeasurement(id int64, genus string, claims *types.Claims) (*Measurement,
 		WHERE m.id=$2;`
 	if err := DBH.SelectOne(&measurement, q, genus, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.MeasurementNotFound
+			return nil, errors.ErrMeasurementNotFound
 		}
 		return nil, err
 	}
@@ -209,15 +221,20 @@ func GetMeasurement(id int64, genus string, claims *types.Claims) (*Measurement,
 	return &measurement, nil
 }
 
+// CharacteristicOptsFromMeasurements returns the options for finding all related
+// characteristics for a set of measurements.
 func CharacteristicOptsFromMeasurements(opt helpers.MeasurementListOptions) (*helpers.ListOptions, error) {
-	return &helpers.ListOptions{Genus: opt.Genus, Ids: opt.Characteristics}, nil
+	return &helpers.ListOptions{Genus: opt.Genus, IDs: opt.Characteristics}, nil
 }
 
+// StrainOptsFromMeasurements returns the options for finding all related
+// strains from a set of measurements.
 func StrainOptsFromMeasurements(opt helpers.MeasurementListOptions) (*helpers.ListOptions, error) {
-	return &helpers.ListOptions{Genus: opt.Genus, Ids: opt.Strains}, nil
+	return &helpers.ListOptions{Genus: opt.Genus, IDs: opt.Strains}, nil
 }
 
-func GetTextMeasurementTypeId(val string) (int64, error) {
+// GetTextMeasurementTypeID returns the ID for a particular text measurement type
+func GetTextMeasurementTypeID(val string) (int64, error) {
 	var id int64
 	q := `SELECT id FROM text_measurement_types WHERE text_measurement_name=$1;`
 

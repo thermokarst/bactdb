@@ -3,5 +3,6 @@ package errors
 import "errors"
 
 var (
-	SourceNotByteSlice = errors.New("Scan source was not []byte")
+	// ErrSourceNotByteSlice when not a byte-slice.
+	ErrSourceNotByteSlice = errors.New("Scan source was not []byte")
 )

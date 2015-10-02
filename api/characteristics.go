@@ -12,56 +12,59 @@ import (
 	"github.com/thermokarst/bactdb/types"
 )
 
+// CharacteristicService provides for CRUD operations
 type CharacteristicService struct{}
 
+// Unmarshal satisfies interface Updater and interface Creater
 func (c CharacteristicService) Unmarshal(b []byte) (types.Entity, error) {
 	var cj payloads.Characteristic
 	err := json.Unmarshal(b, &cj)
 	return &cj, err
 }
 
+// List lists all characteristics
 func (c CharacteristicService) List(val *url.Values, claims *types.Claims) (types.Entity, *types.AppError) {
 	if val == nil {
-		return nil, NewJSONError(errors.MustProvideOptions, http.StatusInternalServerError)
+		return nil, newJSONError(errors.ErrMustProvideOptions, http.StatusInternalServerError)
 	}
 	var opt helpers.ListOptions
 	if err := helpers.SchemaDecoder.Decode(&opt, *val); err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	characteristics, err := models.ListCharacteristics(opt, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains_opt, err := models.StrainOptsFromCharacteristics(opt)
+	strainsOpt, err := models.StrainOptsFromCharacteristics(opt)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains, err := models.ListStrains(*strains_opt, claims)
+	strains, err := models.ListStrains(*strainsOpt, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species_opt, err := models.SpeciesOptsFromStrains(*strains_opt)
+	speciesOpt, err := models.SpeciesOptsFromStrains(*strainsOpt)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species, err := models.ListSpecies(*species_opt, claims)
+	species, err := models.ListSpecies(*speciesOpt, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	measurements_opt, err := models.MeasurementOptsFromCharacteristics(opt)
+	measurementsOpt, err := models.MeasurementOptsFromCharacteristics(opt)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	measurements, err := models.ListMeasurements(*measurements_opt, claims)
+	measurements, err := models.ListMeasurements(*measurementsOpt, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	payload := payloads.Characteristics{
@@ -77,30 +80,31 @@ func (c CharacteristicService) List(val *url.Values, claims *types.Claims) (type
 	return &payload, nil
 }
 
+// Get retrieves a single characteristic
 func (c CharacteristicService) Get(id int64, genus string, claims *types.Claims) (types.Entity, *types.AppError) {
 	characteristic, err := models.GetCharacteristic(id, genus, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	strains, strain_opts, err := models.StrainsFromCharacteristicId(id, genus, claims)
+	strains, strainOpts, err := models.StrainsFromCharacteristicID(id, genus, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species_opt, err := models.SpeciesOptsFromStrains(*strain_opts)
+	speciesOpt, err := models.SpeciesOptsFromStrains(*strainOpts)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species, err := models.ListSpecies(*species_opt, claims)
+	species, err := models.ListSpecies(*speciesOpt, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	measurements, _, err := models.MeasurementsFromCharacteristicId(id, genus, claims)
+	measurements, _, err := models.MeasurementsFromCharacteristicID(id, genus, claims)
 	if err != nil {
-		return nil, NewJSONError(err, http.StatusInternalServerError)
+		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
 	payload := payloads.Characteristic{
@@ -113,43 +117,44 @@ func (c CharacteristicService) Get(id int64, genus string, claims *types.Claims)
 	return &payload, nil
 }
 
+// Update modifies an existing characteristic
 func (c CharacteristicService) Update(id int64, e *types.Entity, genus string, claims *types.Claims) *types.AppError {
 	payload := (*e).(*payloads.Characteristic)
 	payload.Characteristic.UpdatedBy = claims.Sub
-	payload.Characteristic.Id = id
+	payload.Characteristic.ID = id
 
 	// First, handle Characteristic Type
 	id, err := models.InsertOrGetCharacteristicType(payload.Characteristic.CharacteristicType, claims)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 
 	payload.Characteristic.CanEdit = helpers.CanEdit(claims, payload.Characteristic.CreatedBy)
 
-	payload.Characteristic.CharacteristicTypeId = id
+	payload.Characteristic.CharacteristicTypeID = id
 	// TODO: fix this
 	count, err := models.DBH.Update(payload.Characteristic.CharacteristicBase)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 	if count != 1 {
 		// TODO: fix this
-		return NewJSONError(errors.CharacteristicNotUpdated, http.StatusBadRequest)
+		return newJSONError(errors.ErrCharacteristicNotUpdated, http.StatusBadRequest)
 	}
 
-	strains, strain_opts, err := models.StrainsFromCharacteristicId(id, genus, claims)
+	strains, strainOpts, err := models.StrainsFromCharacteristicID(id, genus, claims)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species_opt, err := models.SpeciesOptsFromStrains(*strain_opts)
+	speciesOpt, err := models.SpeciesOptsFromStrains(*strainOpts)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	species, err := models.ListSpecies(*species_opt, claims)
+	species, err := models.ListSpecies(*speciesOpt, claims)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 
 	payload.Strains = strains
@@ -160,6 +165,7 @@ func (c CharacteristicService) Update(id int64, e *types.Entity, genus string, c
 	return nil
 }
 
+// Create initializes a new characteristic
 func (c CharacteristicService) Create(e *types.Entity, genus string, claims *types.Claims) *types.AppError {
 	payload := (*e).(*payloads.Characteristic)
 	payload.Characteristic.CreatedBy = claims.Sub
@@ -167,19 +173,19 @@ func (c CharacteristicService) Create(e *types.Entity, genus string, claims *typ
 
 	id, err := models.InsertOrGetCharacteristicType(payload.Characteristic.CharacteristicType, claims)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
-	payload.Characteristic.CharacteristicTypeId = id
+	payload.Characteristic.CharacteristicTypeID = id
 
 	// TODO: fix this
 	err = models.DBH.Insert(payload.Characteristic.CharacteristicBase)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	characteristic, err := models.GetCharacteristic(payload.Characteristic.Id, genus, claims)
+	characteristic, err := models.GetCharacteristic(payload.Characteristic.ID, genus, claims)
 	if err != nil {
-		return NewJSONError(err, http.StatusInternalServerError)
+		return newJSONError(err, http.StatusInternalServerError)
 	}
 
 	payload.Characteristic = characteristic

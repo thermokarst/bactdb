@@ -12,11 +12,12 @@ import (
 )
 
 func init() {
-	DB.AddTableWithName(UserBase{}, "users").SetKeys(true, "Id")
+	DB.AddTableWithName(UserBase{}, "users").SetKeys(true, "ID")
 }
 
+// UserBase is what the DB expects to see for write operations.
 type UserBase struct {
-	Id        int64          `json:"id,omitempty"`
+	ID        int64          `json:"id,omitempty"`
 	Email     string         `db:"email" json:"email"`
 	Password  string         `db:"password" json:"password,omitempty"`
 	Name      string         `db:"name" json:"name"`
@@ -27,11 +28,14 @@ type UserBase struct {
 	DeletedAt types.NullTime `db:"deleted_at" json:"deletedAt"`
 }
 
+// User is what the DB expects to see for read operations, and is what the API
+// expects to return to the requester.
 type User struct {
 	*UserBase
 	CanEdit bool `db:"-" json:"canEdit"`
 }
 
+// UserValidation handles validation of a user record.
 type UserValidation struct {
 	Email    []string `json:"email,omitempty"`
 	Password []string `json:"password,omitempty"`
@@ -39,6 +43,7 @@ type UserValidation struct {
 	Role     []string `json:"role,omitempty"`
 }
 
+// Error returns the JSON-encoded error response for any validation errors.
 func (uv UserValidation) Error() string {
 	errs, err := json.Marshal(struct {
 		UserValidation `json:"errors"`
@@ -49,24 +54,15 @@ func (uv UserValidation) Error() string {
 	return string(errs)
 }
 
+// Users are multiple user entities.
 type Users []*User
 
-type UserJSON struct {
-	User *User `json:"user"`
-}
-
-type UsersJSON struct {
-	Users *Users `json:"users"`
-}
-
+// UserMeta stashes some metadata related to the entity.
 type UserMeta struct {
 	CanAdd bool `json:"canAdd"`
 }
 
-func (u *Users) Marshal() ([]byte, error) {
-	return json.Marshal(&UsersJSON{Users: u})
-}
-
+// Validate validates a user record.
 func (u *User) Validate() error {
 	var uv UserValidation
 	validationError := false
@@ -98,7 +94,8 @@ func (u *User) Validate() error {
 	return nil
 }
 
-// for thermokarst/jwt: authentication callback
+// DbAuthenticate authenticates a user.
+// For thermokarst/jwt: authentication callback
 func DbAuthenticate(email string, password string) error {
 	var user User
 	q := `SELECT *
@@ -107,15 +104,16 @@ func DbAuthenticate(email string, password string) error {
 		AND verified IS TRUE
 		AND deleted_at IS NULL;`
 	if err := DBH.SelectOne(&user, q, email); err != nil {
-		return errors.InvalidEmailOrPassword
+		return errors.ErrInvalidEmailOrPassword
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return errors.InvalidEmailOrPassword
+		return errors.ErrInvalidEmailOrPassword
 	}
 	return nil
 }
 
-func DbGetUserById(id int64) (*User, error) {
+// DbGetUserByID returns a specific user record by ID.
+func DbGetUserByID(id int64) (*User, error) {
 	var user User
 	q := `SELECT *
 		FROM users
@@ -124,14 +122,15 @@ func DbGetUserById(id int64) (*User, error) {
 		AND deleted_at IS NULL;`
 	if err := DBH.SelectOne(&user, q, id); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.UserNotFound
+			return nil, errors.ErrUserNotFound
 		}
 		return nil, err
 	}
 	return &user, nil
 }
 
-// for thermokarst/jwt: setting user in claims bundle
+// DbGetUserByEmail returns a specific user record by email.
+// For thermokarst/jwt: setting user in claims bundle
 func DbGetUserByEmail(email string) (*User, error) {
 	var user User
 	q := `SELECT *
@@ -141,7 +140,7 @@ func DbGetUserByEmail(email string) (*User, error) {
 		AND deleted_at IS NULL;`
 	if err := DBH.SelectOne(&user, q, email); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.UserNotFound
+			return nil, errors.ErrUserNotFound
 		}
 		return nil, err
 	}

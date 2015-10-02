@@ -3,5 +3,6 @@ package errors
 import "errors"
 
 var (
-	ExpiredToken = errors.New("this token has expired")
+	// ErrExpiredToken when expired token.
+	ErrExpiredToken = errors.New("this token has expired")
 )
