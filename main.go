@@ -128,7 +128,7 @@ func cmdMigrateDb(c *cli.Context) {
 		// Back up users table
 		// TODO: look into this
 		if err := models.DBH.Select(&users, `SELECT * FROM users;`); err != nil {
-			log.Fatal("Couldn't back up identity tables: ", err)
+			log.Printf("Couldn't back up identity tables: %+v", err)
 		}
 		log.Printf("%+v Users", len(users))
 
