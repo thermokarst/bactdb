@@ -1,8 +1,7 @@
-package main
+package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,85 +15,49 @@ import (
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/mux"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/nytimes/gziphandler"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/thermokarst/jwt"
+	"github.com/thermokarst/bactdb/api"
+	"github.com/thermokarst/bactdb/auth"
+	"github.com/thermokarst/bactdb/errors"
+	"github.com/thermokarst/bactdb/helpers"
+	"github.com/thermokarst/bactdb/models"
+	"github.com/thermokarst/bactdb/types"
 )
-
-var (
-	config *jwt.Config
-	j      *jwt.Middleware
-)
-
-type Claims struct {
-	Name string
-	Iss  string
-	Sub  int64
-	Role string
-	Iat  int64
-	Exp  int64
-	Ref  string
-}
 
 func verifyClaims(claims []byte, r *http.Request) error {
+	// TODO: use helper
 	currentTime := time.Now()
-	var c Claims
+	var c types.Claims
 	err := json.Unmarshal(claims, &c)
 	if err != nil {
 		return err
 	}
 	if currentTime.After(time.Unix(c.Exp, 0)) {
-		return errors.New("this token has expired")
+		return errors.ErrExpiredToken
 	}
 	context.Set(r, "claims", c)
 	return nil
 }
 
+// Handler is the root HTTP handler for bactdb.
 func Handler() http.Handler {
-	claimsFunc := func(email string) (map[string]interface{}, error) {
-		currentTime := time.Now()
-		user, err := dbGetUserByEmail(email)
-		if err != nil {
-			return nil, err
-		}
-		return map[string]interface{}{
-			"name": user.Name,
-			"iss":  "bactdb",
-			"sub":  user.Id,
-			"role": user.Role,
-			"iat":  currentTime.Unix(),
-			"exp":  currentTime.Add(time.Minute * 60).Unix(),
-			"ref":  "",
-		}, nil
-	}
-
-	config = &jwt.Config{
-		Secret: os.Getenv("SECRET"),
-		Auth:   dbAuthenticate,
-		Claims: claimsFunc,
-	}
-
-	var err error
-	j, err = jwt.New(config)
-	if err != nil {
-		panic(err)
-	}
-
 	m := mux.NewRouter()
-	userService := UserService{}
-	strainService := StrainService{}
-	speciesService := SpeciesService{}
-	characteristicService := CharacteristicService{}
-	measurementService := MeasurementService{}
+	userService := api.UserService{}
+	strainService := api.StrainService{}
+	speciesService := api.SpeciesService{}
+	characteristicService := api.CharacteristicService{}
+	measurementService := api.MeasurementService{}
 
-	m.Handle("/authenticate", tokenHandler(j.Authenticate())).Methods("POST")
-	m.Handle("/refresh", j.Secure(errorHandler(tokenRefresh(j)), verifyClaims)).Methods("POST")
+	m.Handle("/authenticate", tokenHandler(auth.Middleware.Authenticate())).Methods("POST")
+	m.Handle("/refresh", auth.Middleware.Secure(errorHandler(tokenRefresh(auth.Middleware)), verifyClaims)).Methods("POST")
 
 	// Everything past here is lumped under a genus
 	s := m.PathPrefix("/{genus}").Subrouter()
 
 	s.Handle("/users", errorHandler(handleCreater(userService))).Methods("POST")
-	s.Handle("/users/verify/{Nonce}", errorHandler(handleUserVerify)).Methods("GET")
-	s.Handle("/users/lockout", errorHandler(handleUserLockout)).Methods("POST")
+	s.Handle("/users/verify/{Nonce}", errorHandler(api.HandleUserVerify)).Methods("GET")
+	s.Handle("/users/lockout", errorHandler(api.HandleUserLockout)).Methods("POST")
 
-	s.Handle("/compare", j.Secure(errorHandler(handleCompare), verifyClaims)).Methods("GET")
+	s.Handle("/compare", auth.Middleware.Secure(errorHandler(api.HandleCompare), verifyClaims)).Methods("GET")
 
 	type r struct {
 		f errorHandler
@@ -105,49 +68,49 @@ func Handler() http.Handler {
 	// Everything past this point requires a valid token
 	routes := []r{
 		r{handleLister(userService), "GET", "/users"},
-		r{handleGetter(userService), "GET", "/users/{Id:.+}"},
-		r{handleUpdater(userService), "PUT", "/users/{Id:.+}"},
+		r{handleGetter(userService), "GET", "/users/{ID:.+}"},
+		r{handleUpdater(userService), "PUT", "/users/{ID:.+}"},
 		r{handleLister(speciesService), "GET", "/species"},
 		r{handleCreater(speciesService), "POST", "/species"},
-		r{handleGetter(speciesService), "GET", "/species/{Id:.+}"},
-		r{handleUpdater(speciesService), "PUT", "/species/{Id:.+}"},
+		r{handleGetter(speciesService), "GET", "/species/{ID:.+}"},
+		r{handleUpdater(speciesService), "PUT", "/species/{ID:.+}"},
 		r{handleLister(strainService), "GET", "/strains"},
 		r{handleCreater(strainService), "POST", "/strains"},
-		r{handleGetter(strainService), "GET", "/strains/{Id:.+}"},
-		r{handleUpdater(strainService), "PUT", "/strains/{Id:.+}"},
+		r{handleGetter(strainService), "GET", "/strains/{ID:.+}"},
+		r{handleUpdater(strainService), "PUT", "/strains/{ID:.+}"},
 		r{handleLister(characteristicService), "GET", "/characteristics"},
 		r{handleCreater(characteristicService), "POST", "/characteristics"},
-		r{handleGetter(characteristicService), "GET", "/characteristics/{Id:.+}"},
-		r{handleUpdater(characteristicService), "PUT", "/characteristics/{Id:.+}"},
+		r{handleGetter(characteristicService), "GET", "/characteristics/{ID:.+}"},
+		r{handleUpdater(characteristicService), "PUT", "/characteristics/{ID:.+}"},
 		r{handleLister(measurementService), "GET", "/measurements"},
 		r{handleCreater(measurementService), "POST", "/measurements"},
-		r{handleGetter(measurementService), "GET", "/measurements/{Id:.+}"},
-		r{handleUpdater(measurementService), "PUT", "/measurements/{Id:.+}"},
-		r{handleDeleter(measurementService), "DELETE", "/measurements/{Id:.+}"},
+		r{handleGetter(measurementService), "GET", "/measurements/{ID:.+}"},
+		r{handleUpdater(measurementService), "PUT", "/measurements/{ID:.+}"},
+		r{handleDeleter(measurementService), "DELETE", "/measurements/{ID:.+}"},
 	}
 
 	for _, route := range routes {
-		s.Handle(route.p, j.Secure(errorHandler(route.f), verifyClaims)).Methods(route.m)
+		s.Handle(route.p, auth.Middleware.Secure(errorHandler(route.f), verifyClaims)).Methods(route.m)
 	}
 
 	return jsonHandler(gziphandler.GzipHandler(corsHandler(m)))
 }
 
-func handleGetter(g getter) errorHandler {
-	return func(w http.ResponseWriter, r *http.Request) *appError {
-		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+func handleGetter(g api.Getter) errorHandler {
+	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
+		id, err := strconv.ParseInt(mux.Vars(r)["ID"], 10, 0)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
 
-		claims := getClaims(r)
+		claims := helpers.GetClaims(r)
 
-		e, appErr := g.get(id, mux.Vars(r)["genus"], &claims)
+		e, appErr := g.Get(id, mux.Vars(r)["genus"], &claims)
 		if appErr != nil {
 			return appErr
 		}
 
-		data, err := e.marshal()
+		data, err := e.Marshal()
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
@@ -156,18 +119,18 @@ func handleGetter(g getter) errorHandler {
 	}
 }
 
-func handleLister(l lister) errorHandler {
-	return func(w http.ResponseWriter, r *http.Request) *appError {
+func handleLister(l api.Lister) errorHandler {
+	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
 		opt := r.URL.Query()
 		opt.Add("Genus", mux.Vars(r)["genus"])
 
-		claims := getClaims(r)
+		claims := helpers.GetClaims(r)
 
-		es, appErr := l.list(&opt, &claims)
+		es, appErr := l.List(&opt, &claims)
 		if appErr != nil {
 			return appErr
 		}
-		data, err := es.marshal()
+		data, err := es.Marshal()
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
@@ -176,9 +139,9 @@ func handleLister(l lister) errorHandler {
 	}
 }
 
-func handleUpdater(u updater) errorHandler {
-	return func(w http.ResponseWriter, r *http.Request) *appError {
-		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+func handleUpdater(u api.Updater) errorHandler {
+	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
+		id, err := strconv.ParseInt(mux.Vars(r)["ID"], 10, 0)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
@@ -188,19 +151,19 @@ func handleUpdater(u updater) errorHandler {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
 
-		e, err := u.unmarshal(bodyBytes)
+		e, err := u.Unmarshal(bodyBytes)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
 
-		claims := getClaims(r)
+		claims := helpers.GetClaims(r)
 
-		appErr := u.update(id, &e, mux.Vars(r)["genus"], &claims)
+		appErr := u.Update(id, &e, mux.Vars(r)["genus"], &claims)
 		if appErr != nil {
 			return appErr
 		}
 
-		data, err := e.marshal()
+		data, err := e.Marshal()
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
@@ -209,26 +172,26 @@ func handleUpdater(u updater) errorHandler {
 	}
 }
 
-func handleCreater(c creater) errorHandler {
-	return func(w http.ResponseWriter, r *http.Request) *appError {
+func handleCreater(c api.Creater) errorHandler {
+	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
 
-		e, err := c.unmarshal(bodyBytes)
+		e, err := c.Unmarshal(bodyBytes)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
 
-		claims := getClaims(r)
+		claims := helpers.GetClaims(r)
 
-		appErr := c.create(&e, mux.Vars(r)["genus"], &claims)
+		appErr := c.Create(&e, mux.Vars(r)["genus"], &claims)
 		if appErr != nil {
 			return appErr
 		}
 
-		data, err := e.marshal()
+		data, err := e.Marshal()
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
@@ -237,16 +200,16 @@ func handleCreater(c creater) errorHandler {
 	}
 }
 
-func handleDeleter(d deleter) errorHandler {
-	return func(w http.ResponseWriter, r *http.Request) *appError {
-		id, err := strconv.ParseInt(mux.Vars(r)["Id"], 10, 0)
+func handleDeleter(d api.Deleter) errorHandler {
+	return func(w http.ResponseWriter, r *http.Request) *types.AppError {
+		id, err := strconv.ParseInt(mux.Vars(r)["ID"], 10, 0)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
 
-		claims := getClaims(r)
+		claims := helpers.GetClaims(r)
 
-		appErr := d.delete(id, mux.Vars(r)["genus"], &claims)
+		appErr := d.Delete(id, mux.Vars(r)["genus"], &claims)
 		if appErr != nil {
 			return appErr
 		}
@@ -320,7 +283,7 @@ func jsonHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(j)
 }
 
-type errorHandler func(http.ResponseWriter, *http.Request) *appError
+type errorHandler func(http.ResponseWriter, *http.Request) *types.AppError
 
 func (fn errorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := fn(w, r); err != nil {
@@ -330,13 +293,14 @@ func (fn errorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func tokenRefresh(j *jwt.Middleware) errorHandler {
-	t := func(w http.ResponseWriter, r *http.Request) *appError {
-		claims := getClaims(r)
-		user, err := dbGetUserById(claims.Sub)
+	t := func(w http.ResponseWriter, r *http.Request) *types.AppError {
+		claims := helpers.GetClaims(r)
+		user, err := models.DbGetUserByID(claims.Sub)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
-		token, err := j.CreateToken(user.Email)
+		user.Password = ""
+		token, err := auth.Middleware.CreateToken(user.Email)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}

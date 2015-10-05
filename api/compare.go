@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"bytes"
@@ -11,9 +11,13 @@ import (
 	"time"
 
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/mux"
+	"github.com/thermokarst/bactdb/helpers"
+	"github.com/thermokarst/bactdb/payloads"
+	"github.com/thermokarst/bactdb/types"
 )
 
-func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
+// HandleCompare is a HTTP handler for comparision.
+func HandleCompare(w http.ResponseWriter, r *http.Request) *types.AppError {
 	// types
 	type Comparisions map[string]map[string]string
 	type ComparisionsJSON [][]string
@@ -23,7 +27,7 @@ func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
 	if mimeType == "" {
 		mimeType = "json"
 	}
-	claims := getClaims(r)
+	claims := helpers.GetClaims(r)
 	var header string
 	var data []byte
 
@@ -33,30 +37,30 @@ func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
 	opt.Del("mimeType")
 	opt.Del("token")
 	opt.Add("Genus", mux.Vars(r)["genus"])
-	measurementsEntity, appErr := measService.list(&opt, &claims)
+	measurementsEntity, appErr := measService.List(&opt, &claims)
 	if appErr != nil {
 		return appErr
 	}
-	measurementsPayload := (measurementsEntity).(*MeasurementsPayload)
+	measurementsPayload := (measurementsEntity).(*payloads.Measurements)
 
 	// Assemble matrix
-	characteristic_ids := strings.Split(opt.Get("characteristic_ids"), ",")
-	strain_ids := strings.Split(opt.Get("strain_ids"), ",")
+	characteristicIDs := strings.Split(opt.Get("characteristic_ids"), ",")
+	strainIDs := strings.Split(opt.Get("strain_ids"), ",")
 
 	comparisions := make(Comparisions)
-	for _, characteristic_id := range characteristic_ids {
-		characteristic_id_int, _ := strconv.ParseInt(characteristic_id, 10, 0)
+	for _, characteristicID := range characteristicIDs {
+		characteristicIDInt, _ := strconv.ParseInt(characteristicID, 10, 0)
 		values := make(map[string]string)
-		for _, strain_id := range strain_ids {
-			strain_id_int, _ := strconv.ParseInt(strain_id, 10, 0)
+		for _, strainID := range strainIDs {
+			strainIDInt, _ := strconv.ParseInt(strainID, 10, 0)
 			for _, m := range *measurementsPayload.Measurements {
-				if (m.CharacteristicId == characteristic_id_int) && (m.StrainId == strain_id_int) {
-					values[strain_id] = m.Value()
+				if (m.CharacteristicID == characteristicIDInt) && (m.StrainID == strainIDInt) {
+					values[strainID] = m.Value()
 				}
 			}
 		}
 
-		comparisions[characteristic_id] = values
+		comparisions[characteristicID] = values
 	}
 
 	// Return, based on mimetype
@@ -65,10 +69,10 @@ func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
 		header = "application/json"
 
 		comparisionsJSON := make(ComparisionsJSON, 0)
-		for _, characteristic_id := range characteristic_ids {
-			row := []string{characteristic_id}
-			for _, strain_id := range strain_ids {
-				row = append(row, comparisions[characteristic_id][strain_id])
+		for _, characteristicID := range characteristicIDs {
+			row := []string{characteristicID}
+			for _, strainID := range strainIDs {
+				row = append(row, comparisions[characteristicID][strainID])
 			}
 			comparisionsJSON = append(comparisionsJSON, row)
 		}
@@ -80,11 +84,11 @@ func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
 		// maps to translate ids
 		strains := make(map[string]string)
 		for _, strain := range *measurementsPayload.Strains {
-			strains[fmt.Sprintf("%d", strain.Id)] = fmt.Sprintf("%s (%s)", strain.SpeciesName(), strain.StrainName)
+			strains[fmt.Sprintf("%d", strain.ID)] = fmt.Sprintf("%s (%s)", strain.SpeciesName(), strain.StrainName)
 		}
 		characteristics := make(map[string]string)
 		for _, characteristic := range *measurementsPayload.Characteristics {
-			characteristics[fmt.Sprintf("%d", characteristic.Id)] = characteristic.CharacteristicName
+			characteristics[fmt.Sprintf("%d", characteristic.ID)] = characteristic.CharacteristicName
 		}
 
 		b := &bytes.Buffer{}
@@ -92,8 +96,8 @@ func handleCompare(w http.ResponseWriter, r *http.Request) *appError {
 
 		// Write header row
 		r := []string{"Characteristic"}
-		for _, strain_id := range strain_ids {
-			r = append(r, strains[strain_id])
+		for _, strainID := range strainIDs {
+			r = append(r, strains[strainID])
 		}
 		wr.Write(r)
 
