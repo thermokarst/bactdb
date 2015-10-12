@@ -146,3 +146,23 @@ func DbGetUserByEmail(email string) (*User, error) {
 	}
 	return &user, nil
 }
+
+// ListUsers returns all users.
+func ListUsers(opt helpers.ListOptions, claims *types.Claims) (*Users, error) {
+	q := `SELECT id, email, 'password' AS password, name, role, created_at,
+		updated_at, deleted_at
+		FROM users
+		WHERE verified IS TRUE
+		AND deleted_at IS NULL;`
+
+	users := make(Users, 0)
+	if err := DBH.Select(&users, q); err != nil {
+		return nil, err
+	}
+
+	for _, u := range users {
+		u.CanEdit = claims.Role == "A" || u.ID == claims.Sub
+	}
+
+	return &users, nil
+}

@@ -44,18 +44,13 @@ func (u UserService) List(val *url.Values, claims *types.Claims) (types.Entity, 
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
-	// TODO: fix this
-	users := make(models.Users, 0)
-	sql := `SELECT id, email, 'password' AS password, name, role,
-		created_at, updated_at, deleted_at
-		FROM users
-		WHERE verified IS TRUE
-		AND deleted_at IS NULL;`
-	if err := models.DBH.Select(&users, sql); err != nil {
+	users, err := models.ListUsers(opt, claims)
+	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
+
 	payload := payloads.Users{
-		Users: &users,
+		Users: users,
 		Meta: &models.UserMeta{
 			CanAdd: claims.Role == "A",
 		},
