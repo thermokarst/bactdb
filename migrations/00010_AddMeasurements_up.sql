@@ -21,7 +21,7 @@ CREATE TABLE measurements (
 
     CONSTRAINT strainscharmeasurements_pkey PRIMARY KEY (id),
     FOREIGN KEY (strain_id) REFERENCES strains(id),
-    FOREIGN KEY (characteristic_id) REFERENCES characteristics(id),
+    FOREIGN KEY (characteristic_id) REFERENCES characteristics(id) ON DELETE CASCADE,
     FOREIGN KEY (text_measurement_type_id) REFERENCES text_measurement_types(id),
     FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
     FOREIGN KEY (test_method_id) REFERENCES test_methods(id),
