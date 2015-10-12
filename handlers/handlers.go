@@ -79,6 +79,7 @@ func Handler() http.Handler {
 		r{handleCreater(strainService), "POST", "/strains"},
 		r{handleGetter(strainService), "GET", "/strains/{ID:.+}"},
 		r{handleUpdater(strainService), "PUT", "/strains/{ID:.+}"},
+		r{handleDeleter(strainService), "DELETE", "/strains/{ID:.+}"},
 		r{handleLister(characteristicService), "GET", "/characteristics"},
 		r{handleCreater(characteristicService), "POST", "/characteristics"},
 		r{handleGetter(characteristicService), "GET", "/characteristics/{ID:.+}"},
