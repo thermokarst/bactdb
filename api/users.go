@@ -96,7 +96,7 @@ func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *typ
 	}
 
 	// TODO: fix this
-	count, err := models.DBH.Update(user)
+	count, err := models.DBH.Update(user.UserBase)
 	user.Password = ""
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
