@@ -21,7 +21,7 @@ CREATE TABLE strains (
     deleted_by BIGINT NULL,
 
     CONSTRAINT strain_pkey PRIMARY KEY (id),
-    FOREIGN KEY (species_id) REFERENCES species(id),
+    FOREIGN KEY (species_id) REFERENCES species(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES users(id),
     FOREIGN KEY (updated_by) REFERENCES users(id),
     FOREIGN KEY (deleted_by) REFERENCES users(id)

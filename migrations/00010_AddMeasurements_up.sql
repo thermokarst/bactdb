@@ -20,7 +20,7 @@ CREATE TABLE measurements (
     updated_by BIGINT NOT NULL,
 
     CONSTRAINT strainscharmeasurements_pkey PRIMARY KEY (id),
-    FOREIGN KEY (strain_id) REFERENCES strains(id),
+    FOREIGN KEY (strain_id) REFERENCES strains(id) ON DELETE CASCADE,
     FOREIGN KEY (characteristic_id) REFERENCES characteristics(id) ON DELETE CASCADE,
     FOREIGN KEY (text_measurement_type_id) REFERENCES text_measurement_types(id),
     FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
