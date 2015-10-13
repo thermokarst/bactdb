@@ -2,18 +2,19 @@ package models
 
 import "github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/modl"
 
-type updater interface {
+type base interface {
+	PreCreate(modl.SqlExecutor) error
 	PreUpdate(modl.SqlExecutor) error
 	UpdateError() error
 }
 
-func Update(u updater) error {
-	count, err := DBH.Update(u)
+func Update(b base) error {
+	count, err := DBH.Update(b)
 	if err != nil {
 		return err
 	}
 	if count != 1 {
-		return u.UpdateError()
+		return b.UpdateError()
 	}
 	return nil
 }
