@@ -299,7 +299,7 @@ func (fn errorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func tokenRefresh(j *jwt.Middleware) errorHandler {
 	t := func(w http.ResponseWriter, r *http.Request) *types.AppError {
 		claims := helpers.GetClaims(r)
-		user, err := models.DbGetUserByID(claims.Sub)
+		user, err := models.GetUser(claims.Sub, "", &claims)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}

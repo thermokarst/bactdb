@@ -60,13 +60,11 @@ func (u UserService) List(val *url.Values, claims *types.Claims) (types.Entity, 
 
 // Get retrieves a single user.
 func (u UserService) Get(id int64, dummy string, claims *types.Claims) (types.Entity, *types.AppError) {
-	user, err := models.DbGetUserByID(id)
+	user, err := models.GetUser(id, dummy, claims)
 	user.Password = ""
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
-
-	user.CanEdit = claims.Role == "A" || id == claims.Sub
 
 	payload := payloads.User{
 		User: user,
@@ -81,7 +79,7 @@ func (u UserService) Get(id int64, dummy string, claims *types.Claims) (types.En
 func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *types.Claims) *types.AppError {
 	user := (*e).(*payloads.User).User
 
-	originalUser, err := models.DbGetUserByID(id)
+	originalUser, err := models.GetUser(id, dummy, claims)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -263,7 +261,7 @@ func HandleUserLockout(w http.ResponseWriter, r *http.Request) *types.AppError {
 func HandleUserPasswordChange(w http.ResponseWriter, r *http.Request) *types.AppError {
 	claims := helpers.GetClaims(r)
 
-	if err := models.UpdateUserPassword(claims.Sub, r.FormValue("password")); err != nil {
+	if err := models.UpdateUserPassword(&claims, r.FormValue("password")); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 

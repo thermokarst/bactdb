@@ -112,8 +112,8 @@ func DbAuthenticate(email string, password string) error {
 	return nil
 }
 
-// DbGetUserByID returns a specific user record by ID.
-func DbGetUserByID(id int64) (*User, error) {
+// GetUser returns a specific user record by ID.
+func GetUser(id int64, dummy string, claims *types.Claims) (*User, error) {
 	var user User
 	q := `SELECT *
 		FROM users
@@ -126,6 +126,9 @@ func DbGetUserByID(id int64) (*User, error) {
 		}
 		return nil, err
 	}
+
+	user.CanEdit = claims.Role == "A" || id == claims.Sub
+
 	return &user, nil
 }
 
@@ -167,8 +170,8 @@ func ListUsers(opt helpers.ListOptions, claims *types.Claims) (*Users, error) {
 	return &users, nil
 }
 
-func UpdateUserPassword(id int64, password string) error {
-	user, err := DbGetUserByID(id)
+func UpdateUserPassword(claims *types.Claims, password string) error {
+	user, err := GetUser(claims.Sub, "", claims)
 	if err != nil {
 		return err
 	}
