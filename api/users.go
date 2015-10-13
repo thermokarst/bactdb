@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/mux"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/lib/pq"
@@ -44,6 +45,11 @@ func (u UserService) List(val *url.Values, claims *types.Claims) (types.Entity, 
 		return nil, newJSONError(err, http.StatusInternalServerError)
 	}
 
+	// Only Admins can view all users
+	if claims.Role != "A" {
+		return nil, newJSONError(errors.ErrUserForbidden, http.StatusForbidden)
+	}
+
 	users, err := models.ListUsers(opt, claims)
 	if err != nil {
 		return nil, newJSONError(err, http.StatusInternalServerError)
@@ -60,6 +66,11 @@ func (u UserService) List(val *url.Values, claims *types.Claims) (types.Entity, 
 
 // Get retrieves a single user.
 func (u UserService) Get(id int64, dummy string, claims *types.Claims) (types.Entity, *types.AppError) {
+	// Only Admins can view any users, otherwise users are limited to themselves
+	if claims.Role != "A" && claims.Sub != id {
+		return nil, newJSONError(errors.ErrUserForbidden, http.StatusForbidden)
+	}
+
 	user, err := models.GetUser(id, dummy, claims)
 	user.Password = ""
 	if err != nil {
@@ -77,6 +88,11 @@ func (u UserService) Get(id int64, dummy string, claims *types.Claims) (types.En
 
 // Update modifies an existing user.
 func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *types.Claims) *types.AppError {
+	// Only Admins can view any users, otherwise users are limited to themselves
+	if claims.Role != "A" && claims.Sub != id {
+		return newJSONError(errors.ErrUserForbidden, http.StatusForbidden)
+	}
+
 	user := (*e).(*payloads.User).User
 
 	originalUser, err := models.GetUser(id, dummy, claims)
@@ -260,6 +276,15 @@ func HandleUserLockout(w http.ResponseWriter, r *http.Request) *types.AppError {
 
 func HandleUserPasswordChange(w http.ResponseWriter, r *http.Request) *types.AppError {
 	claims := helpers.GetClaims(r)
+	id, err := strconv.ParseInt(r.FormValue("id"), 10, 64)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	// Only a user can change their own password
+	if claims.Sub != id {
+		return newJSONError(errors.ErrUserForbidden, http.StatusForbidden)
+	}
 
 	if err := models.UpdateUserPassword(&claims, r.FormValue("password")); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)

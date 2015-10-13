@@ -13,4 +13,6 @@ var (
 	ErrInvalidEmailOrPassword = errors.New("Invalid email or password")
 	// ErrEmailAddressTaken when email already registered.
 	ErrEmailAddressTaken = errors.New("Email address is already registered")
+	// ErrUserForbidden when user not allowed to view a resource
+	ErrUserForbidden = errors.New("User ccount not authorized")
 )
