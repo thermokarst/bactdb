@@ -175,9 +175,7 @@ func (c CharacteristicService) Create(e *types.Entity, genus string, claims *typ
 	}
 	payload.Characteristic.CharacteristicTypeID = id
 
-	// TODO: fix this
-	err = models.DBH.Insert(payload.Characteristic.CharacteristicBase)
-	if err != nil {
+	if err := models.Create(payload.Characteristic.CharacteristicBase); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 

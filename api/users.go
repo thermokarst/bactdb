@@ -138,8 +138,7 @@ func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims)
 	user.Role = "R"
 	user.Verified = false
 
-	// TODO: fix this
-	if err := models.DBH.Insert(user.UserBase); err != nil {
+	if err := models.Create(user.UserBase); err != nil {
 		if err, ok := err.(*pq.Error); ok {
 			if err.Code == "23505" {
 				return newJSONError(errors.ErrEmailAddressTaken, http.StatusInternalServerError)

@@ -189,8 +189,7 @@ func (s StrainService) Create(e *types.Entity, genus string, claims *types.Claim
 	payload.Strain.CreatedBy = claims.Sub
 	payload.Strain.UpdatedBy = claims.Sub
 
-	// TODO: fix this
-	if err := models.DBH.Insert(payload.Strain.StrainBase); err != nil {
+	if err := models.Create(payload.Strain.StrainBase); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 

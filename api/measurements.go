@@ -129,8 +129,7 @@ func (m MeasurementService) Create(e *types.Entity, genus string, claims *types.
 	payload.Measurement.CreatedBy = claims.Sub
 	payload.Measurement.UpdatedBy = claims.Sub
 
-	// TODO: fix this
-	if err := models.DBH.Insert(payload.Measurement.MeasurementBase); err != nil {
+	if err := models.Create(payload.Measurement.MeasurementBase); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 

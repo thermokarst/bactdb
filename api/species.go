@@ -132,9 +132,7 @@ func (s SpeciesService) Create(e *types.Entity, genus string, claims *types.Clai
 	}
 	payload.Species.SpeciesBase.GenusID = genusID
 
-	// TODO: fix this
-	err = models.DBH.Insert(payload.Species.SpeciesBase)
-	if err != nil {
+	if err := models.Create(payload.Species.SpeciesBase); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
