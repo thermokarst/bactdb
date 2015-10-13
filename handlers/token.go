@@ -16,19 +16,30 @@ import (
 )
 
 func verifyClaims(claims []byte, r *http.Request) error {
-	// TODO: use helper
 	currentTime := time.Now()
 	var c types.Claims
 	err := json.Unmarshal(claims, &c)
 	if err != nil {
 		return err
 	}
+
 	if currentTime.After(time.Unix(c.Exp, 0)) {
 		return errors.ErrExpiredToken
 	}
+
+	user, err := models.GetUser(c.Sub, "", &c)
+	if err != nil {
+		return err
+	}
+
+	if c.Role != user.Role {
+		return errors.ErrInvalidToken
+	}
+
 	context.Set(r, "claims", c)
 	return nil
 }
+
 func tokenHandler(h http.Handler) http.Handler {
 	token := func(w http.ResponseWriter, r *http.Request) {
 		recorder := httptest.NewRecorder()
@@ -73,16 +84,19 @@ func tokenRefresh(j *jwt.Middleware) errorHandler {
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
+
 		user.Password = ""
 		token, err := auth.Middleware.CreateToken(user.Email)
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
+
 		data, _ := json.Marshal(struct {
 			Token string `json:"token"`
 		}{
 			Token: token,
 		})
+
 		w.Write(data)
 		return nil
 	}
