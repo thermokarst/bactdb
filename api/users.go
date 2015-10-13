@@ -105,13 +105,12 @@ func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *typ
 	user.Verified = originalUser.Verified
 	user.UpdatedAt = helpers.CurrentTime()
 
-	if err := user.Validate(); err != nil {
-		return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
-	}
-
 	if err := models.Update(user.UserBase); err != nil {
 		if err == errors.ErrUserNotUpdated {
 			return newJSONError(err, http.StatusBadRequest)
+		}
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
 		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -124,9 +123,7 @@ func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *typ
 // Create initializes a new user.
 func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims) *types.AppError {
 	user := (*e).(*payloads.User).User
-	if err := user.Validate(); err != nil {
-		return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
-	}
+
 	ct := helpers.CurrentTime()
 	user.CreatedAt = ct
 	user.UpdatedAt = ct
@@ -143,6 +140,9 @@ func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims)
 			if err.Code == "23505" {
 				return newJSONError(errors.ErrEmailAddressTaken, http.StatusInternalServerError)
 			}
+		}
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
 		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}

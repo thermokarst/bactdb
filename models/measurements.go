@@ -39,6 +39,24 @@ func (m *MeasurementBase) DeleteError() error {
 	return errors.ErrMeasurementNotDeleted
 }
 
+func (m *MeasurementBase) validate() types.ValidationError {
+	mv := make(types.ValidationError, 0)
+
+	if m.StrainID == 0 {
+		mv["Strain"] = []string{helpers.MustProvideAValue}
+	}
+
+	if m.CharacteristicID == 0 {
+		mv["Characteristic"] = []string{helpers.MustProvideAValue}
+	}
+
+	if len(mv) > 0 {
+		return mv
+	}
+
+	return nil
+}
+
 // MeasurementBase is what the DB expects for write operations
 // There are three types of supported measurements: fixed-text, free-text,
 // & numerical. The table has a constraint that will allow at most one

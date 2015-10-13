@@ -39,6 +39,24 @@ func (s *StrainBase) DeleteError() error {
 	return errors.ErrStrainNotDeleted
 }
 
+func (s *StrainBase) validate() types.ValidationError {
+	sv := make(types.ValidationError, 0)
+
+	if s.SpeciesID == 0 {
+		sv["Species"] = []string{helpers.MustProvideAValue}
+	}
+
+	if s.StrainName == "" {
+		sv["Name"] = []string{helpers.MustProvideAValue}
+	}
+
+	if len(sv) > 0 {
+		return sv
+	}
+
+	return nil
+}
+
 // StrainBase is what the DB expects for write operations.
 type StrainBase struct {
 	ID                  int64            `db:"id" json:"id"`

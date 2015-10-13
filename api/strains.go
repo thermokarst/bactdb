@@ -159,6 +159,9 @@ func (s StrainService) Update(id int64, e *types.Entity, genus string, claims *t
 		if err == errors.ErrStrainNotUpdated {
 			return newJSONError(err, http.StatusBadRequest)
 		}
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
@@ -190,6 +193,9 @@ func (s StrainService) Create(e *types.Entity, genus string, claims *types.Claim
 	payload.Strain.UpdatedBy = claims.Sub
 
 	if err := models.Create(payload.Strain.StrainBase); err != nil {
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 

@@ -97,6 +97,9 @@ func (s SpeciesService) Update(id int64, e *types.Entity, genus string, claims *
 		if err == errors.ErrSpeciesNotUpdated {
 			return newJSONError(err, http.StatusBadRequest)
 		}
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
@@ -133,6 +136,9 @@ func (s SpeciesService) Create(e *types.Entity, genus string, claims *types.Clai
 	payload.Species.SpeciesBase.GenusID = genusID
 
 	if err := models.Create(payload.Species.SpeciesBase); err != nil {
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 

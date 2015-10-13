@@ -99,6 +99,9 @@ func (m MeasurementService) Update(id int64, e *types.Entity, genus string, clai
 		if err == errors.ErrMeasurementNotUpdated {
 			return newJSONError(err, http.StatusBadRequest)
 		}
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
@@ -132,6 +135,9 @@ func (m MeasurementService) Create(e *types.Entity, genus string, claims *types.
 	payload.Measurement.UpdatedBy = claims.Sub
 
 	if err := models.Create(payload.Measurement.MeasurementBase); err != nil {
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 

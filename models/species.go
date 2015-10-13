@@ -39,6 +39,24 @@ func (s *SpeciesBase) DeleteError() error {
 	return errors.ErrSpeciesNotDeleted
 }
 
+func (s *SpeciesBase) validate() types.ValidationError {
+	sv := make(types.ValidationError, 0)
+
+	if s.GenusID == 0 {
+		sv["Genus"] = []string{helpers.MustProvideAValue}
+	}
+
+	if s.SpeciesName == "" {
+		sv["Species"] = []string{helpers.MustProvideAValue}
+	}
+
+	if len(sv) > 0 {
+		return sv
+	}
+
+	return nil
+}
+
 // SpeciesBase is what the DB expects for write operations.
 type SpeciesBase struct {
 	ID                  int64            `db:"id" json:"id"`

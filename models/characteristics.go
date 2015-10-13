@@ -38,6 +38,24 @@ func (c *CharacteristicBase) DeleteError() error {
 	return errors.ErrCharacteristicNotDeleted
 }
 
+func (c *CharacteristicBase) validate() types.ValidationError {
+	cv := make(types.ValidationError, 0)
+
+	if c.CharacteristicName == "" {
+		cv["Name"] = []string{helpers.MustProvideAValue}
+	}
+
+	if c.CharacteristicTypeID == 0 {
+		cv["Characteristic Type"] = []string{helpers.MustProvideAValue}
+	}
+
+	if len(cv) > 0 {
+		return cv
+	}
+
+	return nil
+}
+
 // CharacteristicBase is what the DB expects for write operations
 type CharacteristicBase struct {
 	ID                   int64           `json:"id,omitempty"`

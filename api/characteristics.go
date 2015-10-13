@@ -137,6 +137,9 @@ func (c CharacteristicService) Update(id int64, e *types.Entity, genus string, c
 		if err == errors.ErrCharacteristicNotUpdated {
 			return newJSONError(err, http.StatusBadRequest)
 		}
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
@@ -176,6 +179,9 @@ func (c CharacteristicService) Create(e *types.Entity, genus string, claims *typ
 	payload.Characteristic.CharacteristicTypeID = id
 
 	if err := models.Create(payload.Characteristic.CharacteristicBase); err != nil {
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 

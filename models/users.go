@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"encoding/json"
 	"regexp"
 
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/modl"
@@ -40,6 +39,33 @@ func (u *UserBase) DeleteError() error {
 	return errors.ErrUserNotDeleted
 }
 
+func (u *UserBase) validate() types.ValidationError {
+	uv := make(types.ValidationError, 0)
+
+	if u.Name == "" {
+		uv["Name"] = []string{helpers.MustProvideAValue}
+	}
+
+	if u.Email == "" {
+		uv["Email"] = []string{helpers.MustProvideAValue}
+	}
+
+	regex, _ := regexp.Compile(`(\w[-._\w]*\w@\w[-._\w]*\w\.\w{2,3})`)
+	if u.Email != "" && !regex.MatchString(u.Email) {
+		uv["Email"] = []string{"Must provide a valid email address"}
+	}
+
+	if len(u.Password) < 8 {
+		uv["Password"] = []string{"Password must be at least 8 characters"}
+	}
+
+	if len(uv) > 0 {
+		return uv
+	}
+
+	return nil
+}
+
 // UserBase is what the DB expects to see for write operations.
 type UserBase struct {
 	ID        int64          `json:"id,omitempty"`
@@ -68,55 +94,12 @@ type UserValidation struct {
 	Role     []string `json:"role,omitempty"`
 }
 
-// Error returns the JSON-encoded error response for any validation errors.
-func (uv UserValidation) Error() string {
-	errs, err := json.Marshal(struct {
-		UserValidation `json:"errors"`
-	}{uv})
-	if err != nil {
-		return err.Error()
-	}
-	return string(errs)
-}
-
 // Users are multiple user entities.
 type Users []*User
 
 // UserMeta stashes some metadata related to the entity.
 type UserMeta struct {
 	CanAdd bool `json:"canAdd"`
-}
-
-// Validate validates a user record.
-func (u *User) Validate() error {
-	var uv UserValidation
-	validationError := false
-
-	if u.Name == "" {
-		uv.Name = append(uv.Name, helpers.MustProvideAValue)
-		validationError = true
-	}
-
-	if u.Email == "" {
-		uv.Email = append(uv.Email, helpers.MustProvideAValue)
-		validationError = true
-	}
-
-	regex, _ := regexp.Compile(`(\w[-._\w]*\w@\w[-._\w]*\w\.\w{2,3})`)
-	if u.Email != "" && !regex.MatchString(u.Email) {
-		uv.Email = append(uv.Email, "Must provide a valid email address")
-		validationError = true
-	}
-
-	if len(u.Password) < 8 {
-		uv.Password = append(uv.Password, "Password must be at least 8 characters")
-		validationError = true
-	}
-
-	if validationError {
-		return uv
-	}
-	return nil
 }
 
 // DbAuthenticate authenticates a user.
