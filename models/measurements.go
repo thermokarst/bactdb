@@ -33,6 +33,10 @@ func (m *MeasurementBase) UpdateError() error {
 	return errors.ErrMeasurementNotUpdated
 }
 
+func (m *MeasurementBase) DeleteError() error {
+	return errors.ErrMeasurementNotDeleted
+}
+
 // MeasurementBase is what the DB expects for write operations
 // There are three types of supported measurements: fixed-text, free-text,
 // & numerical. The table has a constraint that will allow at most one

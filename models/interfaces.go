@@ -6,6 +6,7 @@ type base interface {
 	PreInsert(modl.SqlExecutor) error
 	PreUpdate(modl.SqlExecutor) error
 	UpdateError() error
+	DeleteError() error
 }
 
 // Create will create a new DB record of a model.
@@ -24,6 +25,18 @@ func Update(b base) error {
 	}
 	if count != 1 {
 		return b.UpdateError()
+	}
+	return nil
+}
+
+// Delete runs a DB delete on a model.
+func Delete(b base) error {
+	count, err := DBH.Delete(b)
+	if err != nil {
+		return err
+	}
+	if count != 1 {
+		return b.DeleteError()
 	}
 	return nil
 }

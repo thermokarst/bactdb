@@ -33,6 +33,10 @@ func (s *SpeciesBase) UpdateError() error {
 	return errors.ErrSpeciesNotUpdated
 }
 
+func (s *SpeciesBase) DeleteError() error {
+	return errors.ErrSpeciesNotDeleted
+}
+
 // SpeciesBase is what the DB expects for write operations.
 type SpeciesBase struct {
 	ID                  int64            `db:"id" json:"id"`

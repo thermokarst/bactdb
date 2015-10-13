@@ -33,6 +33,10 @@ func (s *StrainBase) UpdateError() error {
 	return errors.ErrStrainNotUpdated
 }
 
+func (s *StrainBase) DeleteError() error {
+	return errors.ErrStrainNotDeleted
+}
+
 // StrainBase is what the DB expects for write operations.
 type StrainBase struct {
 	ID                  int64            `db:"id" json:"id"`

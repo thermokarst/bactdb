@@ -193,10 +193,14 @@ func (c CharacteristicService) Create(e *types.Entity, genus string, claims *typ
 
 // Delete deletes a single characteristic
 func (c CharacteristicService) Delete(id int64, genus string, claims *types.Claims) *types.AppError {
-	q := `DELETE FROM characteristics WHERE id=$1;`
-	// TODO: fix this
-	if _, err := models.DBH.Exec(q, id); err != nil {
+	characteristic, err := models.GetCharacteristic(id, genus, claims)
+	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
+
+	if err := models.Delete(characteristic); err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
 	return nil
 }

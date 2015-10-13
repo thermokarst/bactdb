@@ -6,7 +6,9 @@ var (
 	// ErrUserNotFound when not found.
 	ErrUserNotFound = errors.New("No user found")
 	// ErrUserNotUpdated when not updated.
-	ErrUserNotUpdated = errors.New("Count 0")
+	ErrUserNotUpdated = errors.New("User not updated")
+	// ErrUserNotDeleted when not deleted.
+	ErrUserNotDeleted = errors.New("User not deleted")
 	// ErrUserMissingEmail when missing email.
 	ErrUserMissingEmail = errors.New("Missing email")
 	// ErrInvalidEmailOrPassword when invalid login credentials.

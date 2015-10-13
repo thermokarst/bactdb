@@ -216,10 +216,14 @@ func (s StrainService) Create(e *types.Entity, genus string, claims *types.Claim
 
 // Delete deletes a single strain
 func (s StrainService) Delete(id int64, genus string, claims *types.Claims) *types.AppError {
-	q := `DELETE FROM strains WHERE id=$1;`
-	// TODO: fix this
-	if _, err := models.DBH.Exec(q, id); err != nil {
+	strain, err := models.GetStrain(id, genus, claims)
+	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
+
+	if err := models.Delete(strain); err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
 	return nil
 }

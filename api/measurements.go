@@ -114,12 +114,14 @@ func (m MeasurementService) Update(id int64, e *types.Entity, genus string, clai
 
 // Delete deletes a single measurement.
 func (m MeasurementService) Delete(id int64, genus string, claims *types.Claims) *types.AppError {
-	q := `DELETE FROM measurements WHERE id=$1;`
-	// TODO: fix this
-	_, err := models.DBH.Exec(q, id)
+	measurement, err := models.GetMeasurement(id, genus, claims)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
+	if err := models.Delete(measurement); err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
 	return nil
 }
 

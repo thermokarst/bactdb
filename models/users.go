@@ -34,6 +34,10 @@ func (u *UserBase) UpdateError() error {
 	return errors.ErrUserNotUpdated
 }
 
+func (u *UserBase) DeleteError() error {
+	return errors.ErrUserNotDeleted
+}
+
 // UserBase is what the DB expects to see for write operations.
 type UserBase struct {
 	ID        int64          `json:"id,omitempty"`

@@ -153,10 +153,14 @@ func (s SpeciesService) Create(e *types.Entity, genus string, claims *types.Clai
 
 // Delete deletes a single species
 func (s SpeciesService) Delete(id int64, genus string, claims *types.Claims) *types.AppError {
-	q := `DELETE FROM species WHERE id=$1;`
-	// TODO: fix this
-	if _, err := models.DBH.Exec(q, id); err != nil {
+	species, err := models.GetSpecies(id, genus, claims)
+	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
+
+	if err := models.Delete(species.SpeciesBase); err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
 	return nil
 }

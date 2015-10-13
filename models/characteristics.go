@@ -32,6 +32,10 @@ func (c *CharacteristicBase) UpdateError() error {
 	return errors.ErrCharacteristicNotUpdated
 }
 
+func (c *CharacteristicBase) DeleteError() error {
+	return errors.ErrCharacteristicNotDeleted
+}
+
 // CharacteristicBase is what the DB expects for write operations
 type CharacteristicBase struct {
 	ID                   int64           `json:"id,omitempty"`
