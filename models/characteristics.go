@@ -28,6 +28,10 @@ func (c *CharacteristicBase) PreUpdate(e modl.SqlExecutor) error {
 	return nil
 }
 
+func (c *CharacteristicBase) UpdateError() error {
+	return errors.ErrCharacteristicNotUpdated
+}
+
 // CharacteristicBase is what the DB expects for write operations
 type CharacteristicBase struct {
 	ID                   int64           `json:"id,omitempty"`

@@ -155,14 +155,11 @@ func (s StrainService) Update(id int64, e *types.Entity, genus string, claims *t
 	payload.Strain.UpdatedBy = claims.Sub
 	payload.Strain.ID = id
 
-	// TODO: fix this
-	count, err := models.DBH.Update(payload.Strain.StrainBase)
-	if err != nil {
+	if err := models.Update(payload.Strain.StrainBase); err != nil {
+		if err == errors.ErrStrainNotUpdated {
+			return newJSONError(err, http.StatusBadRequest)
+		}
 		return newJSONError(err, http.StatusInternalServerError)
-	}
-	if count != 1 {
-		// TODO: fix this
-		return newJSONError(errors.ErrStrainNotUpdated, http.StatusBadRequest)
 	}
 
 	strain, err := models.GetStrain(id, genus, claims)

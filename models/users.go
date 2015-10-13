@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"regexp"
 
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/jmoiron/modl"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/golang.org/x/crypto/bcrypt"
 	"github.com/thermokarst/bactdb/errors"
 	"github.com/thermokarst/bactdb/helpers"
@@ -13,6 +14,24 @@ import (
 
 func init() {
 	DB.AddTableWithName(UserBase{}, "users").SetKeys(true, "ID")
+}
+
+// PreInsert is a modl hook.
+func (u *UserBase) PreInsert(e modl.SqlExecutor) error {
+	ct := helpers.CurrentTime()
+	u.CreatedAt = ct
+	u.UpdatedAt = ct
+	return nil
+}
+
+// PreUpdate is a modl hook.
+func (u *UserBase) PreUpdate(e modl.SqlExecutor) error {
+	u.UpdatedAt = helpers.CurrentTime()
+	return nil
+}
+
+func (u *UserBase) UpdateError() error {
+	return errors.ErrUserNotUpdated
 }
 
 // UserBase is what the DB expects to see for write operations.

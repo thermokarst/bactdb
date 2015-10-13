@@ -29,6 +29,10 @@ func (s *SpeciesBase) PreUpdate(e modl.SqlExecutor) error {
 	return nil
 }
 
+func (s *SpeciesBase) UpdateError() error {
+	return errors.ErrSpeciesNotUpdated
+}
+
 // SpeciesBase is what the DB expects for write operations.
 type SpeciesBase struct {
 	ID                  int64            `db:"id" json:"id"`

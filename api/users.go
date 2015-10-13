@@ -109,15 +109,14 @@ func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *typ
 		return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
 	}
 
-	// TODO: fix this
-	count, err := models.DBH.Update(user.UserBase)
-	user.Password = ""
-	if err != nil {
+	if err := models.Update(user.UserBase); err != nil {
+		if err == errors.ErrUserNotUpdated {
+			return newJSONError(err, http.StatusBadRequest)
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
-	if count != 1 {
-		return newJSONError(errors.ErrUserNotUpdated, http.StatusInternalServerError)
-	}
+
+	user.Password = ""
 
 	return nil
 }

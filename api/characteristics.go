@@ -132,14 +132,12 @@ func (c CharacteristicService) Update(id int64, e *types.Entity, genus string, c
 	payload.Characteristic.CanEdit = helpers.CanEdit(claims, payload.Characteristic.CreatedBy)
 
 	payload.Characteristic.CharacteristicTypeID = id
-	// TODO: fix this
-	count, err := models.DBH.Update(payload.Characteristic.CharacteristicBase)
-	if err != nil {
+
+	if err := models.Update(payload.Characteristic.CharacteristicBase); err != nil {
+		if err == errors.ErrCharacteristicNotUpdated {
+			return newJSONError(err, http.StatusBadRequest)
+		}
 		return newJSONError(err, http.StatusInternalServerError)
-	}
-	if count != 1 {
-		// TODO: fix this
-		return newJSONError(errors.ErrCharacteristicNotUpdated, http.StatusBadRequest)
 	}
 
 	strains, strainOpts, err := models.StrainsFromCharacteristicID(id, genus, claims)

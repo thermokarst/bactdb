@@ -29,6 +29,10 @@ func (m *MeasurementBase) PreUpdate(e modl.SqlExecutor) error {
 	return nil
 }
 
+func (m *MeasurementBase) UpdateError() error {
+	return errors.ErrMeasurementNotUpdated
+}
+
 // MeasurementBase is what the DB expects for write operations
 // There are three types of supported measurements: fixed-text, free-text,
 // & numerical. The table has a constraint that will allow at most one

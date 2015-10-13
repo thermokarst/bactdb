@@ -93,14 +93,11 @@ func (s SpeciesService) Update(id int64, e *types.Entity, genus string, claims *
 	}
 	payload.Species.SpeciesBase.GenusID = genusID
 
-	// TODO: fix this
-	count, err := models.DBH.Update(payload.Species.SpeciesBase)
-	if err != nil {
+	if err := models.Update(payload.Species.SpeciesBase); err != nil {
+		if err == errors.ErrSpeciesNotUpdated {
+			return newJSONError(err, http.StatusBadRequest)
+		}
 		return newJSONError(err, http.StatusInternalServerError)
-	}
-	if count != 1 {
-		// TODO: fix this
-		return newJSONError(errors.ErrSpeciesNotUpdated, http.StatusBadRequest)
 	}
 
 	// Reload to send back down the wire

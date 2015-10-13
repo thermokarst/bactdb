@@ -29,6 +29,10 @@ func (s *StrainBase) PreUpdate(e modl.SqlExecutor) error {
 	return nil
 }
 
+func (s *StrainBase) UpdateError() error {
+	return errors.ErrStrainNotUpdated
+}
+
 // StrainBase is what the DB expects for write operations.
 type StrainBase struct {
 	ID                  int64            `db:"id" json:"id"`

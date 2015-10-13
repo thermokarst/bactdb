@@ -95,14 +95,11 @@ func (m MeasurementService) Update(id int64, e *types.Entity, genus string, clai
 		payload.Measurement.TextMeasurementTypeID.Valid = true
 	}
 
-	// TODO: fix this
-	count, err := models.DBH.Update(payload.Measurement.MeasurementBase)
-	if err != nil {
+	if err := models.Update(payload.Measurement.MeasurementBase); err != nil {
+		if err == errors.ErrMeasurementNotUpdated {
+			return newJSONError(err, http.StatusBadRequest)
+		}
 		return newJSONError(err, http.StatusInternalServerError)
-	}
-	if count != 1 {
-		// TODO: fix this
-		return newJSONError(errors.ErrStrainNotUpdated, http.StatusBadRequest)
 	}
 
 	measurement, err := models.GetMeasurement(id, genus, claims)
