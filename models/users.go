@@ -76,7 +76,6 @@ type UserBase struct {
 	Verified  bool           `db:"verified" json:"-"`
 	CreatedAt types.NullTime `db:"created_at" json:"createdAt"`
 	UpdatedAt types.NullTime `db:"updated_at" json:"updatedAt"`
-	DeletedAt types.NullTime `db:"deleted_at" json:"deletedAt"`
 }
 
 // User is what the DB expects to see for read operations, and is what the API
@@ -109,8 +108,7 @@ func DbAuthenticate(email string, password string) error {
 	q := `SELECT *
 		FROM users
 		WHERE lower(email)=lower($1)
-		AND verified IS TRUE
-		AND deleted_at IS NULL;`
+		AND verified IS TRUE;`
 	if err := DBH.SelectOne(&user, q, email); err != nil {
 		return errors.ErrInvalidEmailOrPassword
 	}
@@ -126,8 +124,7 @@ func GetUser(id int64, dummy string, claims *types.Claims) (*User, error) {
 	q := `SELECT *
 		FROM users
 		WHERE id=$1
-		AND verified IS TRUE
-		AND deleted_at IS NULL;`
+		AND verified IS TRUE;`
 	if err := DBH.SelectOne(&user, q, id); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.ErrUserNotFound
@@ -147,8 +144,7 @@ func DbGetUserByEmail(email string) (*User, error) {
 	q := `SELECT *
 		FROM users
 		WHERE lower(email)=lower($1)
-		AND verified IS TRUE
-		AND deleted_at IS NULL;`
+		AND verified IS TRUE;`
 	if err := DBH.SelectOne(&user, q, email); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.ErrUserNotFound
@@ -160,11 +156,9 @@ func DbGetUserByEmail(email string) (*User, error) {
 
 // ListUsers returns all users.
 func ListUsers(opt helpers.ListOptions, claims *types.Claims) (*Users, error) {
-	q := `SELECT id, email, 'password' AS password, name, role, created_at,
-		updated_at, deleted_at
+	q := `SELECT id, email, 'password' AS password, name, role, created_at, updated_at
 		FROM users
-		WHERE verified IS TRUE
-		AND deleted_at IS NULL;`
+		WHERE verified IS TRUE;`
 
 	users := make(Users, 0)
 	if err := DBH.Select(&users, q); err != nil {

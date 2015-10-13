@@ -70,10 +70,8 @@ type StrainBase struct {
 	Notes               types.NullString `db:"notes" json:"notes"`
 	CreatedAt           types.NullTime   `db:"created_at" json:"createdAt"`
 	UpdatedAt           types.NullTime   `db:"updated_at" json:"updatedAt"`
-	DeletedAt           types.NullTime   `db:"deleted_at" json:"deletedAt"`
 	CreatedBy           int64            `db:"created_by" json:"createdBy"`
 	UpdatedBy           int64            `db:"updated_by" json:"updatedBy"`
-	DeletedBy           types.NullInt64  `db:"deleted_by" json:"deletedBy"`
 }
 
 // Strain is what the DB expects for read operations, and is what the API expects
