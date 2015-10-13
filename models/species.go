@@ -29,10 +29,12 @@ func (s *SpeciesBase) PreUpdate(e modl.SqlExecutor) error {
 	return nil
 }
 
+// UpdateError satisfies base interface.
 func (s *SpeciesBase) UpdateError() error {
 	return errors.ErrSpeciesNotUpdated
 }
 
+// DeleteError satisfies base interface.
 func (s *SpeciesBase) DeleteError() error {
 	return errors.ErrSpeciesNotDeleted
 }

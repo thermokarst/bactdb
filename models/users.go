@@ -30,10 +30,12 @@ func (u *UserBase) PreUpdate(e modl.SqlExecutor) error {
 	return nil
 }
 
+// UpdateError satisfies base interface.
 func (u *UserBase) UpdateError() error {
 	return errors.ErrUserNotUpdated
 }
 
+// DeleteError satisfies base interface.
 func (u *UserBase) DeleteError() error {
 	return errors.ErrUserNotDeleted
 }

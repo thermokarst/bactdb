@@ -29,10 +29,12 @@ func (m *MeasurementBase) PreUpdate(e modl.SqlExecutor) error {
 	return nil
 }
 
+// UpdateError satisfies base interface.
 func (m *MeasurementBase) UpdateError() error {
 	return errors.ErrMeasurementNotUpdated
 }
 
+// DeleteError satisfies base interface.
 func (m *MeasurementBase) DeleteError() error {
 	return errors.ErrMeasurementNotDeleted
 }

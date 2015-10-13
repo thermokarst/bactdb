@@ -28,10 +28,12 @@ func (c *CharacteristicBase) PreUpdate(e modl.SqlExecutor) error {
 	return nil
 }
 
+// UpdateError satisfies base interface.
 func (c *CharacteristicBase) UpdateError() error {
 	return errors.ErrCharacteristicNotUpdated
 }
 
+// DeleteError satisfies base interface.
 func (c *CharacteristicBase) DeleteError() error {
 	return errors.ErrCharacteristicNotDeleted
 }

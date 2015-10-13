@@ -29,10 +29,12 @@ func (s *StrainBase) PreUpdate(e modl.SqlExecutor) error {
 	return nil
 }
 
+// UpdateError satisfies base interface.
 func (s *StrainBase) UpdateError() error {
 	return errors.ErrStrainNotUpdated
 }
 
+// DeleteError satisfies base interface.
 func (s *StrainBase) DeleteError() error {
 	return errors.ErrStrainNotDeleted
 }
