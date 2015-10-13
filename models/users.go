@@ -166,3 +166,26 @@ func ListUsers(opt helpers.ListOptions, claims *types.Claims) (*Users, error) {
 
 	return &users, nil
 }
+
+func UpdateUserPassword(id int64, password string) error {
+	user, err := DbGetUserByID(id)
+	if err != nil {
+		return err
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	if err != nil {
+		return err
+	}
+
+	user.Password = string(hash)
+
+	count, err := DBH.Update(user.UserBase)
+	if err != nil {
+		return err
+	}
+	if count != 1 {
+		return errors.ErrUserNotUpdated
+	}
+	return nil
+}

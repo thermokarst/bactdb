@@ -68,6 +68,7 @@ func Handler() http.Handler {
 	// Everything past this point requires a valid token
 	routes := []r{
 		r{handleLister(userService), "GET", "/users"},
+		r{api.HandleUserPasswordChange, "POST", "/users/password"},
 		r{handleGetter(userService), "GET", "/users/{ID:.+}"},
 		r{handleUpdater(userService), "PUT", "/users/{ID:.+}"},
 		r{handleLister(speciesService), "GET", "/species"},

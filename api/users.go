@@ -259,3 +259,13 @@ func HandleUserLockout(w http.ResponseWriter, r *http.Request) *types.AppError {
 	fmt.Fprintln(w, `{}`)
 	return nil
 }
+
+func HandleUserPasswordChange(w http.ResponseWriter, r *http.Request) *types.AppError {
+	claims := helpers.GetClaims(r)
+
+	if err := models.UpdateUserPassword(claims.Sub, r.FormValue("password")); err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
+
+	return nil
+}
