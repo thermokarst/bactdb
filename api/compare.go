@@ -17,6 +17,8 @@ import (
 )
 
 // HandleCompare is a HTTP handler for comparision.
+// Comparision requires a list of strain ids and a list of characteristic ids.
+// The id order dictates the presentation order.
 func HandleCompare(w http.ResponseWriter, r *http.Request) *types.AppError {
 	// types
 	type Comparisions map[string]map[string]string
@@ -57,6 +59,11 @@ func HandleCompare(w http.ResponseWriter, r *http.Request) *types.AppError {
 				if (m.CharacteristicID == characteristicIDInt) && (m.StrainID == strainIDInt) {
 					values[strainID] = m.Value()
 				}
+			}
+			// If the strain doesn't have a measurement for this characteristic,
+			// stick an empty value in anyway (for CSV).
+			if _, ok := values[strainID]; !ok {
+				values[strainID] = ""
 			}
 		}
 
@@ -102,10 +109,10 @@ func HandleCompare(w http.ResponseWriter, r *http.Request) *types.AppError {
 		wr.Write(r)
 
 		// Write data
-		for key, record := range comparisions {
-			r := []string{characteristics[key]}
-			for _, val := range record {
-				r = append(r, val)
+		for _, characteristicID := range characteristicIDs {
+			r := []string{characteristics[characteristicID]}
+			for _, strainID := range strainIDs {
+				r = append(r, comparisions[characteristicID][strainID])
 			}
 			wr.Write(r)
 		}
