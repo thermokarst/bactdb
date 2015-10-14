@@ -42,11 +42,15 @@ func (c *CharacteristicBase) validate() types.ValidationError {
 	cv := make(types.ValidationError, 0)
 
 	if c.CharacteristicName == "" {
-		cv["Name"] = []string{helpers.MustProvideAValue}
+		cv = append(cv, types.NewValidationError(
+			"characteristicName",
+			helpers.MustProvideAValue))
 	}
 
 	if c.CharacteristicTypeID == 0 {
-		cv["Characteristic Type"] = []string{helpers.MustProvideAValue}
+		cv = append(cv, types.NewValidationError(
+			"characteristicType",
+			helpers.MustProvideAValue))
 	}
 
 	if len(cv) > 0 {

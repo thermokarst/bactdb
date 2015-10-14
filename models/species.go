@@ -43,11 +43,15 @@ func (s *SpeciesBase) validate() types.ValidationError {
 	sv := make(types.ValidationError, 0)
 
 	if s.GenusID == 0 {
-		sv["Genus"] = []string{helpers.MustProvideAValue}
+		sv = append(sv, types.NewValidationError(
+			"genus",
+			helpers.MustProvideAValue))
 	}
 
 	if s.SpeciesName == "" {
-		sv["Species"] = []string{helpers.MustProvideAValue}
+		sv = append(sv, types.NewValidationError(
+			"speciesName",
+			helpers.MustProvideAValue))
 	}
 
 	if len(sv) > 0 {

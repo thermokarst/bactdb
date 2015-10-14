@@ -43,11 +43,21 @@ func (m *MeasurementBase) validate() types.ValidationError {
 	mv := make(types.ValidationError, 0)
 
 	if m.StrainID == 0 {
-		mv["Strain"] = []string{helpers.MustProvideAValue}
+		mv = append(mv, types.NewValidationError(
+			"strain",
+			helpers.MustProvideAValue))
 	}
 
 	if m.CharacteristicID == 0 {
-		mv["Characteristic"] = []string{helpers.MustProvideAValue}
+		mv = append(mv, types.NewValidationError(
+			"characteristic",
+			helpers.MustProvideAValue))
+	}
+
+	if m.TextMeasurementTypeID.Valid == false && m.TxtValue.Valid == false && m.NumValue.Valid == false {
+		mv = append(mv, types.NewValidationError(
+			"value",
+			helpers.MustProvideAValue))
 	}
 
 	if len(mv) > 0 {
@@ -119,7 +129,9 @@ func (m *Measurement) UnmarshalJSON(b []byte) error {
 		id, err := GetTextMeasurementTypeID(v)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				measurement.TxtValue = types.NullString{sql.NullString{String: v, Valid: true}}
+				if v != "" {
+					measurement.TxtValue = types.NullString{sql.NullString{String: v, Valid: true}}
+				}
 			} else {
 				return err
 			}

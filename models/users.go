@@ -43,20 +43,28 @@ func (u *UserBase) validate() types.ValidationError {
 	uv := make(types.ValidationError, 0)
 
 	if u.Name == "" {
-		uv["Name"] = []string{helpers.MustProvideAValue}
+		uv = append(uv, types.NewValidationError(
+			"name",
+			helpers.MustProvideAValue))
 	}
 
 	if u.Email == "" {
-		uv["Email"] = []string{helpers.MustProvideAValue}
+		uv = append(uv, types.NewValidationError(
+			"email",
+			helpers.MustProvideAValue))
 	}
 
 	regex, _ := regexp.Compile(`(\w[-._\w]*\w@\w[-._\w]*\w\.\w{2,3})`)
 	if u.Email != "" && !regex.MatchString(u.Email) {
-		uv["Email"] = []string{"Must provide a valid email address"}
+		uv = append(uv, types.NewValidationError(
+			"email",
+			"Must provide a valid email address"))
 	}
 
 	if len(u.Password) < 8 {
-		uv["Password"] = []string{"Password must be at least 8 characters"}
+		uv = append(uv, types.NewValidationError(
+			"password",
+			"Password must be at least 8 characters"))
 	}
 
 	if len(uv) > 0 {
