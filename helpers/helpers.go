@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/schema"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/context"
+	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/gorilla/schema"
 	"github.com/thermokarst/bactdb/Godeps/_workspace/src/github.com/lib/pq"
 	"github.com/thermokarst/bactdb/types"
 )
