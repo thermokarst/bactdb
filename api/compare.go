@@ -57,7 +57,11 @@ func HandleCompare(w http.ResponseWriter, r *http.Request) *types.AppError {
 			strainIDInt, _ := strconv.ParseInt(strainID, 10, 0)
 			for _, m := range *measurementsPayload.Measurements {
 				if (m.CharacteristicID == characteristicIDInt) && (m.StrainID == strainIDInt) {
-					values[strainID] = m.Value()
+					if m.Notes.Valid {
+						values[strainID] = fmt.Sprintf("%s (%s)", m.Value(), m.Notes.String)
+					} else {
+						values[strainID] = m.Value()
+					}
 				}
 			}
 			// If the strain doesn't have a measurement for this characteristic,
