@@ -110,7 +110,10 @@ func handleCreater(c api.Creater) errorHandler {
 		if err != nil {
 			return newJSONError(err, http.StatusInternalServerError)
 		}
+
+		w.WriteHeader(http.StatusCreated)
 		w.Write(data)
+
 		return nil
 	}
 }
@@ -128,6 +131,8 @@ func handleDeleter(d api.Deleter) errorHandler {
 		if appErr != nil {
 			return appErr
 		}
+
+		w.WriteHeader(http.StatusNoContent)
 
 		return nil
 	}
