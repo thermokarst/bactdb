@@ -64,7 +64,7 @@ func tokenHandler(h http.Handler) http.Handler {
 			})
 		} else {
 			data, _ = json.Marshal(struct {
-				Token string `json:"token"`
+				Token string `json:"access_token"`
 			}{
 				Token: tokenData,
 			})
@@ -92,7 +92,7 @@ func tokenRefresh(j *jwt.Middleware) errorHandler {
 		}
 
 		data, _ := json.Marshal(struct {
-			Token string `json:"token"`
+			Token string `json:"access_token"`
 		}{
 			Token: token,
 		})

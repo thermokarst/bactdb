@@ -13,9 +13,11 @@ var (
 	Middleware *jwt.Middleware
 	// Config handles JWT middleware configuration
 	Config = &jwt.Config{
-		Secret: os.Getenv("SECRET"),
-		Auth:   models.DbAuthenticate,
-		Claims: claimsFunc,
+		Secret:        os.Getenv("SECRET"),
+		Auth:          models.DbAuthenticate,
+		Claims:        claimsFunc,
+		IdentityField: "username",
+		VerifyField:   "password",
 	}
 )
 
