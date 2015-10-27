@@ -257,8 +257,8 @@ func HandleUserLockout(w http.ResponseWriter, r *http.Request) *types.AppError {
 		subject := fmt.Sprintf("Password Reset Request - %s", mg.Domain())
 		message := fmt.Sprintf("You are receiving this message because this email "+
 			"address was used in an account lockout request at %s. Please visit "+
-			"this URL to complete the process: %s. If you did not request help "+
-			"with a lockout, please disregard this message.",
+			"this URL to complete the process of resetting your password: %s. "+
+			"If you did not request help with a lockout, please disregard this message.",
 			mg.Domain(), hostURL.String())
 		m := mailgun.NewMessage(sender, subject, message, recipient)
 		_, _, err := mg.Send(m)
