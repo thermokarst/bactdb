@@ -188,7 +188,7 @@ func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims)
 func HandleUserVerify(w http.ResponseWriter, r *http.Request) *types.AppError {
 	// TODO: clean this up
 	nonce := mux.Vars(r)["Nonce"]
-	q := `SELECT user_id, referer FROM verification WHERE nonce=$1;`
+	q := `SELECT user_id AS userid, referer FROM verification WHERE nonce=$1;`
 
 	var ver struct {
 		UserID  int64
@@ -203,7 +203,7 @@ func HandleUserVerify(w http.ResponseWriter, r *http.Request) *types.AppError {
 		return newJSONError(errors.ErrUserNotFound, http.StatusInternalServerError)
 	}
 
-	var user models.User
+	var user models.UserBase
 	if err := models.DBH.Get(&user, ver.UserID); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
