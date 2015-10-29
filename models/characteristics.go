@@ -262,14 +262,7 @@ func InsertOrGetCharacteristicType(val string, claims *types.Claims) (int64, err
 				(characteristic_type_name, created_at, updated_at, created_by, updated_by)
 				VALUES ($1, $2, $3, $4, $5) RETURNING id;`
 			ct := helpers.CurrentTime()
-			var result sql.Result
-			var insertErr error
-			stmt, err := DB.Db.Prepare(i)
-			if result, insertErr = stmt.Exec(val, ct, ct, claims.Sub, claims.Sub); insertErr != nil {
-				return 0, insertErr
-			}
-			id, err = result.LastInsertId()
-			if err != nil {
+			if err := DB.Db.QueryRow(i, val, ct, ct, claims.Sub, claims.Sub).Scan(&id); err != nil {
 				return 0, err
 			}
 		} else {
