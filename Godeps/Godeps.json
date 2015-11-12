@@ -51,7 +51,7 @@
 		},
 		{
 			"ImportPath": "github.com/thermokarst/jwt",
-			"Rev": "6b69668616b8d8598fddf36b4bb4e4e3acb56008"
+			"Rev": "ce0235af93669b32c6ba1b7cde9f3632b76a6c91"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/bcrypt",
