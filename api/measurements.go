@@ -121,6 +121,11 @@ func (m MeasurementService) Delete(id int64, genus string, claims *types.Claims)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
+
+	if !measurement.CanEdit {
+		return newJSONError(errors.ErrMeasurementNotDeleted, http.StatusForbidden)
+	}
+
 	if err := models.Delete(measurement.MeasurementBase); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}

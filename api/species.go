@@ -164,6 +164,10 @@ func (s SpeciesService) Delete(id int64, genus string, claims *types.Claims) *ty
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
+	if !species.CanEdit {
+		return newJSONError(errors.ErrSpeciesNotDeleted, http.StatusForbidden)
+	}
+
 	if err := models.Delete(species.SpeciesBase); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}

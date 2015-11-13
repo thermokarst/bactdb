@@ -204,6 +204,10 @@ func (c CharacteristicService) Delete(id int64, genus string, claims *types.Clai
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
+	if !characteristic.CanEdit {
+		return newJSONError(errors.ErrCharacteristicNotDeleted, http.StatusForbidden)
+	}
+
 	if err := models.Delete(characteristic); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
