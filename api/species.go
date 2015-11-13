@@ -50,9 +50,6 @@ func (s SpeciesService) List(val *url.Values, claims *types.Claims) (types.Entit
 	payload := payloads.ManySpecies{
 		Species: species,
 		Strains: strains,
-		Meta: &models.SpeciesMeta{
-			CanAdd: helpers.CanAdd(claims),
-		},
 	}
 
 	return &payload, nil
@@ -73,9 +70,6 @@ func (s SpeciesService) Get(id int64, genus string, claims *types.Claims) (types
 	payload := payloads.Species{
 		Species: species,
 		Strains: strains,
-		Meta: &models.SpeciesMeta{
-			CanAdd: helpers.CanAdd(claims),
-		},
 	}
 
 	return &payload, nil
@@ -116,9 +110,6 @@ func (s SpeciesService) Update(id int64, e *types.Entity, genus string, claims *
 
 	payload.Species = species
 	payload.Strains = strains
-	payload.Meta = &models.SpeciesMeta{
-		CanAdd: helpers.CanAdd(claims),
-	}
 
 	return nil
 }
@@ -151,9 +142,6 @@ func (s SpeciesService) Create(e *types.Entity, genus string, claims *types.Clai
 	// Note, no strains when new species
 
 	payload.Species = species
-	payload.Meta = &models.SpeciesMeta{
-		CanAdd: helpers.CanAdd(claims),
-	}
 	return nil
 }
 

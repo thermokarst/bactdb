@@ -88,11 +88,6 @@ func GetClaims(r *http.Request) types.Claims {
 	return claims
 }
 
-// CanAdd is an authorization helper for adding new entities
-func CanAdd(claims *types.Claims) bool {
-	return claims.Role == "A" || claims.Role == "W"
-}
-
 // CanEdit is an authorization helper for editing entities
 func CanEdit(claims *types.Claims, author int64) bool {
 	return claims.Sub == author || claims.Role == "A"

@@ -166,11 +166,6 @@ func (m *Measurement) Value() string {
 // Measurements are multiple measurement entities
 type Measurements []*Measurement
 
-// MeasurementMeta stashes some metadata related to the entity
-type MeasurementMeta struct {
-	CanAdd bool `json:"canAdd"`
-}
-
 // ListMeasurements returns all measurements
 func ListMeasurements(opt helpers.MeasurementListOptions, claims *types.Claims) (*Measurements, error) {
 	var vals []interface{}

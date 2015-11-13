@@ -89,11 +89,6 @@ type Species struct {
 // ManySpecies is multiple species entities.
 type ManySpecies []*Species
 
-// SpeciesMeta stashes some metadata related to the entity.
-type SpeciesMeta struct {
-	CanAdd bool `json:"canAdd"`
-}
-
 // GenusIDFromName looks up the genus' ID.
 func GenusIDFromName(genusName string) (int64, error) {
 	var genusID struct{ ID int64 }

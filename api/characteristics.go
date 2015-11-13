@@ -72,9 +72,6 @@ func (c CharacteristicService) List(val *url.Values, claims *types.Claims) (type
 		Measurements:    measurements,
 		Strains:         strains,
 		Species:         species,
-		Meta: &models.CharacteristicMeta{
-			CanAdd: helpers.CanAdd(claims),
-		},
 	}
 
 	return &payload, nil
@@ -191,9 +188,7 @@ func (c CharacteristicService) Create(e *types.Entity, genus string, claims *typ
 	}
 
 	payload.Characteristic = characteristic
-	payload.Meta = &models.CharacteristicMeta{
-		CanAdd: helpers.CanAdd(claims),
-	}
+
 	return nil
 }
 

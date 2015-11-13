@@ -9,21 +9,19 @@ import (
 // Characteristic is a payload that sideloads all of the necessary entities for
 // a particular characteristic.
 type Characteristic struct {
-	Characteristic *models.Characteristic     `json:"characteristic"`
-	Measurements   *models.Measurements       `json:"measurements"`
-	Strains        *models.Strains            `json:"strains"`
-	Species        *models.ManySpecies        `json:"species"`
-	Meta           *models.CharacteristicMeta `json:"meta"`
+	Characteristic *models.Characteristic `json:"characteristic"`
+	Measurements   *models.Measurements   `json:"measurements"`
+	Strains        *models.Strains        `json:"strains"`
+	Species        *models.ManySpecies    `json:"species"`
 }
 
 // Characteristics is a payload that sideloads all of the necessary entities for
 // multiple characteristics.
 type Characteristics struct {
-	Characteristics *models.Characteristics    `json:"characteristics"`
-	Measurements    *models.Measurements       `json:"measurements"`
-	Strains         *models.Strains            `json:"strains"`
-	Species         *models.ManySpecies        `json:"species"`
-	Meta            *models.CharacteristicMeta `json:"meta"`
+	Characteristics *models.Characteristics `json:"characteristics"`
+	Measurements    *models.Measurements    `json:"measurements"`
+	Strains         *models.Strains         `json:"strains"`
+	Species         *models.ManySpecies     `json:"species"`
 }
 
 // Marshal satisfies the CRUD interfaces.

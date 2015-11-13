@@ -85,9 +85,6 @@ func (s StrainService) List(val *url.Values, claims *types.Claims) (types.Entity
 		Species:         species,
 		Measurements:    measurements,
 		Characteristics: characteristics,
-		Meta: &models.StrainMeta{
-			CanAdd: helpers.CanAdd(claims),
-		},
 	}
 
 	return &payload, nil
@@ -141,9 +138,6 @@ func (s StrainService) Get(id int64, genus string, claims *types.Claims) (types.
 		Species:         &manySpecies,
 		Characteristics: characteristics,
 		Measurements:    measurements,
-		Meta: &models.StrainMeta{
-			CanAdd: helpers.CanAdd(claims),
-		},
 	}
 
 	return &payload, nil
@@ -179,9 +173,6 @@ func (s StrainService) Update(id int64, e *types.Entity, genus string, claims *t
 
 	payload.Strain = strain
 	payload.Species = &manySpecies
-	payload.Meta = &models.StrainMeta{
-		CanAdd: helpers.CanAdd(claims),
-	}
 
 	return nil
 }
@@ -213,9 +204,6 @@ func (s StrainService) Create(e *types.Entity, genus string, claims *types.Claim
 
 	payload.Strain = strain
 	payload.Species = &manySpecies
-	payload.Meta = &models.StrainMeta{
-		CanAdd: helpers.CanAdd(claims),
-	}
 
 	return nil
 }

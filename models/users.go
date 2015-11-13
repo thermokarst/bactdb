@@ -104,11 +104,6 @@ type UserValidation struct {
 // Users are multiple user entities.
 type Users []*User
 
-// UserMeta stashes some metadata related to the entity.
-type UserMeta struct {
-	CanAdd bool `json:"canAdd"`
-}
-
 // DbAuthenticate authenticates a user.
 // For thermokarst/jwt: authentication callback
 func DbAuthenticate(email string, password string) error {

@@ -9,9 +9,8 @@ import (
 // Species is a payload that sideloads all of the necessary entities for a
 // particular species.
 type Species struct {
-	Species *models.Species     `json:"species"`
-	Strains *models.Strains     `json:"strains"`
-	Meta    *models.SpeciesMeta `json:"meta"`
+	Species *models.Species `json:"species"`
+	Strains *models.Strains `json:"strains"`
 }
 
 // ManySpecies is a payload that sideloads all of the necessary entities for
@@ -19,7 +18,6 @@ type Species struct {
 type ManySpecies struct {
 	Species *models.ManySpecies `json:"species"`
 	Strains *models.Strains     `json:"strains"`
-	Meta    *models.SpeciesMeta `json:"meta"`
 }
 
 // Marshal satisfies the CRUD interfaces.

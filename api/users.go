@@ -57,9 +57,6 @@ func (u UserService) List(val *url.Values, claims *types.Claims) (types.Entity, 
 
 	payload := payloads.Users{
 		Users: users,
-		Meta: &models.UserMeta{
-			CanAdd: claims.Role == "A",
-		},
 	}
 	return &payload, nil
 }
@@ -79,9 +76,6 @@ func (u UserService) Get(id int64, dummy string, claims *types.Claims) (types.En
 
 	payload := payloads.User{
 		User: user,
-		Meta: &models.UserMeta{
-			CanAdd: claims.Role == "A",
-		},
 	}
 	return &payload, nil
 }

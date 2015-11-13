@@ -9,15 +9,13 @@ import (
 // User is a payload that sideloads all of the necessary entities for a
 // particular user.
 type User struct {
-	User *models.User     `json:"user"`
-	Meta *models.UserMeta `json:"meta"`
+	User *models.User `json:"user"`
 }
 
 // Users is a payload that sideloads all of the necessary entities for
 // multiple users.
 type Users struct {
-	Users *models.Users    `json:"users"`
-	Meta  *models.UserMeta `json:"meta"`
+	Users *models.Users `json:"users"`
 }
 
 // Marshal satisfies the CRUD interfaces.

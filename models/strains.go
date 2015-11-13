@@ -92,11 +92,6 @@ type Strain struct {
 // Strains are multiple strain entities.
 type Strains []*Strain
 
-// StrainMeta stashes some metadata related to the entity.
-type StrainMeta struct {
-	CanAdd bool `json:"canAdd"`
-}
-
 // SpeciesName returns a strain's species name.
 func (s StrainBase) SpeciesName() string {
 	var species SpeciesBase

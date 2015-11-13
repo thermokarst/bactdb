@@ -85,11 +85,6 @@ type Characteristic struct {
 // Characteristics are multiple characteristic entities
 type Characteristics []*Characteristic
 
-// CharacteristicMeta stashes some metadata related to the entity
-type CharacteristicMeta struct {
-	CanAdd bool `json:"canAdd"`
-}
-
 // ListCharacteristics returns all characteristics
 func ListCharacteristics(opt helpers.ListOptions, claims *types.Claims) (*Characteristics, error) {
 	var vals []interface{}

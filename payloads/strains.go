@@ -13,7 +13,6 @@ type Strain struct {
 	Species         *models.ManySpecies     `json:"species"`
 	Characteristics *models.Characteristics `json:"characteristics"`
 	Measurements    *models.Measurements    `json:"measurements"`
-	Meta            *models.StrainMeta      `json:"meta"`
 }
 
 // Strains is a payload that sideloads all of the necessary entities for
@@ -23,7 +22,6 @@ type Strains struct {
 	Species         *models.ManySpecies     `json:"species"`
 	Characteristics *models.Characteristics `json:"characteristics"`
 	Measurements    *models.Measurements    `json:"measurements"`
-	Meta            *models.StrainMeta      `json:"meta"`
 }
 
 // Marshal satisfies the CRUD interfaces.
