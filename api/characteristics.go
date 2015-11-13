@@ -203,7 +203,7 @@ func (c CharacteristicService) Delete(id int64, genus string, claims *types.Clai
 		return newJSONError(errors.ErrCharacteristicNotDeleted, http.StatusForbidden)
 	}
 
-	if err := models.Delete(characteristic); err != nil {
+	if err := models.Delete(characteristic.CharacteristicBase); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
