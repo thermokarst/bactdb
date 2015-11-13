@@ -124,9 +124,6 @@ func (u UserService) Update(id int64, e *types.Entity, dummy string, claims *typ
 func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims) *types.AppError {
 	user := (*e).(*payloads.User).User
 
-	ct := helpers.CurrentTime()
-	user.CreatedAt = ct
-	user.UpdatedAt = ct
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
@@ -156,7 +153,7 @@ func (u UserService) Create(e *types.Entity, dummy string, claims *types.Claims)
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 	// TODO: fix this
-	_, err = models.DBH.Exec(q, user.ID, nonce, claims.Ref, ct)
+	_, err = models.DBH.Exec(q, user.ID, nonce, claims.Ref, helpers.CurrentTime())
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -208,7 +205,6 @@ func HandleUserVerify(w http.ResponseWriter, r *http.Request) *types.AppError {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	user.UpdatedAt = helpers.CurrentTime()
 	user.Verified = true
 
 	count, err := models.DBH.Update(&user)
