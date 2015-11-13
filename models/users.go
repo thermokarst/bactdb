@@ -181,6 +181,13 @@ func UpdateUserPassword(claims *types.Claims, password string) error {
 		return err
 	}
 
+	// Temporarily set PW as plaintext, for validation purposes
+	user.Password = password
+
+	if err := user.validate(); err != nil {
+		return err
+	}
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		return err

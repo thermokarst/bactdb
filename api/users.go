@@ -201,16 +201,18 @@ func HandleUserVerify(w http.ResponseWriter, r *http.Request) *types.AppError {
 
 	user.Verified = true
 
-	count, err := models.DBH.Update(&user)
-	if err != nil {
+	if err := models.Update(&user); err != nil {
+		if err == errors.ErrUserNotUpdated {
+			return newJSONError(err, http.StatusBadRequest)
+		}
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
-	}
-	if count != 1 {
-		return newJSONError(errors.ErrUserNotUpdated, http.StatusInternalServerError)
 	}
 
 	q = `DELETE FROM verification WHERE user_id=$1;`
-	_, err = models.DBH.Exec(q, user.ID)
+	_, err := models.DBH.Exec(q, user.ID)
 	if err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
@@ -275,6 +277,9 @@ func HandleUserPasswordChange(w http.ResponseWriter, r *http.Request) *types.App
 	}
 
 	if err := models.UpdateUserPassword(&claims, r.FormValue("password")); err != nil {
+		if err, ok := err.(types.ValidationError); ok {
+			return &types.AppError{Error: err, Status: helpers.StatusUnprocessableEntity}
+		}
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
