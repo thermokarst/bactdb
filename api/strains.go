@@ -219,7 +219,7 @@ func (s StrainService) Delete(id int64, genus string, claims *types.Claims) *typ
 		return newJSONError(errors.ErrStrainNotDeleted, http.StatusForbidden)
 	}
 
-	if err := models.Delete(strain); err != nil {
+	if err := models.Delete(strain.StrainBase); err != nil {
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
