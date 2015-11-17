@@ -283,5 +283,7 @@ func HandleUserPasswordChange(w http.ResponseWriter, r *http.Request) *types.App
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
+	w.WriteHeader(http.StatusNoContent)
+
 	return nil
 }
