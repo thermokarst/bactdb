@@ -34,7 +34,7 @@ func claimsFunc(email string) (map[string]interface{}, error) {
 		"sub":  user.ID,
 		"role": user.Role,
 		"iat":  currentTime.Unix(),
-		"exp":  currentTime.Add(time.Minute * 60).Unix(),
+		"exp":  currentTime.Add(time.Minute * 60 * 24).Unix(),
 		"ref":  "",
 	}, nil
 }
