@@ -99,7 +99,11 @@ func HandleCompare(w http.ResponseWriter, r *http.Request) *types.AppError {
 		// maps to translate ids
 		strains := make(map[string]string)
 		for _, strain := range *measurementsPayload.Strains {
-			strains[fmt.Sprintf("%d", strain.ID)] = fmt.Sprintf("%s (%s)", strain.SpeciesName(), strain.StrainName)
+			var t string
+			if strain.TypeStrain {
+				t = "T"
+			}
+			strains[fmt.Sprintf("%d", strain.ID)] = fmt.Sprintf("%s %s %s", strain.SpeciesName(), strain.StrainName, t)
 		}
 		characteristics := make(map[string]string)
 		for _, characteristic := range *measurementsPayload.Characteristics {
