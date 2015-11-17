@@ -61,7 +61,7 @@ func HandleCompare(w http.ResponseWriter, r *http.Request) *types.AppError {
 						values[strainID] = fmt.Sprintf("%s (%s)", m.Value(), m.Notes.String)
 					} else {
 						if values[strainID] != "" {
-							values[strainID] = fmt.Sprintf("%s, %s", values[strainID], m.Value())
+							values[strainID] = fmt.Sprintf("%s; %s", values[strainID], m.Value())
 						} else {
 							values[strainID] = m.Value()
 						}
