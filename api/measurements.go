@@ -146,6 +146,12 @@ func (m MeasurementService) Create(e *types.Entity, genus string, claims *types.
 		return newJSONError(err, http.StatusInternalServerError)
 	}
 
-	return nil
+	measurement, err := models.GetMeasurement(payload.Measurement.ID, genus, claims)
+	if err != nil {
+		return newJSONError(err, http.StatusInternalServerError)
+	}
 
+	payload.Measurement = measurement
+
+	return nil
 }
